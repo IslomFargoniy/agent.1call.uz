@@ -1,5 +1,5 @@
 # Multi-Tenant SaaS "agent.1call.uz" — Texnik Arxitektura va Implementatsiya Rejasi
-**(Single Database + Centralized Auth + PostgreSQL RLS + Click/Payme Billing + Telegram Bot + CRM/ERP)**
+**(Single Database + Centralized Auth + PostgreSQL RLS + Click/Payme/LemonSqueezy Billing + Telegram Bot + CRM/ERP)**
 
 ---
 
@@ -12,8 +12,8 @@
 | **Izolyatsiya** | 2 bosqichli: Laravel Eloquent TenantScope + PostgreSQL RLS |
 | **Foydalanuvchi Rollari (RBAC)** | 3 ta aniq rol: `superadmin` (Platforma egasi), `admin` (Kompaniya rahbari), `operator` (Xodim) |
 | **DBMS** | PostgreSQL 16+ |
-| **Billing & To'lov Usullari** | 1) Click, 2) Payme (`goodoneuz/pay-uz`), 3) Karta orqali to'lov (P2P + Skrinshot yuklash & Superadmin tasdiqlashi) |
-| **To'lov Tizimlari Boshqaruvi** | Superadmin to'lov usullarini Active/Passive qila oladi va Karta raqamlarini kirita oladi (`payment_methods` jadvali) |
+| **Billing & To'lov Usullari** | 1) Click, 2) Payme (`goodoneuz/pay-uz`), 3) Karta orqali to'lov (P2P + Skrinshot), 4) **Lemon Squeezy** (Xalqaro Visa/Mastercard/Apple Pay/USD — `1call.uz` tajribasi asosida) |
+| **To'lov Tizimlari Boshqaruvi** | Superadmin to'lov usullarini Active/Passive qila oladi, Karta raqamlarini hamda Lemon Squeezy API kalitlari va Webhook Secret'ni boshqaradi (`payment_methods` jadvali) |
 | **Tarif Modeli** | Bazada boshqariluvchi (`tariffs`, `tariff_discounts`): Har bir telefon uchun (Dual-SIM = 1 telefon) |
 | **Chegirmalar Modeli** | Oylar kesimida (3/6/12 oy) VA Qurilmalar soni kesimida (5+, 10+, 20+ telefon) chegirma foizlari |
 | **Billing Dinamikasi** | Yangi telefonlar uchun **Pro-rata (Co-terming)** + **3 kunlik Grace Period** |
@@ -109,8 +109,9 @@ Alohida og'ir paketlar (masalan Filament) o'rnatilmaydi. Mavjud Inertia.js + Rea
    - **Oylar kesimidagi chegirmalar:** 3, 6, 12 oylik chegirma foizlarini qo'shish/tahrirlash.
    - **Qurilmalar soni kesimidagi chegirmalar:** Qanchadir miqdordan ortiq telefonlar uchun hajm chegirmalarini (masalan, 5+, 10+, 20+ telefon) belgilash.
 4. **`/admin/payment-methods` (To'lov Tizimlari Sozlamalari):**
-   - Click, Payme va Karta to'lov usullarini **Active / Passive** (yoqish/o'chirish) boshqaruvi.
+   - Click, Payme, Karta hamda **Lemon Squeezy** to'lov usullarini **Active / Passive** (yoqish/o'chirish) boshqaruvi.
    - Karta to'lovi uchun Karta raqami (masalan: `8600 1234 5678 9012`), Karta egasi ismi va bank nomini kiritish/yangilash.
+   - **Lemon Squeezy sozlamalari:** Store ID, API Key, Webhook Secret, Store Slug va USD valyuta kursini belgilash/yangilash.
 5. **`/admin/invoices` (To'lovlarni Tasdiqlash Navbati):**
    - Karta orqali qilingan to'lovlar skrinshotlarini kattalashtirib ko'rish.
    - Bitta tugma bilan **"Tasdiqlash" (Approve)** → tenant obunasini avtomatik uzaytirish yoki **"Rad etish" (Reject)**.
@@ -337,10 +338,10 @@ CREATE POLICY subscriptions_tenant_isolation ON subscriptions
 ```sql
 CREATE TABLE payment_methods (
     id BIGSERIAL PRIMARY KEY,
-    code VARCHAR(50) UNIQUE NOT NULL,            -- 'click', 'payme', 'card_transfer'
-    name VARCHAR(100) NOT NULL,                  -- 'Click', 'Payme', 'Karta orqali to''lov (P2P)'
+    code VARCHAR(50) UNIQUE NOT NULL,            -- 'click', 'payme', 'card_transfer', 'lemonsqueezy'
+    name VARCHAR(100) NOT NULL,                  -- 'Click', 'Payme', 'Karta orqali to''lov (P2P)', 'Lemon Squeezy'
     is_active BOOLEAN NOT NULL DEFAULT TRUE,     -- Active / Passive holati
-    settings JSONB NULL DEFAULT '{}',            -- Karta uchun: {"card_number": "8600 1234 5678 9012", "card_holder": "Islombek F.", "bank_name": "Kapitalbank"}
+    settings JSONB NULL DEFAULT '{}',            -- Karta: {"card_number", "card_holder", "bank_name"} | Lemon Squeezy: {"store_id", "api_key", "webhook_secret", "store_slug", "usd_exchange_rate"}
     instructions TEXT NULL,                      -- To'lov ko'rsatmalari (mijozga ko'rsatiladigan matn)
     sort_order SMALLINT NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NULL,
@@ -358,7 +359,7 @@ CREATE TABLE invoices (
     invoice_number VARCHAR(50) UNIQUE NOT NULL,    -- Masalan: INV-202609-00042
     amount NUMERIC(14, 2) NOT NULL,
     currency VARCHAR(3) NOT NULL DEFAULT 'UZS',
-    payment_method VARCHAR(30) NOT NULL,          -- 'click', 'payme', 'card_transfer'
+    payment_method VARCHAR(30) NOT NULL,          -- 'click', 'payme', 'card_transfer', 'lemonsqueezy'
     transaction_id VARCHAR(100) NULL,             -- Provider / pay_uz tranzaksiya ID si
     receipt_image_path VARCHAR(500) NULL,         -- Karta to'lovida yuklangan skrinshot fayl yo'li
     status VARCHAR(30) NOT NULL DEFAULT 'pending', -- 'pending', 'reviewing' (skrinshot tekshiruvda), 'paid', 'rejected', 'cancelled'
@@ -434,12 +435,12 @@ To'lov summasi bazadagi `tariffs` va `tariff_discounts` jadvallari qoidalariga a
      * Qo'ng'iroqning o'zi, statistikasi (raqam, davomiylik, xodim, sana) bazada abadiy saqlanadi, faqat `recording_status = 'expired'` qilib qo'yiladi.
 
 
-### 3.2. To'lov Usullari va Karta Orqali To'lov (P2P + Skrinshot) Oqimi
+### 3.2. To'lov Usullari: Click, Payme, Karta (P2P + Skrinshot) va Lemon Squeezy Integratsiyasi
 
-Tizimda 3 xil to'lov usuli mavjud:
-1. **Click** (Avtomatik merchant to'lovi via `goodoneuz/pay-uz`)
-2. **Payme** (Avtomatik merchant to'lovi via `goodoneuz/pay-uz`)
-3. **Karta orqali to'lov (P2P o'tkazma):**
+Tizimda 4 xil to'lov usuli qo'llab-quvvatlanadi:
+1. **Click** (Avtomatik merchant to'lovi via `goodoneuz/pay-uz`, UZS)
+2. **Payme** (Avtomatik merchant to'lovi via `goodoneuz/pay-uz`, UZS)
+3. **Karta orqali to'lov (P2P o'tkazma + Skrinshot tekshiruvi):**
    - Mijoz tarifni tanlaganda ekranda Superadmin kiritgan faol karta raqami ko'rsatiladi (masalan: `8600 1234 5678 9012`, Islombek F., Kapitalbank).
    - Mijoz to'lovni amalga oshirib, chek skrinshotini (PNG/JPG) tizimga yuklaydi.
    - Invoys statusi `reviewing` (Tekshiruvda) holatiga o'tadi.
@@ -447,6 +448,52 @@ Tizimda 3 xil to'lov usuli mavjud:
    - Superadmin `/admin/invoices` sahifasida skrinshotni tekshirib, **"Tasdiqlash" (Approve)** tugmasini bosadi.
    - Tasdiqlanishi bilan obuna avtomatik uzaytiriladi va tenantga Telegramda xabar boradi.
 
+4. **Lemon Squeezy (Xalqaro to'lovlar — `1call.uz` tajribasi asosida):**
+   - **Qo'llanish maqsadi:** Chet el mijozlari, xalqaro hamkorlar yoki xalqaro kartalar (Visa, Mastercard, American Express, Apple Pay, Google Pay) orqali to'lovlarni qabul qilish.
+   - **Superadmin Boshqaruvi (`/admin/payment-methods`):**
+     * Active / Passive statusini yoqish/o'chirish.
+     * `lemonsqueezy_store_id`: Lemon Squeezy do'kon identifikatori.
+     * `lemonsqueezy_api_key`: Lemon Squeezy API kaliti.
+     * `lemonsqueezy_webhook_secret`: Webhook imzosini tekshirish uchun maxfiy kalit.
+     * `lemonsqueezy_store_slug`: Do'kon subdomeni (masalan: `1call.lemonsqueezy.com`).
+     * `usd_exchange_rate`: UZS hisob-fakturalarni USD ga avtomat o'girish kursi (masalan: 1 USD = 12 850 UZS) yoki USD tarif narxlari.
+   - **Frontend integratsiyasi (`lemon.js`):**
+     * Sahifaga `https://assets.lemonsqueezy.com/lemon.js` kutubxonasi yuklanadi.
+     * Foydalanuvchi "Lemon Squeezy orqali to'lash"ni tanlaganda quyidagi formatdagi xavfsiz checkout URL generatsiya qilinadi:
+       `https://{store_slug}.lemonsqueezy.com/checkout/buy/{variant_id}?checkout[custom][invoice_id]={invoice_id}&checkout[custom][tenant_id]={tenant_id}&checkout[custom][action]=subscription_pay&checkout[email]={tenant_admin_email}&preview=0&embed=1`
+     * `(window as any).LemonSqueezy.Url.Open(checkoutUrl)` orqali foydalanuvchini platformadan chiqarmasdan qulay modal overlay oynasida ochiladi.
+   - **Webhook Handler (`LemonSqueezyController`):**
+     * Marshrut: `POST /payment/lemonsqueezy` (yoki `/api/v1/billing/lemonsqueezy/webhook`).
+     * **HMAC SHA-256 Imzo Tekshiruvi (`X-Signature`):**
+       ```php
+       $payload = $request->getContent();
+       $signature = $request->header('X-Signature');
+       $secret = PaymentMethod::where('code', 'lemonsqueezy')->first()?->settings['webhook_secret']
+           ?? config('services.lemonsqueezy.webhook_secret');
+
+       if (!empty($secret)) {
+           $computedSignature = hash_hmac('sha256', $payload, $secret);
+           if (!hash_equals($computedSignature, (string) $signature)) {
+               Log::warning('Lemon Squeezy webhook signature verification failed.');
+               return response()->json(['error' => 'Invalid signature'], 400);
+           }
+       }
+       ```
+     * **Hodisalar va Biznes Mantiqi:**
+       1. `order_created` / `subscription_created`:
+          - `custom_data['invoice_id']` orqali hisob-faktura topiladi.
+          - `$invoice->status !== 'paid'` bo'lsa:
+            - `$invoice->update(['status' => 'paid', 'transaction_id' => $orderId, 'paid_at' => now()])`.
+            - Tenant obuna muddati (`subscription_expires_at`) tanlangan oylar soniga (3, 6, 12 oy) uzaytiriladi.
+            - Tenantning `allowed_devices_count` va `audio_retention_days` yangilanadi.
+            - Telegram bot orqali Superadminga va Tenant rahbariga to'lov qabul qilingani haqida tabrik xabari yuboriladi.
+       2. `order_refunded` / `subscription_payment_refunded`:
+          - Invoys statusi `cancelled` ga o'zgartiriladi.
+          - Obunadan mos kunlar ayirib tashlanadi yoki statusi `suspended` qilinadi.
+       3. `subscription_cancelled` / `subscription_expired` / `subscription_paused` / `subscription_payment_failed`:
+          - Tenant obuna holati `suspended` ga o'tkaziladi va xizmat cheklanadi.
+
+#### A) Karta orqali to'lov (P2P + Skrinshot) Ketma-ketligi:
 ```mermaid
 sequenceDiagram
     autonumber
@@ -471,6 +518,29 @@ sequenceDiagram
     Backend->>DB: Invoices status = 'paid', Subscriptions status = 'active'
     Backend->>DB: Tenant: allowed_devices_count va subscription_expires_at yangilanadi
     Backend->>TG: Tenantga xabar: "✅ To'lovingiz tasdiqlandi! Obuna faollashdi."
+```
+
+#### B) Lemon Squeezy (Xalqaro Visa/Mastercard/Apple Pay) Ketma-ketligi:
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as Tenant Admin
+    participant Web as Web Dashboard (lemon.js)
+    participant LS as Lemon Squeezy Hosted Checkout
+    participant Backend as Laravel Backend (Webhook)
+    participant DB as PostgreSQL DB
+    participant TG as Telegram Bot
+
+    Client->>Web: Tarifni tanlaydi va "Lemon Squeezy (Visa/Mastercard)" tugmasini bosadi
+    Web->>Web: lemon.js orqali overlay modal ochiladi
+    Client->>LS: Xalqaro karta ma'lumotlarini kiritib to'lovni tasdiqlaydi
+    LS-->>Client: "To'lov muvaffaqiyatli amalga oshirildi!"
+    LS->>Backend: POST /payment/lemonsqueezy (X-Signature, custom_data: invoice_id)
+    Backend->>Backend: HMAC SHA-256 imzoni tekshiradi
+    Backend->>DB: Invoices status = 'paid', transaction_id = LS Order ID
+    Backend->>DB: Tenant: subscription_expires_at uzaytiriladi, allowed_devices_count yangilanadi
+    Backend->>TG: Tenant va Superadminga xabar: "✅ Lemon Squeezy to'lovi muvaffaqiyatli qabul qilindi!"
+    Web-->>Client: Modal yopiladi, Dashboard avtomatik yangilanadi
 ```
 
 ### 3.3. Pro-rata (Co-terming) Yangi Telefon Qo'shish Kalkulyatori
@@ -532,7 +602,7 @@ Xodimlarning shaxsiy hayotini himoya qilish va korporativ axloq qoidalariga rioy
   > • Chiquvchi: **92 ta**  
   > • Qoldirilgan: **10 ta**  
   > 🏆 Eng faol operator: **Shahnoza Rahimova** (64 ta qo'ng'iroq)
-- **Billing Eslatmalari:** Obuna tugashiga 7 kun, 3 kun qolganda va Grace Period davrida to'g'ridan-to'g'ri Click va Payme to'lov havolalari yuboriladi.
+- **Billing Eslatmalari:** Obuna tugashiga 7 kun, 3 kun qolganda va Grace Period davrida to'g'ridan-to'g'ri Click, Payme va Lemon Squeezy to'lov havolalari yuboriladi.
 
 ---
 
@@ -568,7 +638,9 @@ agent.1call.uz/
 │   │   ├── DashboardController.php
 │   │   ├── CallsController.php
 │   │   ├── DevicesController.php
-│   │   ├── BillingController.php             # Pro-rata, Click/Payme to'lov
+│   │   ├── BillingController.php             # Pro-rata, to'lov kalkulyatori
+│   │   ├── PaymentWebhookController.php      # Click va Payme callbacklari
+│   │   ├── LemonSqueezyController.php        # Lemon Squeezy webhook va imzo tekshiruvi
 │   │   ├── SettingsController.php            # Ish grafigi va maxfiylik
 │   │   └── IntegrationsController.php
 │   ├── Http/Middleware/
@@ -584,13 +656,14 @@ agent.1call.uz/
 │   │   ├── Tariff.php                       # Asosiy tarif modeli
 │   │   ├── TariffDiscount.php               # Oylar va qurilmalar hajm chegirmalari
 │   │   ├── TariffRetentionOption.php        # Audio arxivini uzoqroq saqlash narxlari modeli
-│   │   ├── PaymentMethod.php                # To'lov usuli modeli (Click, Payme, Karta)
+│   │   ├── PaymentMethod.php                # To'lov usuli modeli (Click, Payme, Karta, Lemon Squeezy)
 │   │   ├── Subscription.php
 │   │   ├── Invoice.php
 │   │   └── TenantIntegration.php
 │   ├── Services/Billing/
 │   │   ├── BillingCalculator.php             # 3/6/12 oy, chegirmalar, Pro-rata
-│   │   └── SubscriptionService.php
+│   │   ├── SubscriptionService.php
+│   │   └── LemonSqueezyService.php           # Checkout generatsiyasi va valyuta kursi
 │   ├── Services/Telegram/
 │   │   └── TelegramNotificationService.php   # Qoldirilgan qo'ng'iroq va hisobotlar
 │   ├── Services/Integrations/{CrmManager, AmoCrmDriver, Bitrix24Driver, MoySkladDriver, BitoErpDriver}.php
@@ -601,7 +674,7 @@ agent.1call.uz/
 │   │   ├── Users/Index.tsx                      # Superadmin Users sahifasi
 │   │   ├── Tenants/Index.tsx                    # Superadmin Tenants sahifasi
 │   │   ├── Tariffs/Index.tsx                    # Tariflar va oylar/hajm chegirmalari boshqaruvi
-│   │   ├── PaymentMethods/Index.tsx             # To'lov tizimlarini active/passive qilish & karta raqami
+│   │   ├── PaymentMethods/Index.tsx             # To'lov tizimlari (Click, Payme, Karta, Lemon Squeezy)
 │   │   └── Invoices/Index.tsx                   # Skrinshotlarni ko'rish va tasdiqlash (Approve/Reject)
 │   ├── Billing/{Index, Invoices}.tsx
 │   ├── Settings/{WorkSchedule, Privacy}.tsx
@@ -664,7 +737,7 @@ agent.1call.uz/
 
 ---
 
-### **Phase 5: Billing, Pro-rata va To'lov Tizimi (Click, Payme, goodoneuz/pay-uz)**
+### **Phase 5: Billing, Pro-rata va To'lov Tizimlari (Click, Payme, Karta, Lemon Squeezy)**
 - [ ] **5.1.** `config/pay-uz.php` sozlash (Click va Payme merchant kalitlari).
 - [ ] **5.2.** `BillingCalculator` servisi:
   - Baza narx + tanlangan arxiv muddati qo'shimcha narxi (30 kun bepul, 60/90/180/365 kunlik narxlar).
@@ -672,9 +745,19 @@ agent.1call.uz/
   - Bazadagi `tariffs` va `tariff_discounts` jadvallaridan oylar va qurilmalar soni chegirmalarini dinamik o'qib hisoblovchi dvigatel.
   - Yangi telefonlar uchun **Pro-rata (Co-terming)** kalkulyatori.
 - [ ] **5.3.** `SubscriptionService` (yangi obuna, hisob-faktura, slotlar soni va muddatni yangilash).
-- [ ] **5.4.** Gateway Webhook integratsiyasi: `POST /payment/payme` va `POST /payment/click`.
-- [ ] **5.5.** **3 kunlik Grace Period** mexanizmi va `CheckTenantSubscription` middleware.
-- [ ] **5.6.** Billing UI: `Billing/Index.tsx` (tarif kalkulyatori, Pro-rata qo'shimcha slotlar, Click/Payme tugmalari), `Billing/Invoices.tsx`.
+- [ ] **5.4.** Mahalliy to'lov provayderlari webhooklari: `POST /payment/payme` va `POST /payment/click`.
+- [ ] **5.5.** Karta orqali to'lov (P2P + Skrinshot yuklash, Superadmin approve/reject navbati).
+- [ ] **5.6.** **Lemon Squeezy integratsiyasi (`1call.uz` tajribasi asosida):**
+  - `LemonSqueezyController` webhook marshruti: `POST /payment/lemonsqueezy`.
+  - `X-Signature` HMAC SHA-256 xavfsizlik tekshiruvi.
+  - `order_created`, `subscription_created`, `order_refunded`, `subscription_cancelled` hodisalari orqali invoysni yopish va obunani uzaytirish.
+  - `LemonSqueezyService` — Dinamik checkout sessiyalari yoki variant URL lari generatsiyasi (UZS -> USD konvertatsiya bilan).
+  - `lemon.js` overlay integratsiyasi.
+- [ ] **5.7.** **Superadmin To'lov Tizimlari Boshqaruvi:**
+  - `/admin/payment-methods`: Click, Payme, Karta va Lemon Squeezy usullarini Active/Passive qilish.
+  - Karta rekvizitlari va Lemon Squeezy API kalitlari (Store ID, API Key, Webhook Secret, Store Slug, USD kurs) sozlamalari.
+- [ ] **5.8.** **3 kunlik Grace Period** mexanizmi va `CheckTenantSubscription` middleware.
+- [ ] **5.9.** Billing UI: `Billing/Index.tsx` (Click, Payme, Karta va Lemon Squeezy to'lov tugmalari), `Billing/Invoices.tsx`.
 
 ---
 
