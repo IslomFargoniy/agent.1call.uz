@@ -1,16 +1,15 @@
 # ZvonkiPro - Multi-Tenant SaaS Platform
 
-"Moi Zvonki" servisining to'liq analogi bo'lgan korporativ **Multi-Tenant SaaS** platformasi (Laravel 12 Backend & Inertia/React Dashboard + Android Native Kotlin Agent).
+"Moi Zvonki" servisining to'liq analogi bo'lgan korporativ **Multi-Tenant SaaS** platformasi.
 
-## Texnologik Stack:
-- **Backend & Dashboard:** Laravel 12, Inertia.js, React, Tailwind CSS, PostgreSQL.
-- **Multi-Tenancy modeli:** Single Database with Row-Level / Tenant Scoping (PostgreSQL Native RLS + Laravel Eloquent `TenantScope`).
-- **Mobil Agent:** `android/` subdirektoriyasida Native Kotlin (Jetpack Compose, Foreground Service, TelephonyCallback, Room DB, WorkManager, Retrofit).
-- **Muloqot va Auth:** Laravel Sanctum (Tenant doirasida generatsiya qilinadigan Device Tokenlar) va HMAC imzolangan CRM Webhook tizimi.
+## Texnologik Stack
+| Qatlam | Texnologiya |
+|--------|-------------|
+| **Backend** | Laravel 12, PostgreSQL 16+, Laravel Sanctum |
+| **Dashboard** | Inertia.js v3, React 19, Tailwind CSS 4 |
+| **Multi-Tenancy** | Single DB + Row-Level Security (RLS) + Eloquent TenantScope |
+| **Mobil Agent** | Native Kotlin (Jetpack Compose, Foreground Service, Room DB, WorkManager) |
+| **CRM/ERP** | amoCRM, Bitrix24, MoySklad, BitoERP (Driver Pattern) |
 
----
-
-## Batafsil Arxitektura va Yo'l Xaritasi:
-Loyiha arxitekturasi, ma'lumotlar bazasi sxemalari, RLS xavfsizlik siyosatlari, Android fon arxitekturasi va 5 bosqichli amaliy implementatsiya rejasi bilan tanishish uchun quyidagi hujjatga qarang:
-
+## Arxitektura va Yo'l Xaritasi
 👉 **[docs/ARCHITECTURE_AND_ROADMAP.md](docs/ARCHITECTURE_AND_ROADMAP.md)**
