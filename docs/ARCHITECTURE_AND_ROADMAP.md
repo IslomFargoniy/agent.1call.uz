@@ -13,7 +13,8 @@
 | **Foydalanuvchi Rollari (RBAC)** | 3 darajali: `admin`, `supervisor`, `operator` (+ global `superadmin`) |
 | **DBMS** | PostgreSQL 16+ |
 | **Billing & To'lovlar** | Click va Payme (`composer require goodoneuz/pay-uz`) |
-| **Tarif Modeli** | Har bir mobil telefon (handset) uchun 3, 6, 12 oylik paketlar (Dual-SIM = 1 telefon) |
+| **Tarif Modeli** | Bazada boshqariluvchi (`tariffs`, `tariff_discounts`): Har bir telefon uchun (Dual-SIM = 1 telefon) |
+| **Chegirmalar Modeli** | Oylar kesimida (3/6/12 oy) VA Qurilmalar soni kesimida (5+, 10+, 20+ telefon) chegirma foizlari |
 | **Billing Dinamikasi** | Yangi telefonlar uchun **Pro-rata (Co-terming)** + **3 kunlik Grace Period** |
 | **Android Audio Capture** | **AccessibilityService** + MediaRecorder AudioSource fallback (Android 10+ qo'llab-quvvatlash) |
 | **Maxfiylik (Privacy)** | **Ish vaqti rejimi (Work Schedule)** va shaxsiy raqamlar filtri (Blacklist) |
@@ -21,7 +22,7 @@
 | **CRM/ERP Integratsiyalari** | amoCRM, Bitrix24, MoySklad, BitoERP (Driver Pattern) |
 | **Server va Joylashtirish** | Linux VPS (Ubuntu 24.04, Nginx, PHP 8.3, PostgreSQL 16, Redis) |
 | **Audio Saqlash** | VPS Private Storage (`storage/app/private/recordings/`) + HTTP Range streaming |
-| **Superadmin Paneli** | Ichki yengil Inertia.js/React boshqaruvi (`/admin/users`, `/admin/tenants`) |
+| **Superadmin Paneli** | Ichki Inertia.js/React boshqaruvi (`/admin/users`, `/admin/tenants`, `/admin/tariffs`) |
 
 ---
 
@@ -101,6 +102,10 @@ Alohida og'ir paketlar (masalan Filament) o'rnatilmaydi. Mavjud Inertia.js + Rea
 2. **`/admin/tenants`:**
    - Barcha kompaniyalar (tenantlar) ro'yxati, ularning joriy tarifi, faol telefonlari soni va obuna tugash sanasi.
    - Obunani qo'lda uzaytirish (masalan, to'lov bank orqali kelib tushganda yoki do'stona trial berilganda).
+3. **`/admin/tariffs`:**
+   - Asosiy tariflar va baza narxini belgilash (1 ta telefon uchun oylik narx).
+   - **Oylar kesimidagi chegirmalar:** 3, 6, 12 oylik chegirma foizlarini qo'shish/tahrirlash.
+   - **Qurilmalar soni kesimidagi chegirmalar:** Qanchadir miqdordan ortiq telefonlar uchun hajm chegirmalarini (masalan, 5+, 10+, 20+ telefon) belgilash.
    - RLS bu sahifalarda `SuperadminBypassTenant` middleware orqali avtomatik chetlab o'tiladi.
 
 ---
@@ -227,16 +232,60 @@ CREATE POLICY calls_tenant_isolation ON calls
     WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint);
 ```
 
-### 2.5. `subscriptions` (Tarif va Obunalar)
+### 2.5. `tariffs` (Asosiy Bosh Tariflar Jadvali)
+> [!NOTE]
+> Ushbu jadval global konfiguratsiya hisoblanadi (barcha tenantlar uchun umumiy, RLS talab etilmaydi). Superadmin tomonidan boshqariladi.
+```sql
+CREATE TABLE tariffs (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,                 -- Masalan: "Standart Korporativ"
+    code VARCHAR(50) UNIQUE NOT NULL,           -- Masalan: "standard"
+    description TEXT NULL,
+    base_price_monthly NUMERIC(12, 2) NOT NULL, -- 1 ta telefon uchun 1 oylik baza narxi (masalan: 50 000 UZS)
+    currency VARCHAR(3) NOT NULL DEFAULT 'UZS',
+    min_devices INTEGER NOT NULL DEFAULT 1,     -- Minimal sotib olinadigan slotlar
+    trial_days INTEGER NOT NULL DEFAULT 14,     -- Bepul sinov kunlari
+    trial_device_slots INTEGER NOT NULL DEFAULT 2, -- Sinovdagi bepul qurilmalar
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NULL,
+    updated_at TIMESTAMPTZ NULL
+);
+```
+
+### 2.6. `tariff_discounts` (Qurilmalar Soni va Oylar Kesimidagi Chegirmalar)
+> [!IMPORTANT]
+> Superadmin istalgan paytda ushbu jadval orqali oylar yoki qurilmalar miqdori bo'yicha chegirma foizlarini erkin boshqara oladi.
+```sql
+CREATE TABLE tariff_discounts (
+    id BIGSERIAL PRIMARY KEY,
+    tariff_id BIGINT NOT NULL REFERENCES tariffs(id) ON DELETE CASCADE,
+    type VARCHAR(30) NOT NULL,                  -- 'period' (oylar bo'yicha) yoki 'device_volume' (qurilmalar soni bo'yicha)
+    min_value INTEGER NOT NULL,                 -- Minimal chegara (oylar soni: 3, 6, 12 yoki qurilmalar soni: 5, 10, 20)
+    max_value INTEGER NULL,                     -- Maksimal chegara (masalan: 9 ta telefon, NULL = cheksiz)
+    discount_percent NUMERIC(5, 2) NOT NULL,    -- Chegirma foizi (masalan: 5.00, 10.00, 15.00, 20.00 %)
+    description VARCHAR(255) NULL,              -- Masalan: "10 tadan ortiq telefon uchun 10% chegirma"
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NULL,
+    updated_at TIMESTAMPTZ NULL,
+    CONSTRAINT uq_tariff_discount UNIQUE (tariff_id, type, min_value)
+);
+CREATE INDEX idx_tariff_discounts ON tariff_discounts(tariff_id, type, is_active);
+```
+
+### 2.7. `subscriptions` (Tarif va Obunalar)
 ```sql
 CREATE TABLE subscriptions (
     id BIGSERIAL PRIMARY KEY,
     uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     tenant_id BIGINT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    tariff_id BIGINT NULL REFERENCES tariffs(id) ON DELETE SET NULL,
     period_months SMALLINT NOT NULL,              -- 3, 6, 12 oy (yoki 0 agar pro-rata bo'lsa)
     device_count INTEGER NOT NULL,               -- Obunadagi telefonlar soni
     unit_price_monthly NUMERIC(12, 2) NOT NULL,  -- 1 ta telefon uchun 1 oylik baza narxi
-    discount_percent SMALLINT NOT NULL DEFAULT 0,-- 3 oy (0%), 6 oy (10%), 12 oy (20%)
+    period_discount_percent NUMERIC(5, 2) NOT NULL DEFAULT 0, -- Oylar kesimidagi chegirma foizi
+    volume_discount_percent NUMERIC(5, 2) NOT NULL DEFAULT 0, -- Qurilmalar soni bo'yicha chegirma foizi
+    total_discount_percent NUMERIC(5, 2) NOT NULL DEFAULT 0,  -- Jami qo'llangan chegirma foizi
     total_amount NUMERIC(14, 2) NOT NULL,        -- Umumiy to'lov summasi
     is_prorated BOOLEAN NOT NULL DEFAULT FALSE,  -- Pro-rata orqali qo'shilgan slotmi
     currency VARCHAR(3) NOT NULL DEFAULT 'UZS',
@@ -255,7 +304,7 @@ CREATE POLICY subscriptions_tenant_isolation ON subscriptions
     WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint);
 ```
 
-### 2.6. `invoices` (Hisob-fakturalar va To'lovlar)
+### 2.8. `invoices` (Hisob-fakturalar va To'lovlar)
 ```sql
 CREATE TABLE invoices (
     id BIGSERIAL PRIMARY KEY,
@@ -286,12 +335,32 @@ CREATE POLICY invoices_tenant_isolation ON invoices
 
 ## 3. Billing, Pro-rata va Grace Period Mexanizmi
 
-### 3.1. Tariflash Qoidalari va Chegirmalar
-1. **Hisob-kitob Birligi:** Faqat ulangan **mobil telefonlar (Handset / Qurilma)** soni bo'yicha. Dual-SIM 1 ta telefon narxida.
-2. **Paketlar:**
-   - **3 oylik:** 0% chegirma (Baza narx * 3).
-   - **6 oylik:** 10% chegirma (Baza narx * 6 * 0.90).
-   - **12 oylik:** 20% chegirma (Baza narx * 12 * 0.80).
+### 3.1. Tariflash Qoidalari va Dinamik Chegirmalar Dvigateli (Bazada boshqariladi)
+To'lov summasi bazadagi `tariffs` va `tariff_discounts` jadvallari qoidalariga asosan dinamik hisoblanadi:
+
+1. **Hisob-kitob Birligi:** Faqat ulangan **mobil telefonlar (Handset / Qurilma)** soni bo'yicha. Bitta telefonda 2 ta SIM-karta bo'lsa ham, 1 ta litsenziya narxida to'lanadi.
+2. **Ikkitalik Dinamik Chegirmalar (Combined Discounts):**
+   - **A) Oylar kesimidagi chegirmalar (`type = 'period'`):**
+     * 3 oy: 0%
+     * 6 oy: 10%
+     * 12 oy: 20%
+   - **B) Qurilmalar soni (Hajm) kesimidagi chegirmalar (`type = 'device_volume'`):**
+     * 1 - 4 ta telefon: 0%
+     * 5 - 9 ta telefon: 5% chegirma
+     * 10 - 19 ta telefon: 10% chegirma
+     * 20+ ta telefon: 15% chegirma
+3. **Hisoblash Formulalari:**
+   $$\\text{Baza Summa} = \\text{Telefonlar Soni} \\times \\text{Baza Narx (tariffs.base_price_monthly)} \\times \\text{Oylar Soni}$$
+   $$\\text{Jami Chegirma \\%} = \\text{Davr Chegirmasi \\%} + \\text{Hajm Chegirmasi \\%}$$
+   $$\\text{Yakuniy To'lov Summasi} = \\text{Baza Summa} \\times \\left(1 - \\frac{\\text{Jami Chegirma \\%}}{100}\\right)$$
+
+*Misollar jadvali (Baza narx = 50 000 UZS):*
+| Telefonlar | Davr | Baza Summa | Davr Chegirmasi | Hajm Chegirmasi | Jami Chegirma | Yakuniy To'lov | Tejamkorlik |
+|---|---|---|---|---|---|---|---|
+| **3 ta** | 3 oy | 450 000 UZS | 0% | 0% | **0%** | **450 000 UZS** | 0 UZS |
+| **5 ta** | 6 oy | 1 500 000 UZS | 10% | 5% | **15%** | **1 275 000 UZS** | 225 000 UZS |
+| **10 ta** | 12 oy | 6 000 000 UZS | 20% | 10% | **30%** | **4 200 000 UZS** | 1 800 000 UZS |
+| **25 ta** | 12 oy | 15 000 000 UZS | 20% | 15% | **35%** | **9 750 000 UZS** | 5 250 000 UZS |
 
 ### 3.2. Pro-rata (Co-terming) Yangi Telefon Qo'shish Kalkulyatori
 Mijozda joriy obuna davom etayotgan bo'lsa va qo'shimcha yangi telefonlar ulamoqchi bo'lsa, ularning muddati alohida hisoblanmaydi, balki **mavjud obunaning tugash sanasiga moslanadi**:
@@ -381,7 +450,8 @@ agent.1call.uz/
 │   ├── Http/Controllers/Web/
 │   │   ├── Admin/
 │   │   │   ├── SuperadminUsersController.php    # Superadmin barcha foydalanuvchilar sahifasi
-│   │   │   └── SuperadminTenantsController.php  # Superadmin barcha tenantlar sahifasi
+│   │   │   ├── SuperadminTenantsController.php  # Superadmin barcha tenantlar sahifasi
+│   │   │   └── SuperadminTariffsController.php  # Tariflar va chegirmalarni boshqarish
 │   │   ├── DashboardController.php
 │   │   ├── CallsController.php
 │   │   ├── DevicesController.php
@@ -398,6 +468,8 @@ agent.1call.uz/
 │   │   ├── User.php
 │   │   ├── Device.php
 │   │   ├── Call.php
+│   │   ├── Tariff.php                       # Asosiy tarif modeli
+│   │   ├── TariffDiscount.php               # Oylar va qurilmalar hajm chegirmalari
 │   │   ├── Subscription.php
 │   │   ├── Invoice.php
 │   │   └── TenantIntegration.php
@@ -412,7 +484,8 @@ agent.1call.uz/
 │   ├── {Dashboard, Calls/Index, Devices/Index}.tsx
 │   ├── Admin/
 │   │   ├── Users/Index.tsx                      # Superadmin Users sahifasi
-│   │   └── Tenants/Index.tsx                    # Superadmin Tenants sahifasi
+│   │   ├── Tenants/Index.tsx                    # Superadmin Tenants sahifasi
+│   │   └── Tariffs/Index.tsx                    # Tariflar va oylar/hajm chegirmalari boshqaruvi
 │   ├── Billing/{Index, Invoices}.tsx
 │   ├── Settings/{WorkSchedule, Privacy}.tsx
 │   └── Integrations/{Index, AmoCrmConfig, UserMapping}.tsx
@@ -429,7 +502,7 @@ agent.1call.uz/
 - [ ] **1.1.** Paketlarni o'rnatish: `laravel/sanctum`, `goodoneuz/pay-uz`.
 - [ ] **1.2.** `tenants` jadvali migratsiyasi (`allowed_devices_count`, `subscription_expires_at`, `grace_period_ends_at`, `work_schedule`, `privacy_blacklist`).
 - [ ] **1.3.** `users` jadvaliga `tenant_id`, 3 darajali `role` (`admin`, `supervisor`, `operator`), `supervisor_id` ustunlarini qo'shish.
-- [ ] **1.4.** Baza migratsiyalari: `devices`, `calls`, `subscriptions`, `invoices`, `tenant_integrations`, `integration_user_mappings`, `integration_sync_logs` va `pay-uz`.
+- [ ] **1.4.** Baza migratsiyalari: `tariffs`, `tariff_discounts` (boshlang'ich qiymatlar bilan seed), `devices`, `calls`, `subscriptions` (chegirmalar ustunlari bilan), `invoices`, `tenant_integrations`, `integration_user_mappings`, `integration_sync_logs` va `pay-uz`.
 - [ ] **1.5.** Barcha tenant-jadvallarga PostgreSQL RLS siyosatlarini qo'llash.
 - [ ] **1.6.** `TenantContext` singleton va `SetTenantContext` middleware.
 - [ ] **1.7.** `RoleMiddleware` (Admin, Supervisor, Operator ruxsatlarini ajratish).
@@ -467,14 +540,17 @@ agent.1call.uz/
 - [ ] **4.4.** `WaveformPlayer.tsx` — Audio to'lqin vizualizatsiyasi (wavesurfer.js), xavfsiz streaming (Signed URL, yuklab olishni taqiqlash).
 - [ ] **4.5.** Qurilmalar monitoringi va QR-kod generatsiya modali.
 - [ ] **4.6.** Ish grafigi va Maxfiylik sozlamalari sahifasi (`Settings/WorkSchedule.tsx`).
-- [ ] **4.7.** **Superadmin Sahifalari:** `/admin/users` (barcha xodimlar boshqaruvi) va `/admin/tenants` (kompaniyalar va obuna boshqaruvi).
+- [ ] **4.7.** **Superadmin Sahifalari:**
+  - `/admin/users` (barcha xodimlar boshqaruvi).
+  - `/admin/tenants` (kompaniyalar va obuna boshqaruvi).
+  - `/admin/tariffs` (baza narx, oylar kesimidagi chegirmalar va qurilmalar soni bo'yicha chegirma foizlarini boshqarish).
 
 ---
 
 ### **Phase 5: Billing, Pro-rata va To'lov Tizimi (Click, Payme, goodoneuz/pay-uz)**
 - [ ] **5.1.** `config/pay-uz.php` sozlash (Click va Payme merchant kalitlari).
 - [ ] **5.2.** `BillingCalculator` servisi:
-  - 3 oy (0%), 6 oy (10%), 12 oy (20%) chegirmalar kalkulyatori.
+  - Bazadagi `tariffs` va `tariff_discounts` jadvallaridan oylar va qurilmalar soni chegirmalarini dinamik o'qib hisoblovchi dvigatel.
   - Yangi telefonlar uchun **Pro-rata (Co-terming)** kalkulyatori.
 - [ ] **5.3.** `SubscriptionService` (yangi obuna, hisob-faktura, slotlar soni va muddatni yangilash).
 - [ ] **5.4.** Gateway Webhook integratsiyasi: `POST /payment/payme` va `POST /payment/click`.
