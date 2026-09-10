@@ -1,5 +1,5 @@
 # Multi-Tenant SaaS "ZvonkiPro" — Texnik Arxitektura va Implementatsiya Rejasi
-**(Single Database + Centralized Auth + PostgreSQL RLS + amoCRM/Bitrix24/MoySklad/BitoERP)**
+**(Single Database + Centralized Auth + PostgreSQL RLS + amoCRM/Bitrix24/MoySklad/BitoERP + Click/Payme Billing)**
 
 ---
 
@@ -11,6 +11,8 @@
 | **Tenantni aniqlash (Mobil)** | Sanctum Device Token → `device.tenant_id` |
 | **Izolyatsiya** | 2 bosqichli: Laravel Eloquent TenantScope + PostgreSQL RLS |
 | **DBMS** | PostgreSQL 16+ |
+| **Billing & To'lovlar** | Click va Payme (`composer require goodoneuz/pay-uz`) |
+| **Tarif Modeli** | Har bir mobil telefon (handset) uchun 3, 6, 12 oylik paketlar (Dual-SIM = 1 telefon) |
 | **CRM/ERP** | amoCRM, Bitrix24, MoySklad, BitoERP (Driver Pattern) |
 
 ---
@@ -24,8 +26,11 @@ flowchart TD
     RouteCheck -->|"Web (/login)"| WebAuth["Email + Parol"]
     RouteCheck -->|"API (/api/v1/*)"| ApiAuth["Bearer Token"]
     
-    WebAuth --> UserFound["user.tenant_id"]
-    ApiAuth --> DeviceFound["device.tenant_id"]
+    UserFound["user.tenant_id"]
+    DeviceFound["device.tenant_id"]
+    
+    WebAuth --> UserFound
+    ApiAuth --> DeviceFound
     
     UserFound --> SetCtx["TenantContext::setTenant"]
     DeviceFound --> SetCtx
@@ -180,6 +185,9 @@ CREATE TABLE tenants (
     slug VARCHAR(100) UNIQUE NOT NULL,
     plan VARCHAR(50) NOT NULL DEFAULT 'standard',
     plan_limits JSONB NOT NULL DEFAULT '{"max_devices": 10, "retention_days": 90, "audio_storage_gb": 20}',
+    allowed_devices_count INTEGER NOT NULL DEFAULT 2, -- Sotib olingan faol telefon slotlari
+    subscription_expires_at TIMESTAMPTZ NULL,        -- Obuna tugash sanasi
+    trial_ends_at TIMESTAMPTZ NULL,                  -- Bepul sinov davri (masalan, 14 kun)
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NULL,
     updated_at TIMESTAMPTZ NULL
@@ -188,7 +196,6 @@ CREATE TABLE tenants (
 
 ### 2.2. `users` (Mavjud migratsiyaga tenant ustunlari qo'shiladi)
 ```sql
--- Mavjud users jadvaliga qo'shiladigan ustunlar:
 ALTER TABLE users
     ADD COLUMN tenant_id BIGINT REFERENCES tenants(id) ON DELETE CASCADE,
     ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'operator',
@@ -205,6 +212,8 @@ CREATE POLICY users_tenant_isolation ON users
 ```
 
 ### 2.3. `devices` (Android Mobil Agentlar)
+> [!IMPORTANT]
+> **Dual-SIM Qoidasi:** Har bir jismoniy smartfon 1 ta `device` yozuvi hisoblanadi. Unda 1 ta yoki 2 ta SIM karta bo'lishi billing va tarifga ta'sir qilmaydi! SIM ma'lumotlari `sim_slots_info` JSONB ustunida saqlanadi.
 ```sql
 CREATE TABLE devices (
     id BIGSERIAL PRIMARY KEY,
@@ -217,7 +226,7 @@ CREATE TABLE devices (
     manufacturer VARCHAR(100) NULL,
     os_version VARCHAR(50) NULL,
     app_version VARCHAR(50) NULL,
-    sim_slots_info JSONB NULL DEFAULT '[]',
+    sim_slots_info JSONB NULL DEFAULT '[]', -- [ {"slot": 0, "operator": "Ucell", "phone": "+99893..."}, {"slot": 1, "operator": "Beeline", "phone": "+99890..."} ]
     battery_level SMALLINT NULL,
     is_charging BOOLEAN NOT NULL DEFAULT FALSE,
     pairing_code VARCHAR(16) NULL,
@@ -249,7 +258,7 @@ CREATE TABLE calls (
     phone_number VARCHAR(50) NOT NULL,
     contact_name VARCHAR(255) NULL,
     duration_seconds INTEGER NOT NULL DEFAULT 0,
-    sim_slot SMALLINT NOT NULL DEFAULT 0,
+    sim_slot SMALLINT NOT NULL DEFAULT 0, -- 0 (SIM 1) yoki 1 (SIM 2)
     sim_operator VARCHAR(100) NULL,
     recording_disk VARCHAR(50) NOT NULL DEFAULT 'private_storage',
     recording_path VARCHAR(500) NULL,
@@ -271,7 +280,61 @@ CREATE POLICY calls_tenant_isolation ON calls
     WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint);
 ```
 
-### 2.5. `tenant_integrations` (amoCRM, Bitrix24, MoySklad, BitoERP)
+### 2.5. `subscriptions` (Tarif va Obunalar)
+```sql
+CREATE TABLE subscriptions (
+    id BIGSERIAL PRIMARY KEY,
+    uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    tenant_id BIGINT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    period_months SMALLINT NOT NULL,              -- 3, 6, yoki 12 oy
+    device_count INTEGER NOT NULL,               -- Obunadagi telefonlar soni
+    unit_price_monthly NUMERIC(12, 2) NOT NULL,  -- 1 ta telefon uchun 1 oylik baza narxi (masalan, 50,000 UZS)
+    discount_percent SMALLINT NOT NULL DEFAULT 0,-- Chegirma: 3 oy (0%), 6 oy (10%), 12 oy (20%)
+    total_amount NUMERIC(14, 2) NOT NULL,        -- Umumiy hisoblangan to'lov summasi
+    currency VARCHAR(3) NOT NULL DEFAULT 'UZS',
+    starts_at TIMESTAMPTZ NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'pending', -- pending, active, expired, cancelled
+    created_at TIMESTAMPTZ NULL,
+    updated_at TIMESTAMPTZ NULL
+);
+CREATE INDEX idx_subscriptions_tenant ON subscriptions(tenant_id, status);
+
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY subscriptions_tenant_isolation ON subscriptions
+    FOR ALL
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint)
+    WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint);
+```
+
+### 2.6. `invoices` (Hisob-fakturalar va To'lovlar)
+```sql
+CREATE TABLE invoices (
+    id BIGSERIAL PRIMARY KEY,
+    uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    tenant_id BIGINT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    subscription_id BIGINT NULL REFERENCES subscriptions(id) ON DELETE SET NULL,
+    invoice_number VARCHAR(50) UNIQUE NOT NULL,    -- Masalan: INV-202609-00042
+    amount NUMERIC(14, 2) NOT NULL,
+    currency VARCHAR(3) NOT NULL DEFAULT 'UZS',
+    payment_system VARCHAR(30) NULL,              -- 'click', 'payme'
+    transaction_id VARCHAR(100) NULL,             -- Provider / pay_uz tranzaksiya ID si
+    status VARCHAR(30) NOT NULL DEFAULT 'pending', -- pending, paid, cancelled, failed
+    paid_at TIMESTAMPTZ NULL,
+    meta JSONB NULL,                              -- To'lov tizimi qaytargan kvitansiya ma'lumotlari
+    created_at TIMESTAMPTZ NULL,
+    updated_at TIMESTAMPTZ NULL
+);
+CREATE INDEX idx_invoices_tenant ON invoices(tenant_id, status);
+
+ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
+CREATE POLICY invoices_tenant_isolation ON invoices
+    FOR ALL
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint)
+    WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint);
+```
+
+### 2.7. `tenant_integrations` (amoCRM, Bitrix24, MoySklad, BitoERP)
 ```sql
 CREATE TABLE tenant_integrations (
     id BIGSERIAL PRIMARY KEY,
@@ -296,7 +359,7 @@ CREATE POLICY integrations_tenant_isolation ON tenant_integrations
     WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint);
 ```
 
-### 2.6. `integration_user_mappings` (Qurilma ↔ CRM Menejer)
+### 2.8. `integration_user_mappings` (Qurilma ↔ CRM Menejer)
 ```sql
 CREATE TABLE integration_user_mappings (
     id BIGSERIAL PRIMARY KEY,
@@ -311,7 +374,7 @@ CREATE TABLE integration_user_mappings (
 );
 ```
 
-### 2.7. `integration_sync_logs` (Integratsiya audit jurnali)
+### 2.9. `integration_sync_logs` (Integratsiya audit jurnali)
 ```sql
 CREATE TABLE integration_sync_logs (
     id BIGSERIAL PRIMARY KEY,
@@ -332,7 +395,104 @@ CREATE INDEX idx_sync_logs_tenant ON integration_sync_logs(tenant_id, created_at
 
 ---
 
-## 3. Auth Konfiguratsiyasi — config/auth.php
+## 3. Billing & To'lov Tizimi (Click / Payme / goodoneuz/pay-uz)
+
+### 3.1. Tarif Modeli va Hisob-kitob Qoidalari
+1. **Hisob-kitob Birligi (Baza):**
+   - Faqat ulangan **mobil telefonlar (Handset / Qurilma)** soni bo'yicha hisoblanadi.
+   - **Dual-SIM:** Bitta telefonda 2 ta SIM-karta bo'lsa ham, u **1 ta telefon** sifatida hisoblanadi. SIM soniga qo'shimcha to'lov olinmaydi.
+2. **Tarif Davrlari va Chegirmalar:**
+   - **3 oylik:** Boshlang'ich minimal davr (Chegirma: 0%).
+   - **6 oylik:** O'rta muddatli obuna (Chegirma: 10%).
+   - **12 oylik:** Yillik uzoq muddatli obuna (Chegirma: 20%).
+3. **Hisoblash Formulasi:**
+   $$\text{Baza Summasi} = \text{Qurilmalar Soni} \times \text{Oylik Narx (masalan, 50 000 UZS)} \times \text{Oylar Soni (3, 6, 12)}$$
+   $$\text{To'lov Summasi} = \text{Baza Summasi} \times \left(1 - \frac{\text{Chegirma Foizi}}{100}\right)$$
+
+*Misol:*
+| Qurilmalar soni | Davr | Oylik baza narxi | Chegirma | Jami to'lov | Tejamkorlik |
+|-----------------|------|------------------|----------|-------------|-------------|
+| 5 ta telefon | 3 oy | 50 000 UZS | 0% | 750 000 UZS | — |
+| 5 ta telefon | 6 oy | 50 000 UZS | 10% | 1 350 000 UZS | 150 000 UZS |
+| 5 ta telefon | 12 oy | 50 000 UZS | 20% | 2 400 000 UZS | 600 000 UZS |
+
+### 3.2. To'lov Oqimi (Click & Payme integratsiyasi)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Tenant Admin
+    participant Web as Web Dashboard
+    participant Backend as Laravel Backend
+    participant PayUz as goodoneuz/pay-uz
+    participant Gateway as Click / Payme API
+    participant DB as PostgreSQL DB
+
+    Admin->>Web: Telefonlar soni (5 ta) va davr (6 oy) tanlaydi
+    Admin->>Web: "Click" yoki "Payme" orqali to'lashni bosadi
+    Web->>Backend: POST /billing/checkout {devices: 5, months: 6, gateway: 'payme'}
+    Backend->>DB: Subscriptions (pending) va Invoices (pending) yaratadi
+    Backend->>PayUz: PayUz::startPayment(invoice, gateway)
+    PayUz-->>Backend: Redirect URL yoki To'lov Formasi (Merchant link)
+    Backend-->>Web: Redirect to Payment Gateway
+    Web->>Gateway: Foydalanuvchi to'lovni tasdiqlaydi (SMS / OTP)
+    Gateway->>Backend: Webhook Callback (/payment/payme yoki /payment/click)
+    Backend->>PayUz: So'rovni tekshirish va tasdiqlash
+    PayUz->>Backend: PaymentSuccessEvent (invoice_id, transaction_id)
+    Backend->>DB: Invoices status = 'paid'
+    Backend->>DB: Subscriptions status = 'active'
+    Backend->>DB: Tenants: allowed_devices_count = 5, subscription_expires_at uzaytiriladi
+    Backend-->>Gateway: HTTP 200 OK (Success Response)
+    Web->>Admin: "To'lov muvaffaqiyatli qabul qilindi! Obuna faollashdi."
+```
+
+### 3.3. `goodoneuz/pay-uz` Paketini O'rnatish va Sozlash
+```bash
+composer require goodoneuz/pay-uz
+php artisan vendor:publish --provider="Goodoneuz\PayUz\PayUzServiceProvider"
+```
+
+`.env` konfiguratsiyasi:
+```env
+# Payme Sozlamalari
+PAYME_MERCHANT_ID=your_payme_merchant_id
+PAYME_KEY=your_payme_secret_key
+PAYME_TEST_MODE=true
+
+# Click Sozlamalari
+CLICK_SERVICE_ID=your_click_service_id
+CLICK_MERCHANT_ID=your_click_merchant_id
+CLICK_SECRET_KEY=your_click_secret_key
+CLICK_MERCHANT_USER_ID=your_click_user_id
+```
+
+### 3.4. Qurilma Kvotasi va Obunani Nazorat Qilish (Enforcement)
+1. **Yangi telefon ulanayotganda (`POST /api/v1/devices/pair`):**
+   ```php
+   $activeDevicesCount = $tenant->devices()->where('is_active', true)->count();
+   if ($activeDevicesCount >= $tenant->allowed_devices_count) {
+       return response()->json([
+           'error' => 'device_quota_exceeded',
+           'message' => 'Tarifingizdagi faol qurilmalar limiti to\'ldi. Yangi telefon ulash uchun billing bo\'limida qo\'shimcha slot xarid qiling.',
+           'allowed_count' => $tenant->allowed_devices_count,
+           'active_count' => $activeDevicesCount,
+       ], 403);
+   }
+   ```
+2. **Obuna muddati tugaganda (`CheckTenantSubscription` Middleware):**
+   ```php
+   if ($tenant->subscription_expires_at && $tenant->subscription_expires_at->isPast()) {
+       // Bepul trial yoki to'langan obuna muddati tugagan
+       return response()->json([
+           'error' => 'subscription_expired',
+           'message' => 'Obuna muddati tugagan. Xizmatdan foydalanishni davom ettirish uchun to\'lovni amalga oshiring.',
+       ], 402); // 402 Payment Required
+   }
+   ```
+
+---
+
+## 4. Auth Konfiguratsiyasi — config/auth.php
 
 Sanctum orqali mobil qurilmalarni avtorizatsiya qilish uchun alohida `device` guard va provider:
 ```php
@@ -348,7 +508,7 @@ Sanctum orqali mobil qurilmalarni avtorizatsiya qilish uchun alohida `device` gu
 
 ---
 
-## 4. Monorepo Fayl Daraxti
+## 5. Monorepo Fayl Daraxti
 ```
 zvonkipro/
 ├── .github/workflows/
@@ -362,16 +522,41 @@ zvonkipro/
 │   │   └── ui/{pairing, status}/
 │   └── build.gradle.kts
 ├── app/                             # Laravel 12
-│   ├── Http/Controllers/{Api, Web}/
-│   ├── Http/Middleware/{SetTenantContext, SuperadminBypassTenant}.php
-│   ├── Models/{Tenant, User, Device, Call, TenantIntegration}.php
+│   ├── Http/Controllers/Api/
+│   │   ├── DevicePairingController.php
+│   │   ├── TelemetryIngestController.php
+│   │   └── PaymentWebhookController.php # Click va Payme callbacklari
+│   ├── Http/Controllers/Web/
+│   │   ├── DashboardController.php
+│   │   ├── CallsController.php
+│   │   ├── DevicesController.php
+│   │   ├── BillingController.php        # Obuna xaridi va to'lov sahifasi
+│   │   └── IntegrationsController.php
+│   ├── Http/Middleware/
+│   │   ├── SetTenantContext.php
+│   │   ├── SuperadminBypassTenant.php
+│   │   └── CheckTenantSubscription.php  # Obuna holati tekshiruvi
+│   ├── Models/
+│   │   ├── Tenant.php
+│   │   ├── User.php
+│   │   ├── Device.php
+│   │   ├── Call.php
+│   │   ├── Subscription.php             # 3, 6, 12 oylik paketlar
+│   │   ├── Invoice.php                  # Hisob-fakturalar
+│   │   └── TenantIntegration.php
 │   ├── Models/Concerns/BelongsToTenant.php
 │   ├── Models/Scopes/TenantScope.php
 │   ├── Services/Tenancy/TenantContext.php
+│   ├── Services/Billing/
+│   │   ├── BillingCalculator.php        # 3/6/12 oy chegirmalari va narx hisoblash
+│   │   └── SubscriptionService.php      # To'lovdan so'ng slot va muddatni yangilash
 │   ├── Services/Integrations/{CrmManager, AmoCrmDriver, Bitrix24Driver, MoySkladDriver, BitoErpDriver}.php
 │   └── Jobs/{SyncCallToIntegrationsJob, DispatchWebhookJob}.php
 ├── resources/js/pages/
 │   ├── {Dashboard, Calls/Index, Devices/Index}.tsx
+│   ├── Billing/
+│   │   ├── Index.tsx                    # Tarif tanlash, qurilmalar kalkulyatori, Click/Payme tugmalari
+│   │   └── Invoices.tsx                 # To'lovlar tarixi va cheklar
 │   └── Integrations/{Index, AmoCrmConfig, UserMapping}.tsx
 ├── docs/ARCHITECTURE_AND_ROADMAP.md
 └── .gitignore
@@ -379,7 +564,7 @@ zvonkipro/
 
 ---
 
-## 5. Mobil Agent (Kotlin Native) — QR-Kod Orqali Ulanish
+## 6. Mobil Agent (Kotlin Native) — QR-Kod Orqali Ulanish
 
 1. **Dashboardda QR-kod chiqarish:** Admin "Yangi telefon ulash" tugmasini bosadi. Server bir martalik `pairing_token` generatsiya qiladi:
    ```json
@@ -390,31 +575,34 @@ zvonkipro/
      "expires_at": "2026-09-10T12:00:00Z"
    }
    ```
-2. **QR-kod skanerlash:** Xodim ilovada kamerani ochib QR-kodni skanerlaydi (CameraX + ML Kit).
-3. **Bog'lanish:** `POST /api/v1/devices/pair` (qurilma modeli, Android ID xeshi, SIM-kartalar).
-4. **Token olish:** Server doimiy `Sanctum Device Token` qaytaradi.
-5. **Xavfsiz saqlash:** `EncryptedSharedPreferences` (MasterKey AES-256 GCM).
-6. **Avtomatik ishlash:** Bundan keyin foydalanuvchiga qayta login talab etilmaydi.
+2. **Kvota Tekshiruvi:** Agar tenantning mavjud faol qurilmalari `allowed_devices_count` ga teng bo'lsa, tizim yangi QR-kod bermaydi va to'lov bo'limiga yo'naltiradi.
+3. **QR-kod skanerlash:** Xodim ilovada kamerani ochib QR-kodni skanerlaydi (CameraX + ML Kit).
+4. **Bog'lanish:** `POST /api/v1/devices/pair` (qurilma modeli, Android ID xeshi, SIM-kartalar ro'yxati).
+5. **Token olish:** Server doimiy `Sanctum Device Token` qaytaradi.
+6. **Xavfsiz saqlash:** `EncryptedSharedPreferences` (MasterKey AES-256 GCM).
+7. **Avtomatik ishlash:** Bundan keyin foydalanuvchiga qayta login talab etilmaydi.
 
 ---
 
-## 6. Qadam-baqadam Ishga Tushirish Yo'l Xaritasi (Phase 1 — Phase 5)
+## 7. Qadam-baqadam Ishga Tushirish Yo'l Xaritasi (Phase 1 — Phase 6)
 
 ### **Phase 1: Multi-Tenant Backend Core & Ingest API**
 - [ ] **1.0.** PostgreSQL o'rnatish va `.env` da `DB_CONNECTION=pgsql` ga o'tish.
-- [ ] **1.1.** `composer require laravel/sanctum` o'rnatish va konfiguratsiya.
-- [ ] **1.2.** `tenants` jadval migratsiyasi.
+- [ ] **1.1.** Kerakli paketlarni o'rnatish:
+  - `composer require laravel/sanctum`
+  - `composer require goodoneuz/pay-uz` (Click va Payme to'lovlari uchun)
+- [ ] **1.2.** `tenants` jadval migratsiyasi (`allowed_devices_count`, `subscription_expires_at`, `trial_ends_at` bilan).
 - [ ] **1.3.** Mavjud `users` migratsiyasiga `tenant_id`, `role`, `phone_number`, `is_active` ustunlarini qo'shish.
-- [ ] **1.4.** `devices`, `calls`, `tenant_integrations`, `integration_user_mappings`, `integration_sync_logs` migratsiyalarini yaratish.
-- [ ] **1.5.** Barcha tenant-jadvallarga PostgreSQL RLS siyosatlarini qo'llash (`users`, `devices`, `calls`, `tenant_integrations` — hammasi).
+- [ ] **1.4.** Baza migratsiyalari: `devices`, `calls`, `subscriptions`, `invoices`, `tenant_integrations`, `integration_user_mappings`, `integration_sync_logs` va `pay-uz` jadvallari.
+- [ ] **1.5.** Barcha tenant-jadvallarga PostgreSQL RLS siyosatlarini qo'llash (`users`, `devices`, `calls`, `subscriptions`, `invoices`, `tenant_integrations`).
 - [ ] **1.6.** `TenantContext` singleton va `SetTenantContext` middleware yaratish (`SET app.current_tenant_id` — `SET LOCAL` emas!).
 - [ ] **1.7.** `BelongsToTenant` Trait va `TenantScope` ni modellar uchun tatbiq etish.
 - [ ] **1.8.** `config/auth.php` da `device` guard va provider sozlash.
 - [ ] **1.9.** `SuperadminBypassTenant` middleware yaratish (platforma egasi uchun RLS bypass).
-- [ ] **1.10.** QR-kod orqali qurilma ulash APIsi: `POST /api/v1/devices/pair`.
+- [ ] **1.10.** `POST /api/v1/devices/pair` APIsi (Tarifdagi `allowed_devices_count` kvotasi tekshiruvi bilan).
 - [ ] **1.11.** Telemetriya qabul qilish APIsi: `POST /api/v1/telemetry/calls` (Multipart/JSON).
 - [ ] **1.12.** Heartbeat APIsi: `POST /api/v1/telemetry/heartbeat`.
-- [ ] **1.13.** Pest testlar: RLS izolyatsiyasi, tenant scoping, superadmin bypass tekshiruvlari.
+- [ ] **1.13.** Pest testlar: RLS izolyatsiyasi, tenant scoping, device quota enforcement, superadmin bypass tekshiruvlari.
 
 ---
 
@@ -429,7 +617,7 @@ zvonkipro/
 
 ### **Phase 3: Audio Yozish va Offline Sync (Room + WorkManager)**
 - [ ] **3.1.** `ForegroundService` (`foregroundServiceType="microphone"`) — `MediaRecorder` AAC/M4A.
-- [ ] **3.2.** `SubscriptionManager` — Dual-SIM aniqlash.
+- [ ] **3.2.** `SubscriptionManager` — Dual-SIM aniqlash (har ikki SIM ma'lumotlarini o'qish, lekin 1 ta qurilma sifatida uzatish).
 - [ ] **3.3.** Room Database (`LocalCallRecord`, DAO, Repository).
 - [ ] **3.4.** `CallSyncWorker` (WorkManager, `NetworkType.CONNECTED`, Exponential Backoff).
 - [ ] **3.5.** `HeartbeatWorker` (15 daqiqalik davriy ping).
@@ -441,19 +629,40 @@ zvonkipro/
 - [ ] **4.1.** `TenantLayout` va navigatsiya.
 - [ ] **4.2.** Qo'ng'iroqlar jurnali: Filtrlar, jadval, KPI kartalari.
 - [ ] **4.3.** `WaveformPlayer.tsx` — Audio to'lqin vizualizatsiyasi (wavesurfer.js), tezlik nazorati (1x-2x).
-- [ ] **4.4.** Qurilmalar monitoringi: Onlayn/oflayn, batareya, QR-kod generatsiya modali.
+- [ ] **4.4.** Qurilmalar monitoringi: Onlayn/oflayn, batareya, Dual-SIM holati, QR-kod generatsiya modali (kvota tekshiruvi bilan).
 - [ ] **4.5.** Xavfsiz audio streaming marshruti (`/api/v1/calls/{uuid}/audio-stream`, HTTP Range qo'llab-quvvatlash).
 
 ---
 
-### **Phase 5: CRM & ERP Integratsiyalari va Production Tayyorgarlik**
-- [ ] **5.1.** `CrmDriverInterface` va `CrmManager` (Driver Pattern).
-- [ ] **5.2.** **amoCRM Drayveri:** OAuth2 refresh oqimi, `/api/v4/contacts` qidirish/yaratish, `/api/v4/calls` voqea yozish, Redis Rate Limiter (7 req/sec).
-- [ ] **5.3.** **Bitrix24 Drayveri:** `telephony.externalcall.register` va `telephony.externalcall.finish`, audio biriktirish.
-- [ ] **5.4.** **MoySklad Drayveri:** JSON API 1.2 kontragent qidiruv va voqea kiritish.
-- [ ] **5.5.** **BitoERP & Universal Webhook Drayveri:** REST Webhook (HMAC SHA-256).
-- [ ] **5.6.** `SyncCallToIntegrationsJob` asinxron navbat va Retry Policy (3 urinish, Exponential Backoff).
-- [ ] **5.7.** Integratsiyalar Dashboard UI: Ulanish modallari, User Mapping, audit loglari.
-- [ ] **5.8.** Monorepo `.gitignore` yangilash (Android artefaktlar uchun).
-- [ ] **5.9.** GitHub Actions CI/CD: `backend-ci.yml` va `android-ci.yml`.
-- [ ] **5.10.** Yuqori yuklamada sinov (PostgreSQL indekslar, Redis navbatlar, PgBouncer).
+### **Phase 5: Billing & To'lov Tizimi (Click, Payme, goodoneuz/pay-uz)**
+- [ ] **5.1.** `config/pay-uz.php` sozlash (Click va Payme merchant kalitlari, callback URLlar).
+- [ ] **5.2.** `BillingCalculator` servisi:
+  - 1 ta telefon uchun bazaviy narxni hisoblash.
+  - 3 oylik (0%), 6 oylik (10%), 12 oylik (20%) chegirmalarni avtomatik hisoblash.
+  - Qurilmalar soni o'zgarganda pro-rata kalkulyatsiyasi.
+- [ ] **5.3.** `SubscriptionService`:
+  - Yangi obuna yaratish, hisob-faktura (`Invoice`) chiqarish.
+  - To'lov tasdiqlanganda `tenant.subscription_expires_at` va `tenant.allowed_devices_count` ni oshirish.
+- [ ] **5.4.** To'lov Gateway Webhook integratsiyasi:
+  - `POST /payment/payme` (Payme JSON-RPC 2.0 protokoli).
+  - `POST /payment/click` (Click Prepare va Complete so'rovlari).
+  - Webhook tranzaksiyalari imzolarini tekshirish (MD5 / SHA-1) va xavfsizlik.
+- [ ] **5.5.** `CheckTenantSubscription` middleware — muddati tugagan tenantlar uchun operatsiyalarni cheklash.
+- [ ] **5.6.** Billing UI Dashboard:
+  - `Billing/Index.tsx` — Interaktiv kalkulyator (telefonlar soni slayder/input, 3 / 6 / 12 oy tanlash, Click va Payme tugmalari).
+  - `Billing/Invoices.tsx` — To'lovlar tarixi, statuslari va PDF kvitansiyalar.
+- [ ] **5.7.** Avtomatik eslatmalar (Obuna tugashiga 7 kun, 3 kun, 1 kun qolganda Email va Telegram xabarnomasi).
+
+---
+
+### **Phase 6: CRM & ERP Integratsiyalari va Production Tayyorgarlik**
+- [ ] **6.1.** `CrmDriverInterface` va `CrmManager` (Driver Pattern).
+- [ ] **6.2.** **amoCRM Drayveri:** OAuth2 refresh oqimi, `/api/v4/contacts` qidirish/yaratish, `/api/v4/calls` voqea yozish, Redis Rate Limiter (7 req/sec).
+- [ ] **6.3.** **Bitrix24 Drayveri:** `telephony.externalcall.register` va `telephony.externalcall.finish`, audio biriktirish.
+- [ ] **6.4.** **MoySklad Drayveri:** JSON API 1.2 kontragent qidiruv va voqea kiritish.
+- [ ] **6.5.** **BitoERP & Universal Webhook Drayveri:** REST Webhook (HMAC SHA-256).
+- [ ] **6.6.** `SyncCallToIntegrationsJob` asinxron navbat va Retry Policy (3 urinish, Exponential Backoff).
+- [ ] **6.7.** Integratsiyalar Dashboard UI: Ulanish modallari, User Mapping, audit loglari.
+- [ ] **6.8.** Monorepo `.gitignore` yangilash (Android artefaktlar uchun).
+- [ ] **6.9.** GitHub Actions CI/CD: `backend-ci.yml` va `android-ci.yml`.
+- [ ] **6.10.** Yuqori yuklamada sinov (PostgreSQL indekslar, Redis navbatlar, PgBouncer).
