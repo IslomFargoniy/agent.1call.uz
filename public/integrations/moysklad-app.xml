@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application xmlns="https://online.moysklad.ru/xml/ns/appstore/app/v1">
+    <app-id>uz.onecall.agent</app-id>
+    <version>1.0.0</version>
+    <title>1Call Agent Telephony</title>
+    <vendor>1Call</vendor>
+    <description>Корпоративная телефония 1Call для МойСклад. Автоматическое сохранение входящих и исходящих звонков, всплывающие карточки клиентов при звонке и прослушивание записей разговоров.</description>
+    <access-level>ADMIN</access-level>
+    <iframe-url>https://agent.1call.uz/integrations/moysklad/iframe</iframe-url>
+    <telephony>
+        <phone-api-version>1.0</phone-api-version>
+        <callback-url>https://agent.1call.uz/api/v1/integrations/moysklad/callback</callback-url>
+    </telephony>
+</application>

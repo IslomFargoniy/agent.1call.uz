@@ -1,0 +1,32 @@
+{
+  "widget": {
+    "name": "widget.name",
+    "description": "widget.description",
+    "short_description": "widget.short_description",
+    "version": "1.0.0",
+    "interface_version": 2,
+    "init_once": false,
+    "locale": ["ru", "en"],
+    "installation": true,
+    "settings": {
+      "server_url": {
+        "name": "settings.server_url",
+        "type": "text",
+        "value": "https://agent.1call.uz"
+      },
+      "api_token": {
+        "name": "settings.api_token",
+        "type": "text",
+        "value": ""
+      }
+    },
+    "locations": [
+      "settings",
+      "leads_list",
+      "leads_card",
+      "customers_card",
+      "contacts_card",
+      "notifications"
+    ]
+  }
+}

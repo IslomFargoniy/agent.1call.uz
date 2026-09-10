@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CheckTenantSubscription;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RoleMiddleware;
@@ -22,6 +23,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+        $middleware->validateCsrfTokens(except: [
+            'payment/*',
+            'api/*',
+        ]);
+
         $middleware->web(append: [
             HandleAppearance::class,
             HandleInertiaRequests::class,
@@ -33,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant' => SetTenantContext::class,
             'role' => RoleMiddleware::class,
             'superadmin.bypass' => SuperadminBypassTenant::class,
+            'subscription' => CheckTenantSubscription::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -1,0 +1,21 @@
+.onecall-widget-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+.onecall-widget-title {
+  font-weight: 600;
+  color: #0f172a;
+}
+.onecall-player-btn {
+  background: #3b82f6;
+  color: #ffffff;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}

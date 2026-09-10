@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\v1;
 use App\Events\CallLoggedEvent;
 use App\Events\CallRingingEvent;
 use App\Http\Controllers\Controller;
+use App\Jobs\SendTelegramAlertJob;
+use App\Jobs\SyncCallToIntegrationsJob;
 use App\Models\Call;
 use App\Models\Device;
 use Illuminate\Http\JsonResponse;
@@ -191,6 +193,14 @@ class TelemetryController extends Controller
 
         // Broadcast to live call log
         broadcast(new CallLoggedEvent($call));
+
+        // Asynchronously synchronize call with amoCRM and MoySklad integrations
+        SyncCallToIntegrationsJob::dispatch($call);
+
+        // If call was missed, dispatch Telegram alert
+        if ($call->isMissed()) {
+            SendTelegramAlertJob::dispatch('missed_call', $call);
+        }
 
         return response()->json([
             'success' => true,

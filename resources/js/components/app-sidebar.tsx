@@ -1,7 +1,17 @@
-import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import {
+    Building2,
+    Clock,
+    Coins,
+    CreditCard,
+    LayoutGrid,
+    PhoneCall,
+    Receipt,
+    Share2,
+    Smartphone,
+    Users,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -12,39 +22,88 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarGroup,
+    SidebarGroupLabel,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-];
-
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
-];
-
 export function AppSidebar() {
+    const { auth } = usePage<{ auth: { user: { role: string; name: string } | null; tenant?: { name: string } | null } }>().props;
+    const role = auth?.user?.role || 'operator';
+    const isSuperAdmin = role === 'superadmin';
+    const isAdmin = role === 'admin' || isSuperAdmin;
+
+    const mainNavItems: NavItem[] = [
+        {
+            title: 'Bosh sahifa',
+            href: '/dashboard',
+            icon: LayoutGrid,
+        },
+        {
+            title: 'Qo\'ng\'iroqlar jurnali',
+            href: '/calls',
+            icon: PhoneCall,
+        },
+    ];
+
+    const adminNavItems: NavItem[] = [
+        {
+            title: 'Telefonlar',
+            href: '/devices',
+            icon: Smartphone,
+        },
+        {
+            title: 'amoCRM & MoySklad',
+            href: '/integrations',
+            icon: Share2,
+        },
+        {
+            title: 'Ish grafigi & Maxfiylik',
+            href: '/settings/work-schedule',
+            icon: Clock,
+        },
+        {
+            title: 'To\'lovlar & Obuna',
+            href: '/billing',
+            icon: CreditCard,
+        },
+    ];
+
+    const superadminNavItems: NavItem[] = [
+        {
+            title: 'Kompaniyalar (Tenants)',
+            href: '/admin/tenants',
+            icon: Building2,
+        },
+        {
+            title: 'Barcha xodimlar',
+            href: '/admin/users',
+            icon: Users,
+        },
+        {
+            title: 'Tariflar boshqaruvi',
+            href: '/admin/tariffs',
+            icon: Coins,
+        },
+        {
+            title: 'To\'lov tizimlari',
+            href: '/admin/payment-methods',
+            icon: CreditCard,
+        },
+        {
+            title: 'Karta cheklari',
+            href: '/admin/invoices',
+            icon: Receipt,
+        },
+    ];
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href="/dashboard" prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
@@ -54,10 +113,23 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
+
+                {isAdmin && (
+                    <SidebarGroup>
+                        <SidebarGroupLabel>Kompaniya Boshqaruvi</SidebarGroupLabel>
+                        <NavMain items={adminNavItems} />
+                    </SidebarGroup>
+                )}
+
+                {isSuperAdmin && (
+                    <SidebarGroup>
+                        <SidebarGroupLabel>Superadmin Paneli</SidebarGroupLabel>
+                        <NavMain items={superadminNavItems} />
+                    </SidebarGroup>
+                )}
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

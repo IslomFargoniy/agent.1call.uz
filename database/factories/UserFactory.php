@@ -30,10 +30,34 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'role' => 'operator',
+            'is_active' => true,
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
         ];
+    }
+
+    public function superadmin(): static
+    {
+        return $this->state(fn () => [
+            'role' => 'superadmin',
+            'tenant_id' => null,
+        ]);
+    }
+
+    public function admin(): static
+    {
+        return $this->state(fn () => [
+            'role' => 'admin',
+        ]);
+    }
+
+    public function operator(): static
+    {
+        return $this->state(fn () => [
+            'role' => 'operator',
+        ]);
     }
 
     /**
