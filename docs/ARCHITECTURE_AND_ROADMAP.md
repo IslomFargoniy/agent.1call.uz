@@ -913,3 +913,146 @@ Loyihada amoCRM va MoySklad integratsiyalari `panel.1call.uz` repozitoriyasida m
      `UTC+3 (Moskva yuborish) + 2 soat (MoySklad serveri) = UTC+5 (Toshkent vaqti)`
 5. **MoySklad Ilovasi (App Descriptor XML):**
    - `moysklad-app.xml` deskriptori orqali MoySklad shaxsiy ilovasi ulanadi va kontragent kartochkasida `1call` telefoniya iframe vidjeti paydo bo'ladi.
+
+
+---
+
+## 9. Production Server Sozlamalari va Deploy Standarti (Fastpanel & Ubuntu)
+
+Ushbu bo'lim loyihaning **193.180.213.188** (Fastpanel) serveriga joylashtirish va ishlash parametrlarini qat'iy belgilaydi.
+
+### 9.1. Server Texnik Parametrlari
+| Parametr | Qiymat | Izoh |
+|---|---|---|
+| **Server IP** | `193.180.213.188` | Fastpanel boshqaruv paneli |
+| **Domen / SSL** | `https://agent.1call.uz` | Let's Encrypt SSL yoniq |
+| **Loyiha Papkasi** | `/var/www/agent_1call__usr/data/www/agent.1call.uz` | Ildiz katalogi |
+| **Public Papka (Web Root)** | `/var/www/agent_1call__usr/data/www/agent.1call.uz/public` | Nginx root katalogi |
+| **Tizim Foydalanuvchisi** | `agent_1call__usr:agent_1call__usr` | Fastpanel xavfsiz useri |
+| **PHP Versiyasi** | PHP 8.3 (PHP-FPM) | `pdo_pgsql`, `redis`, `bcmath`, `intl` modullari bilan |
+| **PostgreSQL Versiyasi** | PostgreSQL 16.15 | Port: `5432` (127.0.0.1) |
+| **Baza Nomi & User** | DB: `agent_1call`, User: `agent_1call_usr` | PostgreSQL da yaratilgan |
+| **Redis** | `127.0.0.1:6379` | Kesh va asinxron navbatlar (queues) |
+| **Laravel Reverb Porti** | `8085` | 8080 porti boshqa loyiha tomonidan band bo'lgani uchun |
+
+### 9.2. Server `.env` Konfiguratsiyasi (Namuna)
+```env
+APP_NAME="agent.1call.uz"
+APP_ENV=production
+APP_KEY=base64:...
+APP_DEBUG=false
+APP_URL=https://agent.1call.uz
+
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=agent_1call
+DB_USERNAME=agent_1call_usr
+DB_PASSWORD=agent1call_StrongPass_2026!
+
+CACHE_STORE=redis
+QUEUE_CONNECTION=redis
+SESSION_DRIVER=redis
+
+BROADCAST_CONNECTION=reverb
+REVERB_APP_ID=agent1call
+REVERB_APP_KEY=agent1call_key
+REVERB_APP_SECRET=agent1call_secret
+REVERB_HOST="agent.1call.uz"
+REVERB_PORT=443
+REVERB_SCHEME=https
+
+REVERB_SERVER_HOST=127.0.0.1
+REVERB_SERVER_PORT=8085
+
+RECORDINGS_STORAGE_DISK=local
+```
+
+### 9.3. Nginx Reverse Proxy Sozlamasi (`agent.1call.uz`)
+Fastpanel Nginx fayliga WebSocket (`/app`) ulanishini port 8085 ga yo'naltirish qoidasi kiritiladi:
+```nginx
+# WebSocket (Laravel Reverb)
+location /app {
+    proxy_pass http://127.0.0.1:8085;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "Upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_read_timeout 60s;
+    proxy_send_timeout 60s;
+}
+
+location / {
+    try_files $uri $uri/ /index.php?$args;
+}
+```
+
+### 9.4. Supervisor Xizmatlari (`/etc/supervisor/conf.d/`)
+1. **Asinxron Navbat Worker (`agent-1call-worker.conf`):**
+```ini
+[program:agent-1call-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/agent_1call__usr/data/www/agent.1call.uz/artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=agent_1call__usr
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/var/www/agent_1call__usr/data/logs/worker.log
+```
+
+2. **WebSocket Reverb Server (`agent-1call-reverb.conf`):**
+```ini
+[program:agent-1call-reverb]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/agent_1call__usr/data/www/agent.1call.uz/artisan reverb:start --host=127.0.0.1 --port=8085
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=agent_1call__usr
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/var/www/agent_1call__usr/data/logs/reverb.log
+```
+
+### 9.5. Avtomatlashtirilgan Deploy Skripti (`deploy.sh`)
+Serverda loyihani bitta buyruq bilan yangilash:
+```bash
+#!/bin/bash
+set -e
+
+cd /var/www/agent_1call__usr/data/www/agent.1call.uz
+
+echo "🚀 Yangi versiya tortib olinmoqda..."
+git pull origin main
+
+echo "📦 PHP paketlari o'rnatilmoqda..."
+composer install --no-dev --optimize-autoloader --no-interaction
+
+echo "🗄️ Baza migratsiyalari ishga tushirilmoqda..."
+php artisan migrate --force
+
+echo "⚡ Keshlar tozalanmoqda va optimallanmoqda..."
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan event:cache
+
+echo "🎨 Frontend assetlar qurilmoqda..."
+npm ci
+npm run build
+
+echo "🔄 Supervisor xizmatlari qayta ishga tushirilmoqda..."
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl restart agent-1call-worker:*
+sudo supervisorctl restart agent-1call-reverb:*
+
+echo "✅ Deploy muvaffaqiyatli yakunlandi!"
+```
