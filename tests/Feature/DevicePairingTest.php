@@ -93,3 +93,47 @@ test('device pairing is rejected when subscription and trial have expired', func
         'success' => false,
     ]);
 });
+
+test('device pairs successfully with QR code payload containing tenant_uuid and pairing_code', function () {
+    $tenant = Tenant::create([
+        'name' => 'QR Scan Co',
+        'slug' => 'qr-scan-co',
+        'allowed_devices_count' => 5,
+        'trial_ends_at' => now()->addDays(14),
+    ]);
+
+    $device = Device::create([
+        'tenant_id' => $tenant->id,
+        'device_uid' => 'pending_qr_123',
+        'name' => 'Yangi Telefon #1',
+        'pairing_code' => '554433',
+        'is_paired' => false,
+    ]);
+
+    // Android ML Kit scans QR code and sends payload
+    $response = $this->postJson('/api/v1/devices/pair', [
+        'tenant_uuid' => $tenant->uuid,
+        'pairing_code' => '554433',
+        'device_uid' => 'android-hw-998877',
+        'name' => 'Xiaomi 13 Pro (QR Scan)',
+        'model' => '2210132C',
+        'battery_level' => 92,
+        'accessibility_service_enabled' => true,
+    ]);
+
+    $response->assertStatus(200);
+    $response->assertJson([
+        'success' => true,
+        'message' => 'Qurilma muvaffaqiyatli ulandi.',
+    ]);
+
+    expect($response->json('token'))->not->toBeEmpty();
+    expect($response->json('tenant.name'))->toBe('QR Scan Co');
+
+    $device->refresh();
+    expect($device->is_paired)->toBeTrue();
+    expect($device->pairing_code)->toBeNull();
+    expect($device->device_uid)->toBe('android-hw-998877');
+    expect($device->name)->toBe('Xiaomi 13 Pro (QR Scan)');
+    expect($device->battery_level)->toBe(92);
+});

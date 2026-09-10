@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
+import React, { useState, useEffect } from "react";
+import { Head, useForm, router } from "@inertiajs/react";
 import {
     Smartphone,
     Plus,
@@ -10,9 +10,12 @@ import {
     Edit3,
     QrCode,
     RefreshCw,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+    Copy,
+    Check,
+} from "lucide-react";
+import QRCode from "qrcode";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface DeviceItem {
     id: number;
@@ -41,20 +44,58 @@ interface DevicesProps {
 
 export default function DevicesIndex({ devices, operators, quota, tenant_uuid }: DevicesProps) {
     const [editingDevice, setEditingDevice] = useState<DeviceItem | null>(null);
+    const [selectedPairingDevice, setSelectedPairingDevice] = useState<DeviceItem | null>(null);
     const [showPairModal, setShowPairModal] = useState(false);
+    const [qrSvg, setQrSvg] = useState<string>("");
+    const [copied, setCopied] = useState(false);
 
     const { data, setData, put, processing, reset } = useForm({
-        name: '',
-        user_id: '',
-        selected_sim_slot: '',
+        name: "",
+        user_id: "",
+        selected_sim_slot: "",
     });
+
+    const activePairingDevice =
+        selectedPairingDevice || devices.find((d) => !d.is_paired && d.pairing_code);
+
+    useEffect(() => {
+        if (!activePairingDevice?.pairing_code) {
+            setQrSvg("");
+            return;
+        }
+
+        const serverUrl = typeof window !== "undefined" ? window.location.origin : "https://agent.1call.uz";
+        const payload = JSON.stringify({
+            app: "1call-agent",
+            v: 1,
+            server: serverUrl,
+            tenant_uuid: tenant_uuid || "",
+            pairing_code: activePairingDevice.pairing_code,
+            name: activePairingDevice.name || "Android Telefon",
+        });
+
+        QRCode.toString(payload, {
+            type: "svg",
+            margin: 1,
+            errorCorrectionLevel: "M",
+            color: {
+                dark: "#0f172a",
+                light: "#ffffff",
+            },
+        })
+            .then((svg) => setQrSvg(svg))
+            .catch((err) => {
+                console.error("QR code generation error:", err);
+                setQrSvg("");
+            });
+    }, [activePairingDevice?.id, activePairingDevice?.pairing_code, tenant_uuid]);
 
     const openEdit = (device: DeviceItem) => {
         setEditingDevice(device);
         setData({
             name: device.name,
-            user_id: device.user_id ? String(device.user_id) : '',
-            selected_sim_slot: device.selected_sim_slot ? String(device.selected_sim_slot) : '',
+            user_id: device.user_id ? String(device.user_id) : "",
+            selected_sim_slot: device.selected_sim_slot ? String(device.selected_sim_slot) : "",
         });
     };
 
@@ -71,18 +112,27 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
     };
 
     const handleDelete = (device: DeviceItem) => {
-        if (confirm(`Haqiqatan ham "${device.name}" qurilmasini o'chirmoqchimisiz?`)) {
+        if (confirm(`Haqiqatan ham "${device.name}" qurilmasini o\x27chirmoqchimisiz?`)) {
             router.delete(`/devices/${device.id}`);
         }
     };
 
     const generateCode = () => {
-        router.post('/devices/pair-code', {}, {
-            onSuccess: () => setShowPairModal(true),
+        router.post("/devices/pair-code", {}, {
+            onSuccess: () => {
+                setSelectedPairingDevice(null);
+                setShowPairModal(true);
+            },
         });
     };
 
-    const pendingPairingCode = devices.find((d) => !d.is_paired && d.pairing_code)?.pairing_code;
+    const copyPairingCode = () => {
+        if (activePairingDevice?.pairing_code) {
+            navigator.clipboard.writeText(activePairingDevice.pairing_code);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
 
     return (
         <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -97,8 +147,8 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <Button onClick={generateCode} size="sm" className="h-9">
-                        <Plus className="h-4 w-4 mr-1.5" /> Yangi telefon ulash
+                    <Button onClick={generateCode} size="sm" className="h-9 gap-1.5">
+                        <Plus className="h-4 w-4" /> Yangi telefon ulash
                     </Button>
                 </div>
             </div>
@@ -134,7 +184,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                     <thead className="bg-muted/50 border-b border-border text-muted-foreground text-xs uppercase font-medium">
                         <tr>
                             <th className="py-3 px-4">Qurilma nomi</th>
-                            <th className="py-3 px-4">Mas'ul Operator</th>
+                            <th className="py-3 px-4">Mas\x27ul Operator</th>
                             <th className="py-3 px-4">SIM Slot</th>
                             <th className="py-3 px-4">Accessibility</th>
                             <th className="py-3 px-4">Batareya</th>
@@ -161,7 +211,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                                     </td>
                                     <td className="py-3.5 px-4 text-xs">
                                         <span className="bg-secondary px-2 py-0.5 rounded text-secondary-foreground font-medium">
-                                            {device.selected_sim_slot ? `Faqat SIM ${device.selected_sim_slot}` : 'Ikkala SIM'}
+                                            {device.selected_sim_slot ? `Faqat SIM ${device.selected_sim_slot}` : "Ikkala SIM"}
                                         </span>
                                     </td>
                                     <td className="py-3.5 px-4">
@@ -171,7 +221,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                                             </div>
                                         ) : (
                                             <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-medium">
-                                                <XCircle className="h-4 w-4" /> O'chirilgan
+                                                <XCircle className="h-4 w-4" /> O\x27chirilgan
                                             </div>
                                         )}
                                     </td>
@@ -182,23 +232,51 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                                                 <span>{device.battery_level}%</span>
                                             </div>
                                         ) : (
-                                            '—'
+                                            "—"
                                         )}
                                     </td>
-                                    <td className="py-3.5 px-4 text-xs text-muted-foreground">
+                                    <td className="py-3.5 px-4 text-xs">
                                         {device.is_paired ? (
-                                            <div>
+                                            <div className="text-muted-foreground">
                                                 <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />
-                                                Ulangan • {device.last_seen_at ? new Date(device.last_seen_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : 'Yaqinda'}
+                                                Ulangan • {device.last_seen_at ? new Date(device.last_seen_at).toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" }) : "Yaqinda"}
                                             </div>
                                         ) : (
-                                            <div className="text-amber-600 font-mono font-medium">
-                                                Kod: {device.pairing_code} (Kutilmoqda)
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-amber-600 dark:text-amber-400 font-mono font-semibold text-xs">
+                                                    Kod: {device.pairing_code}
+                                                </span>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-6 px-2 text-[11px] font-semibold gap-1 border-primary/30 text-primary hover:bg-primary/10 rounded-md"
+                                                    onClick={() => {
+                                                        setSelectedPairingDevice(device);
+                                                        setShowPairModal(true);
+                                                    }}
+                                                >
+                                                    <QrCode className="h-3 w-3" />
+                                                    QR Kod
+                                                </Button>
                                             </div>
                                         )}
                                     </td>
                                     <td className="py-3.5 px-4 text-right">
                                         <div className="flex justify-end gap-1">
+                                            {!device.is_paired && device.pairing_code && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-primary hover:bg-primary/10"
+                                                    title="QR-kodni skanerlash"
+                                                    onClick={() => {
+                                                        setSelectedPairingDevice(device);
+                                                        setShowPairModal(true);
+                                                    }}
+                                                >
+                                                    <QrCode className="h-4 w-4" />
+                                                </Button>
+                                            )}
                                             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEdit(device)}>
                                                 <Edit3 className="h-3.5 w-3.5" />
                                             </Button>
@@ -214,33 +292,81 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                 </table>
             </div>
 
-            {/* Pairing Modal */}
-            {showPairModal && pendingPairingCode && (
-                <div className="fixed inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-                    <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-xl space-y-5">
-                        <div className="text-center space-y-2">
-                            <h3 className="text-xl font-bold">Android Ilovani Ulash</h3>
-                            <p className="text-xs text-muted-foreground">
-                                Android telefonda <b>agent.1call.uz</b> ilovasini oching va quyidagi 6 xonali ulanish kodini kiriting:
+            {/* Pairing Modal with QR Code */}
+            {showPairModal && activePairingDevice?.pairing_code && (
+                <div className="fixed inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+                    <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5">
+                        <div className="text-center space-y-1.5">
+                            <div className="inline-flex p-2.5 rounded-full bg-primary/10 text-primary mb-1">
+                                <QrCode className="h-6 w-6" />
+                            </div>
+                            <h3 className="text-xl font-bold tracking-tight">Android Telefonni Ulash</h3>
+                            <div className="inline-block bg-muted px-2.5 py-0.5 rounded-full text-xs font-semibold text-muted-foreground">
+                                {activePairingDevice.name}
+                            </div>
+                        </div>
+
+                        {/* High-contrast QR Code Card */}
+                        <div className="bg-white p-4 rounded-2xl shadow-sm border border-neutral-200 flex items-center justify-center mx-auto w-fit">
+                            {qrSvg ? (
+                                <div
+                                    className="w-[210px] h-[210px] flex items-center justify-center [&>svg]:w-full [&>svg]:h-full"
+                                    dangerouslySetInnerHTML={{ __html: qrSvg }}
+                                />
+                            ) : (
+                                <div className="w-[210px] h-[210px] flex items-center justify-center text-muted-foreground">
+                                    <RefreshCw className="h-6 w-6 animate-spin text-primary" />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Fallback 6-digit Manual Code */}
+                        <div className="bg-muted/70 border border-border rounded-xl p-3 flex items-center justify-between">
+                            <div>
+                                <div className="text-[11px] text-muted-foreground font-medium">Zaxira 6 xonali ulanish kodi:</div>
+                                <div className="text-2xl font-mono font-extrabold tracking-widest text-primary">
+                                    {activePairingDevice.pairing_code}
+                                </div>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 gap-1.5 text-xs"
+                                onClick={copyPairingCode}
+                            >
+                                {copied ? (
+                                    <>
+                                        <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                        Nusxalandi
+                                    </>
+                                ) : (
+                                    <>
+                                        <Copy className="h-3.5 w-3.5" />
+                                        Nusxa olish
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+
+                        {/* Visual Onboarding Instructions */}
+                        <div className="bg-secondary/40 border border-border/60 rounded-xl p-3.5 text-xs space-y-2">
+                            <p className="font-semibold text-foreground flex items-center gap-1.5">
+                                <Smartphone className="h-4 w-4 text-primary" /> Android telefonda bajariladigan amallar:
                             </p>
-                        </div>
-
-                        <div className="bg-muted p-5 rounded-xl text-center">
-                            <span className="text-3xl font-mono font-extrabold tracking-widest text-primary">
-                                {pendingPairingCode}
-                            </span>
-                        </div>
-
-                        <div className="space-y-2 text-xs text-muted-foreground bg-secondary/50 p-3.5 rounded-lg">
-                            <p className="font-semibold text-foreground">Ko'rsatma:</p>
-                            <ol className="list-decimal list-inside space-y-1">
-                                <li>Ilovada "Ulanish kodini kiritish" tugmasini bosing.</li>
-                                <li>Kod kiritilgach, ilova avtomatik ushbu kompaniya bilan sinxronlashadi.</li>
-                                <li>Accessibility xizmatiga ruxsat berishni unutmang.</li>
+                            <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                                <li>Telefonda <b>1Call Agent</b> ilovasini oching.</li>
+                                <li><b>"QR-kodni skanerlash"</b> tugmasini bosing va kamerani ushbu QR-kodga qarating.</li>
+                                <li>Qurilma avtomatik ulanadi va audio yozish uchun ruxsatlar faollashadi.</li>
                             </ol>
                         </div>
 
-                        <Button className="w-full" onClick={() => setShowPairModal(false)}>
+                        <Button
+                            className="w-full h-10 font-semibold"
+                            onClick={() => {
+                                setShowPairModal(false);
+                                setSelectedPairingDevice(null);
+                            }}
+                        >
                             Tushunarli / Yopish
                         </Button>
                     </div>
@@ -257,7 +383,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                             <label className="text-xs font-semibold">Qurilma nomi</label>
                             <Input
                                 value={data.name}
-                                onChange={(e) => setData('name', e.target.value)}
+                                onChange={(e) => setData("name", e.target.value)}
                                 required
                             />
                         </div>
@@ -266,7 +392,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                             <label className="text-xs font-semibold">Biriktirilgan Operator</label>
                             <select
                                 value={data.user_id}
-                                onChange={(e) => setData('user_id', e.target.value)}
+                                onChange={(e) => setData("user_id", e.target.value)}
                                 className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-xs"
                             >
                                 <option value="">Biriktirilmagan</option>
@@ -280,7 +406,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                             <label className="text-xs font-semibold">Korporativ SIM Slot (Dual-SIM)</label>
                             <select
                                 value={data.selected_sim_slot}
-                                onChange={(e) => setData('selected_sim_slot', e.target.value)}
+                                onChange={(e) => setData("selected_sim_slot", e.target.value)}
                                 className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-xs"
                             >
                                 <option value="">Ikkala SIM kartani ham yozish</option>

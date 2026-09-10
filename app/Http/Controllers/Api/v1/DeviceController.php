@@ -20,7 +20,7 @@ class DeviceController extends Controller
             'pairing_code' => ['nullable', 'string', 'max:20'],
             'tenant_uuid' => ['nullable', 'uuid'],
             'device_uid' => ['required', 'string', 'max:100'],
-            'name' => ['required', 'string', 'max:150'],
+            'name' => ['nullable', 'string', 'max:150'],
             'model' => ['nullable', 'string', 'max:100'],
             'sim_slots_info' => ['nullable', 'array'],
             'battery_level' => ['nullable', 'integer', 'min:0', 'max:100'],
@@ -81,7 +81,7 @@ class DeviceController extends Controller
 
         $device->tenant_id = $tenant->id;
         $device->device_uid = $validated['device_uid'];
-        $device->name = $validated['name'];
+        $device->name = ! empty($validated['name']) ? $validated['name'] : ($device->name ?? $validated['model'] ?? 'Android Telefon');
         $device->model = $validated['model'] ?? $device->model;
         $device->sim_slots_info = $validated['sim_slots_info'] ?? $device->sim_slots_info;
         $device->battery_level = $validated['battery_level'] ?? $device->battery_level;
