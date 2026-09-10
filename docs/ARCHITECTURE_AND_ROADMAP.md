@@ -1,6 +1,6 @@
 # Multi-Tenant SaaS "ZvonkiPro" (Single Database with Row-Level / Tenant Scoping)
 
-Mazkur hujjat foydalanuvchi tanlovi asosida **Single Database with Row-Level / Tenant Scoping** modeliga 100% moslashtirilgan, Laravel 12 Backend & Inertia/React Dashboard va Android Native Kotlin Agent uchun to'liq texnik arxitektura va amaliy yo'l xaritasini (Implementation Roadmap) belgilaydi.
+Mazkur hujjat **Single Database with Row-Level / Tenant Scoping** modeliga to'liq moslashtirilgan bo'lib, Laravel 12 Backend, Inertia/React Dashboard, Android Native Kotlin Agent hamda **amoCRM, Bitrix24, MoySklad va BitoERP** kabi tashqi CRM/ERP tizimlari bilan chuqur integratsiyalashgan arxitektura va amaliy yo'l xaritasini (Roadmap) belgilaydi.
 
 ---
 
@@ -34,16 +34,16 @@ flowchart TD
 ```
 
 ### 1.2. PostgreSQL Row-Level Security (RLS) Konfiguratsiyasi
-Barcha tenantga xos jadvallarda (`calls`, `devices`, `users`, `crm_webhooks`) RLS yoqiladi:
+Barcha tenantga xos jadvallarda (`calls`, `devices`, `users`, `tenant_integrations`, `crm_webhooks`) RLS yoqiladi:
 
 ```sql
--- Har bir ulanishda o'rnatiladigan o'zgaruvchi: app.current_tenant_id
--- 1. Calls jadvalida RLS ni yoqish
+-- Calls, Devices, Integratsiyalar jadvallarida RLS yoqish
 ALTER TABLE calls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE devices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenant_integrations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE crm_webhooks ENABLE ROW LEVEL SECURITY;
 
--- 2. Qat'iy izolyatsiya qoidasi (Policy)
+-- Qat'iy izolyatsiya qoidalari (Policies)
 CREATE POLICY calls_tenant_isolation_policy ON calls
     FOR ALL
     USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint)
@@ -54,87 +54,17 @@ CREATE POLICY devices_tenant_isolation_policy ON devices
     USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint)
     WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint);
 
-CREATE POLICY webhooks_tenant_isolation_policy ON crm_webhooks
+CREATE POLICY integrations_tenant_isolation_policy ON tenant_integrations
     FOR ALL
     USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint)
     WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint);
 ```
 
-### 1.3. Laravel Middleware va TenantContext
-
-#### `TenantContext.php` (Singleton Service):
-```php
-namespace App\Services\Tenancy;
-
-use App\Models\Tenant;
-use Illuminate\Support\Facades\DB;
-
-class TenantContext
-{
-    protected ?Tenant $tenant = null;
-
-    public function setTenant(?Tenant $tenant): void
-    {
-        $this->tenant = $tenant;
-
-        if ($tenant) {
-            // PostgreSQL sessiya o'zgaruvchisini o'rnatish (RLS uchun)
-            DB::statement("SET LOCAL app.current_tenant_id = '{$tenant->id}'");
-        } else {
-            DB::statement("RESET app.current_tenant_id");
-        }
-    }
-
-    public function getTenant(): ?Tenant
-    {
-        return $this->tenant;
-    }
-
-    public function id(): ?int
-    {
-        return $this->tenant?->id;
-    }
-
-    public function check(): bool
-    {
-        return $this->tenant !== null;
-    }
-}
-```
-
-#### `BelongsToTenant.php` (Model Trait):
-```php
-namespace App\Models\Concerns;
-
-use App\Models\Scopes\TenantScope;
-use App\Services\Tenancy\TenantContext;
-
-trait BelongsToTenant
-{
-    protected static function bootBelongsToTenant(): void
-    {
-        static::addGlobalScope(new TenantScope());
-
-        static::creating(function ($model) {
-            $context = app(TenantContext::class);
-            if (empty($model->tenant_id) && $context->check()) {
-                $model->tenant_id = $context->id();
-            }
-        });
-    }
-
-    public function tenant()
-    {
-        return $this->belongsTo(\App\Models\Tenant::class);
-    }
-}
-```
-
 ---
 
-### 1.4. To'liq Jadvallar Strukturasi va Indekslar (Single DB Sxemasi)
+### 1.3. Jadvallar Strukturasi (CRM/ERP Modullari Bilan)
 
-#### 1. `tenants` (Ijarachilar / Kompaniyalar)
+#### 1. `tenants` (Ijarachilar)
 ```sql
 CREATE TABLE tenants (
     id BIGSERIAL PRIMARY KEY,
@@ -142,7 +72,7 @@ CREATE TABLE tenants (
     name VARCHAR(255) NOT NULL,
     subdomain VARCHAR(100) UNIQUE NOT NULL,
     custom_domain VARCHAR(255) UNIQUE NULL,
-    plan VARCHAR(50) NOT NULL DEFAULT 'standard', -- 'starter', 'business', 'enterprise'
+    plan VARCHAR(50) NOT NULL DEFAULT 'standard',
     plan_limits JSONB NOT NULL DEFAULT '{"max_devices": 10, "retention_days": 90, "audio_storage_gb": 20}',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NULL,
@@ -151,26 +81,7 @@ CREATE TABLE tenants (
 CREATE INDEX idx_tenants_subdomain ON tenants(subdomain);
 ```
 
-#### 2. `users` (Dashboard Foydalanuvchilari)
-```sql
-CREATE TABLE users (
-    id BIGSERIAL PRIMARY KEY,
-    tenant_id BIGINT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(50) NOT NULL DEFAULT 'operator', -- 'superadmin', 'tenant_admin', 'manager', 'operator'
-    phone_number VARCHAR(50) NULL,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    remember_token VARCHAR(100) NULL,
-    created_at TIMESTAMP WITH TIME ZONE NULL,
-    updated_at TIMESTAMP WITH TIME ZONE NULL,
-    CONSTRAINT uq_users_tenant_email UNIQUE (tenant_id, email)
-);
-CREATE INDEX idx_users_tenant ON users(tenant_id);
-```
-
-#### 3. `devices` (Android Mobil Agentlar)
+#### 2. `devices` (Android Mobil Agentlar)
 ```sql
 CREATE TABLE devices (
     id BIGSERIAL PRIMARY KEY,
@@ -178,12 +89,9 @@ CREATE TABLE devices (
     tenant_id BIGINT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     user_id BIGINT NULL REFERENCES users(id) ON DELETE SET NULL,
     device_uid VARCHAR(128) NOT NULL,
-    name VARCHAR(255) NOT NULL, -- "Alisher - Xiaomi 13"
+    name VARCHAR(255) NOT NULL,
     model VARCHAR(150) NULL,
-    manufacturer VARCHAR(100) NULL,
-    os_version VARCHAR(50) NULL,
-    app_version VARCHAR(50) NULL,
-    sim_slots_info JSONB NULL DEFAULT '[]', -- [{"slot":0,"carrier":"Ucell","phone":"+99890..."},{"slot":1,"carrier":"Beeline","phone":"+99891..."}]
+    sim_slots_info JSONB NULL DEFAULT '[]',
     battery_level SMALLINT NULL,
     is_charging BOOLEAN NOT NULL DEFAULT FALSE,
     pairing_code VARCHAR(16) NULL,
@@ -197,7 +105,7 @@ CREATE TABLE devices (
 CREATE INDEX idx_devices_tenant_seen ON devices(tenant_id, last_seen_at);
 ```
 
-#### 4. `calls` (Qo'ng'iroqlar Jurnali va Audio Yozuvlar)
+#### 3. `calls` (Qo'ng'iroqlar va Audio Yozuvlar)
 ```sql
 CREATE TABLE calls (
     id BIGSERIAL PRIMARY KEY,
@@ -209,72 +117,141 @@ CREATE TABLE calls (
     phone_number VARCHAR(50) NOT NULL,
     contact_name VARCHAR(255) NULL,
     duration_seconds INTEGER NOT NULL DEFAULT 0,
-    sim_slot SMALLINT NOT NULL DEFAULT 0, -- 0 = SIM1, 1 = SIM2
+    sim_slot SMALLINT NOT NULL DEFAULT 0,
     sim_operator VARCHAR(100) NULL,
     recording_disk VARCHAR(50) NOT NULL DEFAULT 'private_storage',
-    recording_path VARCHAR(500) NULL, -- 'recordings/{tenant_id}/{year}/{month}/{call_uuid}.m4a'
+    recording_path VARCHAR(500) NULL,
     recording_size_bytes BIGINT NULL,
-    recording_status VARCHAR(30) NOT NULL DEFAULT 'none', -- 'none', 'uploading', 'ready', 'failed'
+    recording_status VARCHAR(30) NOT NULL DEFAULT 'none',
     call_timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
     synced_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP WITH TIME ZONE NULL,
     updated_at TIMESTAMP WITH TIME ZONE NULL
 );
--- High-performance kompozit indekslar
 CREATE INDEX idx_calls_tenant_timestamp ON calls(tenant_id, call_timestamp DESC);
 CREATE INDEX idx_calls_tenant_phone ON calls(tenant_id, phone_number);
 CREATE INDEX idx_calls_tenant_device ON calls(tenant_id, device_id);
-CREATE INDEX idx_calls_tenant_direction ON calls(tenant_id, direction);
 ```
 
-#### 5. `crm_webhooks` va `webhook_deliveries`
+#### 4. `tenant_integrations` (CRM & ERP Ulanishlari: amoCRM, Bitrix24, MoySklad, BitoERP)
 ```sql
-CREATE TABLE crm_webhooks (
+CREATE TABLE tenant_integrations (
     id BIGSERIAL PRIMARY KEY,
+    uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     tenant_id BIGINT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    name VARCHAR(150) NOT NULL,
-    url VARCHAR(500) NOT NULL,
-    secret VARCHAR(255) NOT NULL,
-    events JSONB NOT NULL DEFAULT '["call.created", "call.recording_ready"]',
+    provider VARCHAR(50) NOT NULL, -- 'amocrm', 'bitrix24', 'moysklad', 'bitoerp', 'custom_webhook'
+    name VARCHAR(150) NOT NULL, -- "Asosiy amoCRM", "Ombor MoySklad"
+    credentials JSONB NOT NULL, -- Shifrlangan tokenlar, API kalitlar, subdomain, webhook sirlari
+    settings JSONB NOT NULL DEFAULT '{"auto_create_lead": true, "sync_recordings": true, "sync_missed_calls": true}',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    failure_count INTEGER NOT NULL DEFAULT 0,
-    last_triggered_at TIMESTAMP WITH TIME ZONE NULL,
+    last_synced_at TIMESTAMP WITH TIME ZONE NULL,
+    status_message TEXT NULL,
     created_at TIMESTAMP WITH TIME ZONE NULL,
-    updated_at TIMESTAMP WITH TIME ZONE NULL
+    updated_at TIMESTAMP WITH TIME ZONE NULL,
+    CONSTRAINT uq_tenant_integrations_provider UNIQUE (tenant_id, provider)
 );
-CREATE INDEX idx_crm_webhooks_tenant ON crm_webhooks(tenant_id);
+CREATE INDEX idx_tenant_integrations_tenant ON tenant_integrations(tenant_id);
+```
 
-CREATE TABLE webhook_deliveries (
+#### 5. `integration_user_mappings` (Telefon apparati xodimini CRM foydalanuvchisi bilan bog'lash)
+Har bir mobil apparat egasi CRMdagi mas'ul menejer (responsible user) bilan moslashtiriladi:
+```sql
+CREATE TABLE integration_user_mappings (
     id BIGSERIAL PRIMARY KEY,
     tenant_id BIGINT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    webhook_id BIGINT NOT NULL REFERENCES crm_webhooks(id) ON DELETE CASCADE,
-    event_type VARCHAR(100) NOT NULL,
-    payload JSONB NOT NULL,
-    response_status INTEGER NULL,
-    response_body TEXT NULL,
-    duration_ms INTEGER NULL,
+    integration_id BIGINT NOT NULL REFERENCES tenant_integrations(id) ON DELETE CASCADE,
+    device_id BIGINT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    crm_user_id VARCHAR(100) NOT NULL, -- amoCRM user_id, Bitrix24 ID, MoySklad employee ID
+    crm_user_name VARCHAR(255) NULL,
+    created_at TIMESTAMP WITH TIME ZONE NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NULL,
+    CONSTRAINT uq_user_mappings UNIQUE (integration_id, device_id)
+);
+```
+
+#### 6. `integration_sync_logs` (Integratsiya yetkazib berish va audit jurnali)
+```sql
+CREATE TABLE integration_sync_logs (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    integration_id BIGINT NOT NULL REFERENCES tenant_integrations(id) ON DELETE CASCADE,
+    call_id BIGINT NOT NULL REFERENCES calls(id) ON DELETE CASCADE,
+    event_type VARCHAR(50) NOT NULL, -- 'call.created', 'call.recorded'
+    status VARCHAR(30) NOT NULL, -- 'success', 'failed', 'retrying'
+    request_payload JSONB NULL,
+    response_payload JSONB NULL,
+    response_code INTEGER NULL,
+    error_message TEXT NULL,
     attempts SMALLINT NOT NULL DEFAULT 1,
-    status VARCHAR(30) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NULL
 );
-CREATE INDEX idx_webhook_deliveries_tenant ON webhook_deliveries(tenant_id, created_at DESC);
+CREATE INDEX idx_integration_logs_call ON integration_sync_logs(call_id);
+CREATE INDEX idx_integration_logs_tenant ON integration_sync_logs(tenant_id, created_at DESC);
 ```
 
 ---
 
-### 1.5. Xavfsiz Audio Saqlash va Oqim (Audio Streaming)
-- Audio fayllar saqlash joyi: `storage/app/private/recordings/{tenant_id}/{year}/{month}/{call_uuid}.m4a`.
-- Pleyerga to'g'ridan-to'g'ri ochiq havola (public URL) berilmaydi.
-- Maxsus audio streaming marshruti: `GET /api/v1/calls/{call:uuid}/audio-stream`
-- Kontroller ichidagi himoya:
-  1. `abort_if($call->tenant_id !== tenant()->id, 403, 'Ruxsat berilmagan!');`
-  2. Stream qilinganda HTTP Range sarlavhalari (206 Partial Content) qo'llab-quvvatlanadi, natijada katta audio fayllarni o'tkazib (seek qilib) eshitish mumkin bo'ladi.
+### 1.4. Tashqi CRM/ERP Integratsiyalari Arxitekturasi (Driver & Adapter Pattern)
+
+Tizim kengaytiriluvchan **Manager/Driver** naqshiga asoslanadi:
+
+```php
+namespace App\Services\Integrations\Contracts;
+
+use App\Models\Call;
+use App\Models\TenantIntegration;
+
+interface CrmDriverInterface
+{
+    /** Ulanish va hisob ma'lumotlarini (OAuth2 / API Key) tekshirish */
+    public function testConnection(TenantIntegration $integration): bool;
+
+    /** Qo'ng'iroq ma'lumotlarini CRMga sinxronlash (kontakt yaratish, lidiya ochish, qo'ng'iroq kartochkasi) */
+    public function syncCall(TenantIntegration $integration, Call $call): array;
+
+    /** Audio yozuv tayyor bo'lganda uni CRM kartochkasiga biriktirish */
+    public function attachAudio(TenantIntegration $integration, Call $call): bool;
+
+    /** CRMdagi foydalanuvchilar (menejerlar) ro'yxatini yuklash */
+    public function fetchCrmUsers(TenantIntegration $integration): array;
+}
+```
+
+#### Integratsiya Modullari Tavsifi:
+
+1. **amoCRM Integratsiyasi (`AmoCrmDriver`):**
+   - **Avtorizatsiya:** OAuth2 (avtomatik refresh token yangilash oqimi).
+   - **Mantiq:**
+     - Qo'ng'iroq kelganda/ketganda raqam bo'yicha kontakt izlash (`/api/v4/contacts?query=...`).
+     - Agar topilmasa: avtomatik yangi kontakt va ochilmagan bitim (Неразобранное / Lead) yaratish.
+     - Qo'ng'iroq tugagach, davomiyligi, yo'nalishi va xodim biriktirilgan holda qo'ng'iroq hodisasini (`/api/v4/calls`) yozish.
+     - Audio yuklanganda audio fayl havolasini karta eslatmasiga biriktirish.
+   - **Rate Limiting:** amoCRM talabi bo'yicha sekundiga 7 ta so'rov chegarasi (Laravel Redis Rate Limiter orqali boshqariladi).
+
+2. **Bitrix24 Integratsiyasi (`Bitrix24Driver`):**
+   - **Protokol:** Bitrix24 Telephony REST API (`telephony.externalcall.register`, `telephony.externalcall.finish`).
+   - **Imkoniyatlar:**
+     - Qo'ng'iroq boshlanganda Bitrix24 ichida mas'ul xodim monitorida mijoz kartochkasini (Screen Pop-up) ko'rsatish.
+     - Qo'ng'iroq tugaganda davomiylik, natija kodi (200 - muvaffaqiyatli, 304 - o'tkazib yuborilgan) va CRM bilan bog'lash.
+     - Bitrix24 diskiga audio faylni (`RECORD_URL`) yuklash.
+
+3. **MoySklad Integratsiyasi (`MoySkladDriver`):**
+   - **Protokol:** MoySklad JSON API 1.2 (Bearer Token yoki Basic Auth).
+   - **Mantiq:**
+     - Qo'ng'iroq qiluvchi raqam bo'yicha kontragentni (`/entity/counterparty?search=...`) aniqlash.
+     - Agar mavjud bo'lmasa, "Yangi mijoz (ZvonkiPro)" nomi bilan kontragent yaratish.
+     - Kontragent tarixiga voqea (Событие / Qo'ng'iroq qaydi) qo'shish va menejerni biriktirish.
+
+4. **BitoERP Integratsiyasi (`BitoErpDriver`):**
+   - **Protokol:** BitoERP REST API + Webhooks (API Token bilan himoyalangan).
+   - **Mantiq:**
+     - Qo'ng'iroq telemetriyasini BitoERP savdo/mijozlar bo'limiga real vaqtda uzatish.
+     - Mijozlar kartochkasi va buyurtmalar holati bo'yicha xodimga ma'lumot qaytarish.
 
 ---
 
 ## 2. Monorepo Tuzilmasi va Git Konfiguratsiyasi
 
-### 2.1. Kataloglar Sxemasi
 ```
 zvonkipro/
 ├── .github/workflows/
@@ -282,130 +259,97 @@ zvonkipro/
 │   └── android-ci.yml           # Gradle test, Assemble APK
 ├── android/                         # NATIVE KOTLIN ANDROID LOYIHASI
 │   ├── app/
-│   │   ├── src/main/
-│   │   │   ├── java/com/zvonkipro/agent/
-│   │   │   │   ├── data/
-│   │   │   │   │   ├── local/          # Room DB (LocalCallRecord, Dao)
-│   │   │   │   │   ├── remote/         # Retrofit API Services, DTOs
-│   │   │   │   │   └── repository/
-│   │   │   │   ├── service/
-│   │   │   │   │   ├── CallDetectionService.kt # TelephonyCallback
-│   │   │   │   │   ├── AudioRecorderService.kt # MediaRecorder / AAC
-│   │   │   │   │   └── KeepAliveService.kt     # Sticky Foreground
-│   │   │   │   ├── workers/
-│   │   │   │   │   ├── CallSyncWorker.kt       # WorkManager offline sync
-│   │   │   │   │   └── HeartbeatWorker.kt      # Batareya ping
-│   │   │   │   └── ui/
-│   │   │   │       ├── pairing/        # QR Scanner (CameraX + ML Kit)
-│   │   │   │       └── status/         # Diagnostics ekrani
-│   │   │   └── AndroidManifest.xml
+│   │   ├── src/main/java/com/zvonkipro/agent/
+│   │   │   ├── data/local/      # Room DB (LocalCallRecord, Dao)
+│   │   │   ├── data/remote/     # Retrofit API Services
+│   │   │   ├── service/         # CallDetectionService, AudioRecorderService
+│   │   │   ├── workers/         # CallSyncWorker, HeartbeatWorker
+│   │   │   └── ui/              # QR Scanner, Diagnostics
 │   │   └── build.gradle.kts
-│   ├── build.gradle.kts
-│   └── settings.gradle.kts
+│   └── build.gradle.kts
 ├── app/                             # LARAVEL 12 BACKEND
-│   ├── Http/
-│   │   ├── Controllers/Api/        # DevicePairing, Telemetry, AudioUpload
-│   │   ├── Controllers/Web/        # Dashboard, Calls, Devices, Webhooks
-│   │   └── Middleware/             # IdentifyTenant, SetTenantRlsContext
-│   ├── Models/                     # Tenant, User, Device, Call, CrmWebhook
-│   ├── Models/Concerns/            # BelongsToTenant trait
-│   └── Services/Tenancy/           # TenantContext
+│   ├── Http/Controllers/Api/        # DevicePairing, Telemetry, AudioUpload
+│   ├── Http/Controllers/Web/        # Dashboard, Calls, Devices, Integrations
+│   ├── Models/                      # Tenant, Device, Call, TenantIntegration
+│   ├── Services/
+│   │   ├── Tenancy/                 # TenantContext, TenantScope
+│   │   └── Integrations/            # Drivers: AmoCrm, Bitrix24, MoySklad, BitoErp
+│   └── Jobs/
+│       ├── SyncCallToIntegrationsJob.php # Asinxron CRMga yuborish
+│       └── DispatchWebhookJob.php
 ├── resources/js/                    # INERTIA + REACT
 │   ├── components/
 │   │   ├── AudioPlayer/WaveformPlayer.tsx
-│   │   ├── DeviceBadge.tsx
 │   │   └── QrPairingModal.tsx
 │   └── pages/
 │       ├── Dashboard.tsx
 │       ├── Calls/Index.tsx
 │       ├── Devices/Index.tsx
-│       └── Settings/Webhooks.tsx
-├── routes/
-│   ├── api.php                      # Mobil agent uchun Sanctum bilan himoyalangan API
-│   └── web.php                      # Inertia Dashboard marshrutlari
+│       └── Integrations/            # CRM sozlash (amoCRM, Bitrix, MoySklad, BitoERP)
+│           ├── Index.tsx
+│           ├── AmoCrmConfigModal.tsx
+│           ├── BitrixConfigModal.tsx
+│           └── UserMappingModal.tsx
 ├── docs/
-│   └── ARCHITECTURE_AND_ROADMAP.md  # Ushbu arxitektura hujjati
+│   └── ARCHITECTURE_AND_ROADMAP.md
 ├── .gitignore
 ├── composer.json
 └── package.json
 ```
 
-### 2.2. Monorepo `.gitignore`
-PHP/Node va Android artefaktlarini to'liq filtrlovchi birlashgan konfiguratsiya:
-- PHP / Composer: `/vendor/`, `.env`, `/storage/*.key`, `/storage/app/private/*`
-- Node / Frontend: `/node_modules/`, `/public/build/`, `/public/hot`
-- Android: `android/.gradle/`, `android/build/`, `android/*/build/`, `android/local.properties`, `*.jks`, `*.keystore`
-
 ---
 
 ## 3. Mobil Agent (Kotlin Native) Arxitekturasi
 
-### 3.1. Tenantga Bog'lanish (Pairing)
-1. **Web Dashboard:** Admin "Yangi qurilma ulash" tugmasini bosadi -> bir martalik `pairing_code` (yoki QR kod) yaratiladi. QR kod tarkibi:
-   `{"endpoint": "https://company.zvonkipro.com/api/v1", "token": "PAIR_XYZ987", "expires_at": "2026-09-10T12:00:00Z"}`
-2. **Android Ilova:** CameraX + ML Kit yordamida QR-kodni skanerlaydi.
-3. **API so'rovi:** `POST /api/v1/devices/pair` ga qurilma UID, modeli, OS versiyasi va SIM karta ma'lumotlarini uzatadi.
-4. **Javob:** Server doimiy Sanctum Bearer Token qaytaradi.
-5. **Saqlash:** Token Android `EncryptedSharedPreferences` (MasterKey AES-256 GCM) da xavfsiz saqlanadi.
-
-### 3.2. Qo'ng'iroqlar va Audio Yozish Dvigateli
-- **Holatlarni aniqlash:** Android 12+ uchun `TelephonyCallback.CallStateListener` (`RINGING`, `OFFHOOK`, `IDLE`).
-  - `RINGING` -> vaqt va kiruvchi raqamni saqlash.
-  - `OFFHOOK` -> Suhbat boshlandi. `AudioRecorderService` ni ishga tushirish.
-  - `IDLE` -> Suhbat tugadi. Audioni yakunlash, davomiylikni o'lchash, Room DB ga saqlash.
-- **Audio yozish:** `ForegroundService` (`foregroundServiceType="microphone"`). Format: **AAC / M4A**, 16 kHz mono (hajmi ~200-300 KB / daqiqa). Korporativ qurilmalar uchun `AccessibilityService` hook'i.
-- **Dual-SIM:** `SubscriptionManager` orqali qo'ng'iroq qilingan/kelgan SIM kartaning uyasi (Slot 0 yoki 1) va operator nomi (Ucell, Beeline, va h.k.) aniqlanadi.
-
-### 3.3. Offline Bardoshlik (Room DB + WorkManager)
-- Internet bo'lmaganda barcha qo'ng'iroqlar Room bazasidagi `LocalCallRecord` jadvaliga `sync_status = PENDING` holatida saqlanadi.
-- `CallSyncWorker` faqat internet mavjud bo'lganda (`Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED)`) ishga tushadi.
-- So'rovlar `POST /api/v1/telemetry/calls` ga multipart formatda uzatiladi. Muvaffaqiyatsiz bo'lsa, WorkManager Exponential Backoff bilan avtomatik qayta urinadi.
-- `HeartbeatWorker` har 15 daqiqada batareya foizi va qurilma onlayn holatini xabar qiladi.
+- **Pairing (QR-kod orqali bog'lanish):** Bir martalik token orqali Sanctum Device Bearer Token olish va `EncryptedSharedPreferences` da saqlash.
+- **Qo'ng'iroq holatlarini tutish:** Android 12+ uchun `TelephonyCallback` (`RINGING` -> `OFFHOOK` -> `IDLE`).
+- **Audio yozish:** `ForegroundService` (`android:foregroundServiceType="microphone"`) + AAC/M4A format (16kHz mono). Korporativ qurilmalarda sifatli yozish uchun `AccessibilityService` hook'i.
+- **Dual-SIM:** `SubscriptionManager` yordamida qaysi SIM-karta orqali qo'ng'iroq bo'lganini (0 yoki 1 slot) va aloqa operatorini aniqlash.
+- **Offline chidamlilik:** Tarmoq bo'lmaganda Room DB ga saqlash, internet paydo bo'lganda `WorkManager` (Exponential Backoff bilan) orqali backendga xavfsiz yuklash.
 
 ---
 
 ## 4. Tenant Dashboard (Inertia.js + React)
 
 1. **Jonli Qo'ng'iroqlar Jurnali (`/calls`):**
-   - KPI bloklari: Kunlik qo'ng'iroqlar, Javob berilganlar %, Umumiy suhbat vaqti, Faol xodimlar.
-   - Filtrlar: Sanalar, Xodimlar, Yo'nalish (Kiruvchi/Chiquvchi/O'tkazib yuborilgan), SIM slot, Raqam qidiruvi.
-   - Inline audio ijro qatori.
-2. **Waveform Audio Pleyer (`WaveformPlayer.tsx`):**
-   - To'lqin shakli (waveform canvas), Play/Pause, 10 soniya oldinga/orqaga sakrash, 1x/1.5x/2x tezlik, yuklab olish.
-3. **Qurilmalar Monitoringi (`/devices`):**
-   - Kartochkalar ko'rinishi: Xodim ismi, telefon modeli, onlayn/oflayn holati (🟢 < 5 min, 🟡 5-30 min, 🔴 > 30 min), batareya foizi va quvvat olayotganlik belgisi (⚡).
-   - QR kod generatsiyasi modali.
-4. **CRM Webhook Integratsiyalari (`/settings/webhooks`):**
-   - Webhook yaratish: URL, HMAC secret, voqealar (`call.completed`, `call.missed`, `device.offline`).
-   - Yetkazib berishlar auditi (Delivery logs): Status kodi, xato xabari, qayta jo'natish (Retry) tugmasi.
+   - KPI kartalari, kengaytirilgan filtrlar (sanalar, xodimlar, yo'nalish, SIM karta).
+   - Waveform Canvas Audio Pleyeri (to'lqin shakli, 1x-2x tezlik, yuklab olish).
+2. **Qurilmalar Telemetriyasi (`/devices`):**
+   - Onlayn/oflayn monitoringi (🟢 onlayn, 🟡 kutilmoqda, 🔴 oflayn), batareya darajasi va zaryad holati.
+   - Yangi qurilma ulash uchun QR-kod generatori.
+3. **Integratsiyalar Markazi (`/integrations`):**
+   - amoCRM, Bitrix24, MoySklad, BitoERP kartochkalari.
+   - Bir tugma bilan OAuth2 ulanish yoki API kalitlarni sozlash.
+   - **Xodimlarni moslashtirish (User Mapping):** Telefon qurilmasini CRM mas'ul menejeri bilan o'zaro bog'lash interfeysi.
+   - Sinxronizatsiya loglari va xatoliklarni qayta yuborish (Retry) tugmasi.
 
 ---
 
 ## 5. Qadam-baqadam Ishga Tushirish Yo'l Xaritasi (Roadmap: Phase 1 — Phase 5)
 
 ### **Phase 1: Multi-Tenant Backend Core & Ingest API (Laravel + PostgreSQL RLS)**
-- [ ] **1.1.** PostgreSQL drayveri va migratsiyalarni yozish (`tenants`, `users`, `devices`, `calls`, `crm_webhooks`, `webhook_deliveries`).
-- [ ] **1.2.** Jadvallarga PostgreSQL RLS siyosatlarini (`ENABLE ROW LEVEL SECURITY` va `POLICY`) qo'llash.
+- [ ] **1.1.** PostgreSQL bazasi va jadvallar migratsiyasini yaratish (`tenants`, `users`, `devices`, `calls`, `tenant_integrations`, `integration_user_mappings`, `integration_sync_logs`).
+- [ ] **1.2.** Jadvallarga PostgreSQL RLS siyosatlarini (`ENABLE ROW LEVEL SECURITY`) qo'llash.
 - [ ] **1.3.** `TenantContext` xizmati va `IdentifyTenant` middleware'ini yaratish (`SET LOCAL app.current_tenant_id`).
-- [ ] **1.4.** `BelongsToTenant` Trait va `TenantScope` ni Eloquent modellari uchun tatbiq etish.
-- [ ] **1.5.** Qurilmani ulash APIsi: `POST /api/v1/devices/pair` (Sanctum token berish).
+- [ ] **1.4.** `BelongsToTenant` Trait va `TenantScope` ni modellar uchun tatbiq etish.
+- [ ] **1.5.** Qurilmani ulash APIsi: `POST /api/v1/devices/pair` (Sanctum token).
 - [ ] **1.6.** Telemetriya va audio qabul qilish APIsi: `POST /api/v1/telemetry/calls` (Multipart/JSON).
 - [ ] **1.7.** Heartbeat APIsi: `POST /api/v1/telemetry/heartbeat` (Batareya va onlayn status).
-- [ ] **1.8.** Pest orqali RLS va Tenant Scoping testlarini yozish (Tenantlararo ma'lumot sizib chiqmasligini tekshirish).
+- [ ] **1.8.** Pest orqali RLS va Tenant Scoping testlarini o'tkazish.
 
 ---
 
 ### **Phase 2: Android Native Core & Device Pairing**
-- [ ] **2.1.** `android/` papkasida Jetpack Compose va Hilt asosida loyiha skeletini yaratish.
-- [ ] **2.2.** Barcha zarur ruxsatnomalar (Permissions) oqimini tayyorlash (`READ_PHONE_STATE`, `RECORD_AUDIO`, `POST_NOTIFICATIONS` va h.k.).
+- [ ] **2.1.** `android/` papkasida Jetpack Compose, Material3 va Hilt asosida loyiha skeletini yaratish.
+- [ ] **2.2.** Android ruxsatnomalar oqimini tayyorlash (`READ_PHONE_STATE`, `RECORD_AUDIO`, `POST_NOTIFICATIONS`).
 - [ ] **2.3.** CameraX + ML Kit asosida QR-kod skanerlash va Tenantga ulanish (Pairing) ekranini yaratish.
 - [ ] **2.4.** `EncryptedSharedPreferences` orqali Sanctum tokenni saqlash va Retrofit interseptorini sozlash.
-- [ ] **2.5.** `TelephonyCallback` orqali qo'ng'iroq holatlarini (`RINGING`, `OFFHOOK`, `IDLE`) tutuvchi fon xizmatini yozish.
+- [ ] **2.5.** `TelephonyCallback` orqali qo'ng'iroq holatlarini (`RINGING`, `OFFHOOK`, `IDLE`) tutuvchi fon servisini yozish.
 
 ---
 
 ### **Phase 3: Audio Yozish va Offline Sync Mexanizmi (Room + WorkManager)**
-- [ ] **3.1.** `ForegroundService` (`microphone` type) asosida audio yozish modulini qurish (`MediaRecorder` - AAC/M4A).
+- [ ] **3.1.** `ForegroundService` (`microphone` turi) asosida audio yozish modulini qurish (`MediaRecorder` - AAC/M4A).
 - [ ] **3.2.** `SubscriptionManager` orqali Dual-SIM (SIM 1 / SIM 2) ma'lumotlarini aniqlash.
 - [ ] **3.3.** Room Database tuzish (`LocalCallRecord`, DAO, Repository).
 - [ ] **3.4.** `WorkManager` asosida `CallSyncWorker` yaratish (Offline navbat va Exponential Backoff).
@@ -422,9 +366,12 @@ PHP/Node va Android artefaktlarini to'liq filtrlovchi birlashgan konfiguratsiya:
 
 ---
 
-### **Phase 5: CRM Webhook Tizimi, Optimallashtirish va CI/CD**
-- [ ] **5.1.** Webhook sozlash sahifasi (CRUD, voqealar tanlovi, maxfiy kalit).
-- [ ] **5.2.** `DispatchWebhookJob` asinxron navbati (Laravel Queue) orqali tashqi CRMlarga (amoCRM, Bitrix24) HMAC imzolangan JSON yuborish.
-- [ ] **5.3.** Webhook muvaffaqiyatsiz bo'lganda 3 martagacha eksponensial kechikish bilan qayta urinish (Retry policy).
-- [ ] **5.4.** Monorepo uchun GitHub Actions quvurlarini (`backend-ci.yml`, `android-ci.yml`) to'liq sozlash.
-- [ ] **5.5.** Yuqori yuklamada (High Load) sinov: PostgreSQL indekslari va Redis navbatlari samaradorligini tekshirish.
+### **Phase 5: CRM & ERP Integratsiya Tizimi (amoCRM, Bitrix24, MoySklad, BitoERP) va Webhooklar**
+- [ ] **5.1.** Integratsiyalar arxitekturasi: `CrmDriverInterface` va `CrmManager` (Driver Pattern).
+- [ ] **5.2.** **amoCRM Drayveri:** OAuth2 oqimi, kontakt qidirish/yaratish, qo'ng'iroq voqeasi va audio yozuvni biriktirish (`/api/v4/calls`).
+- [ ] **5.3.** **Bitrix24 Drayveri:** Bitrix24 Telephony API (`telephony.externalcall.register` va `telephony.externalcall.finish`), audio fayl biriktirish.
+- [ ] **5.4.** **MoySklad Drayveri:** JSON API 1.2 orqali kontragentni qidirish/yaratish va voqea kiritish.
+- [ ] **5.5.** **BitoERP va Universal Webhook Drayveri:** REST Webhook orqali HMAC SHA-256 imzolangan voqealarni uzatish.
+- [ ] **5.6.** `SyncCallToIntegrationsJob` orqali asinxron navbat, Redis Rate Limiter (amoCRM 7 req/sec limit) va qayta urinish (Retry Policy).
+- [ ] **5.7.** Integratsiyalar Dashboard UI: Ulanish modallari, xodimlarni CRM menejerlari bilan moslashtirish (User Mapping) va audit loglari.
+- [ ] **5.8.** CI/CD (GitHub Actions) va yakuniy yuklama ostida sinovlar.
