@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Device;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
@@ -13,14 +14,46 @@ use Inertia\Response;
 class DeviceManagementController extends Controller
 {
     /**
+     * Resolve the active tenant or ensure default tenant exists for superadmin.
+     */
+    protected function resolveTenant(Request $request, TenantContext $tenantContext): ?Tenant
+    {
+        $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
+
+        if (! $tenant && $request->user()?->isSuperAdmin()) {
+            $tenant = Tenant::first() ?? Tenant::create([
+                'name' => '1Call Asosiy Kompaniya',
+                'slug' => '1call-main',
+                'allowed_devices_count' => 10,
+                'audio_retention_days' => 90,
+                'is_active' => true,
+                'trial_ends_at' => now()->addYears(10),
+                'subscription_expires_at' => now()->addYears(10),
+            ]);
+
+            $tenantContext->setTenant($tenant);
+        }
+
+        return $tenant;
+    }
+
+    /**
      * Devices Management Page.
      */
     public function index(Request $request, TenantContext $tenantContext): Response
     {
-        $tenant = $tenantContext->getTenant() ?? $request->user()->tenant;
+        $tenant = $this->resolveTenant($request, $tenantContext);
 
-        $devices = Device::with('user:id,name')->orderBy('id')->get();
-        $users = User::where('role', 'operator')->select('id', 'name')->get();
+        $devicesQuery = Device::with('user:id,name')->orderBy('id');
+        $usersQuery = User::where('role', 'operator')->select('id', 'name');
+
+        if ($tenant) {
+            $devicesQuery->where('tenant_id', $tenant->id);
+            $usersQuery->where('tenant_id', $tenant->id);
+        }
+
+        $devices = $devicesQuery->get();
+        $users = $usersQuery->get();
 
         return Inertia::render('Devices/Index', [
             'devices' => $devices,
@@ -38,19 +71,25 @@ class DeviceManagementController extends Controller
      */
     public function generatePairingCode(Request $request, TenantContext $tenantContext): RedirectResponse
     {
-        $tenant = $tenantContext->getTenant() ?? $request->user()->tenant;
+        $tenant = $this->resolveTenant($request, $tenantContext);
 
-        $pairedCount = Device::where('is_paired', true)->count();
-        if ($pairedCount >= ($tenant->allowed_devices_count ?? 2)) {
-            return back()->with('error', "Tarifingiz bo'yicha ruxsat etilgan qurilmalar soniga yetildi. Yangi telefon qo'shish uchun tarifni kengaytiring.");
+        if (! $tenant) {
+            return back()->with('error', "Kompaniya ma'lumotlari topilmadi.");
+        }
+
+        $allowed = $tenant->allowed_devices_count ?? 2;
+        $pairedCount = Device::where('tenant_id', $tenant->id)->where('is_paired', true)->count();
+        if ($pairedCount >= $allowed) {
+            return back()->with('error', "Tarifingiz bo'yicha ruxsat etilgan qurilmalar soniga yetildi ({$allowed} ta). Yangi telefon qo'shish uchun tarifni kengaytiring.");
         }
 
         $code = (string) mt_rand(100000, 999999);
+        $deviceIndex = Device::where('tenant_id', $tenant->id)->count() + 1;
 
         Device::create([
             'tenant_id' => $tenant->id,
             'device_uid' => 'pending_'.bin2hex(random_bytes(6)),
-            'name' => 'Yangi Telefon #'.(Device::count() + 1),
+            'name' => 'Yangi Telefon #'.$deviceIndex,
             'pairing_code' => $code,
             'is_paired' => false,
         ]);

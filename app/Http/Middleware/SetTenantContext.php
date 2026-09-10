@@ -28,6 +28,17 @@ class SetTenantContext
                 $tenant = $user->tenant;
             } elseif ($user->tenant_id) {
                 $tenant = $user->tenant ?? Tenant::find($user->tenant_id);
+            } elseif ($user->isSuperAdmin()) {
+                // For superadmin, fallback to first tenant or ensure default tenant exists
+                $tenant = Tenant::first() ?? Tenant::create([
+                    'name' => '1Call Asosiy Kompaniya',
+                    'slug' => '1call-main',
+                    'allowed_devices_count' => 10,
+                    'audio_retention_days' => 90,
+                    'is_active' => true,
+                    'trial_ends_at' => now()->addYears(10),
+                    'subscription_expires_at' => now()->addYears(10),
+                ]);
             }
         }
 

@@ -13,14 +13,35 @@ use Inertia\Response;
 class WorkScheduleController extends Controller
 {
     /**
+     * Resolve the active tenant or ensure default tenant exists for superadmin.
+     */
+    protected function resolveTenant(Request $request, TenantContext $tenantContext): ?Tenant
+    {
+        $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
+
+        if (! $tenant && $request->user()?->isSuperAdmin()) {
+            $tenant = Tenant::first() ?? Tenant::create([
+                'name' => '1Call Asosiy Kompaniya',
+                'slug' => '1call-main',
+                'allowed_devices_count' => 10,
+                'audio_retention_days' => 90,
+                'is_active' => true,
+                'trial_ends_at' => now()->addYears(10),
+                'subscription_expires_at' => now()->addYears(10),
+            ]);
+
+            $tenantContext->setTenant($tenant);
+        }
+
+        return $tenant;
+    }
+
+    /**
      * Work schedule and Privacy settings page.
      */
     public function index(Request $request, TenantContext $tenantContext): Response
     {
-        $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
-        if (! $tenant && $request->user()?->isSuperAdmin()) {
-            $tenant = Tenant::first();
-        }
+        $tenant = $this->resolveTenant($request, $tenantContext);
 
         return Inertia::render('WorkSchedule/Index', [
             'workSchedule' => $tenant?->work_schedule ?? [
@@ -39,10 +60,7 @@ class WorkScheduleController extends Controller
      */
     public function update(Request $request, TenantContext $tenantContext): RedirectResponse
     {
-        $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
-        if (! $tenant && $request->user()?->isSuperAdmin()) {
-            $tenant = Tenant::first();
-        }
+        $tenant = $this->resolveTenant($request, $tenantContext);
 
         if (! $tenant) {
             return back()->with('error', 'Kompaniya topilmadi.');

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Component, ErrorInfo, ReactNode, useState } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import {
     Share2,
@@ -9,6 +9,9 @@ import {
     RefreshCw,
     UserCheck,
     Download,
+    Users,
+    AlertCircle,
+    Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,31 +19,87 @@ import { AmoCrmLogo, MoySkladLogo } from '@/components/brand-logos';
 
 interface IntegrationsProps {
     amoCrm?: {
+        id?: number;
         is_active: boolean;
         subdomain: string;
         settings?: any;
-    };
+    } | null;
     moySklad?: {
+        id?: number;
         is_active: boolean;
         login: string;
         settings?: any;
-    };
-    operators: { id: number; name: string; phone_number?: string }[];
-    mappings: { id: number; tenant_integration_id: number; user_id: number; external_user_id: string; external_user_name?: string; user?: { name: string } }[];
-    recentLogs: { id: number; crm_type: string; call_id?: number; status: string; error_message?: string; created_at: string }[];
+    } | null;
+    operators?: { id: number; name: string; phone_number?: string }[];
+    mappings?: {
+        id: number;
+        tenant_integration_id: number;
+        user_id: number;
+        external_user_id: string;
+        external_user_name?: string;
+        user?: { name: string };
+    }[];
+    recentLogs?: {
+        id: number;
+        crm_type: string;
+        call_id?: number;
+        status: string;
+        error_message?: string;
+        created_at?: string;
+    }[];
     widgetDownloadUrl?: string;
     moySkladDescriptorUrl?: string;
 }
 
-export default function IntegrationsIndex({
-    amoCrm,
-    moySklad,
-    operators,
-    mappings,
-    recentLogs,
+// Error Boundary to prevent blank white screen on any client-side exception
+class IntegrationsErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; errorText: string }> {
+    constructor(props: { children: ReactNode }) {
+        super(props);
+        this.state = { hasError: false, errorText: '' };
+    }
+
+    static getDerivedStateFromError(error: Error) {
+        return { hasError: true, errorText: error?.message || 'Noma\'lum xatolik yuz berdi' };
+    }
+
+    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        console.error('Integrations error caught by boundary:', error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="p-8 max-w-4xl mx-auto my-12 bg-card border border-destructive/30 rounded-2xl text-center space-y-4 shadow-sm">
+                    <div className="w-12 h-12 mx-auto rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+                        <AlertCircle className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-lg font-bold">Sahifani yuklashda xatolik yuz berdi</h3>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                        {this.state.errorText}
+                    </p>
+                    <Button onClick={() => window.location.reload()} variant="outline" className="gap-2">
+                        <RefreshCw className="w-4 h-4" /> Sahifani qayta yuklash
+                    </Button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
+function IntegrationsContent({
+    amoCrm = null,
+    moySklad = null,
+    operators = [],
+    mappings = [],
+    recentLogs = [],
     widgetDownloadUrl = '/downloads/amocrm-widget.zip',
     moySkladDescriptorUrl = '/downloads/moysklad-app.xml',
 }: IntegrationsProps) {
+    const safeOperators = Array.isArray(operators) ? operators : [];
+    const safeMappings = Array.isArray(mappings) ? mappings : [];
+    const safeLogs = Array.isArray(recentLogs) ? recentLogs : [];
+
     // amoCRM Form
     const amoForm = useForm({
         subdomain: amoCrm?.subdomain || '',
@@ -56,6 +115,15 @@ export default function IntegrationsIndex({
         token: '',
     });
 
+    // User Mapping Form
+    const defaultIntegrationId = amoCrm?.id || moySklad?.id || '';
+    const mappingForm = useForm({
+        tenant_integration_id: defaultIntegrationId ? String(defaultIntegrationId) : '',
+        user_id: safeOperators[0]?.id ? String(safeOperators[0].id) : '',
+        external_user_id: '',
+        external_user_name: '',
+    });
+
     const submitAmo = (e: React.FormEvent) => {
         e.preventDefault();
         amoForm.post('/integrations/amocrm');
@@ -64,6 +132,26 @@ export default function IntegrationsIndex({
     const submitMoy = (e: React.FormEvent) => {
         e.preventDefault();
         moyForm.post('/integrations/moysklad');
+    };
+
+    const submitMapping = (e: React.FormEvent) => {
+        e.preventDefault();
+        mappingForm.post('/integrations/user-mapping', {
+            onSuccess: () => {
+                mappingForm.reset('external_user_id', 'external_user_name');
+            },
+        });
+    };
+
+    const formatLogTime = (dateStr?: string) => {
+        if (!dateStr) return '—';
+        try {
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return '—';
+            return d.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        } catch {
+            return String(dateStr);
+        }
     };
 
     return (
@@ -243,6 +331,111 @@ export default function IntegrationsIndex({
                 </div>
             </div>
 
+            {/* Operator Mapping Section */}
+            <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden space-y-4 p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border pb-4">
+                    <div>
+                        <h3 className="font-semibold text-base flex items-center gap-2">
+                            <Users className="h-4 w-4 text-primary" /> Operatorlar va CRM foydalanuvchilarini moslashtirish (Mapping)
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                            1Call operatorlarini amoCRM va MoySklad xodimlariga biriktiring, shunda qo'ng'iroqlar to'g'ri mas'ul xodimga birikadi.
+                        </p>
+                    </div>
+                </div>
+
+                <form onSubmit={submitMapping} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end bg-secondary/30 p-4 rounded-xl">
+                    <div className="space-y-1">
+                        <label className="text-xs font-semibold">Tizim:</label>
+                        <select
+                            value={mappingForm.data.tenant_integration_id}
+                            onChange={(e) => mappingForm.setData('tenant_integration_id', e.target.value)}
+                            className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs"
+                            required
+                        >
+                            <option value="">Tanlang...</option>
+                            {amoCrm?.id && <option value={String(amoCrm.id)}>amoCRM</option>}
+                            {moySklad?.id && <option value={String(moySklad.id)}>MoySklad</option>}
+                            {!amoCrm?.id && !moySklad?.id && <option value="" disabled>Avval CRM ni ulang</option>}
+                        </select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-semibold">1Call Operatori:</label>
+                        <select
+                            value={mappingForm.data.user_id}
+                            onChange={(e) => mappingForm.setData('user_id', e.target.value)}
+                            className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs"
+                            required
+                        >
+                            <option value="">Tanlang...</option>
+                            {safeOperators.map((op) => (
+                                <option key={op.id} value={String(op.id)}>
+                                    {op.name} {op.phone_number ? `(${op.phone_number})` : ''}
+                                </option>
+                            ))}
+                            {safeOperators.length === 0 && <option value="" disabled>Operatorlar mavjud emas</option>}
+                        </select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-semibold">CRM Foydalanuvchi ID:</label>
+                        <Input
+                            placeholder="1234567"
+                            value={mappingForm.data.external_user_id}
+                            onChange={(e) => mappingForm.setData('external_user_id', e.target.value)}
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-semibold">CRM Xodim Ismi (ixtiyoriy):</label>
+                        <Input
+                            placeholder="Ali Valiyev"
+                            value={mappingForm.data.external_user_name}
+                            onChange={(e) => mappingForm.setData('external_user_name', e.target.value)}
+                        />
+                    </div>
+
+                    <div>
+                        <Button type="submit" className="w-full h-9 gap-1.5" disabled={mappingForm.processing}>
+                            <Plus className="h-4 w-4" /> Biriktirish
+                        </Button>
+                    </div>
+                </form>
+
+                {safeMappings.length > 0 ? (
+                    <div className="border border-border rounded-xl overflow-hidden mt-4">
+                        <table className="w-full text-left text-xs">
+                            <thead className="bg-muted/50 border-b border-border text-muted-foreground uppercase font-medium">
+                                <tr>
+                                    <th className="py-2.5 px-4">1Call Operatori</th>
+                                    <th className="py-2.5 px-4">CRM Tizim</th>
+                                    <th className="py-2.5 px-4">CRM Foydalanuvchi ID</th>
+                                    <th className="py-2.5 px-4">CRM Xodim Ismi</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border">
+                                {safeMappings.map((m) => (
+                                    <tr key={m.id}>
+                                        <td className="py-2.5 px-4 font-semibold">{m.user?.name || `Operator #${m.user_id}`}</td>
+                                        <td className="py-2.5 px-4 uppercase font-mono">
+                                            {m.tenant_integration_id === amoCrm?.id ? 'amoCRM' : 'MoySklad'}
+                                        </td>
+                                        <td className="py-2.5 px-4 font-mono">{m.external_user_id}</td>
+                                        <td className="py-2.5 px-4 text-muted-foreground">{m.external_user_name || '—'}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <p className="text-xs text-muted-foreground py-2 text-center">
+                        Hozircha biriktirilgan operatorlar mavjud emas.
+                    </p>
+                )}
+            </div>
+
             {/* Sync Logs */}
             <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
                 <div className="p-5 border-b border-border flex items-center justify-between">
@@ -262,14 +455,14 @@ export default function IntegrationsIndex({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border text-xs">
-                        {recentLogs.length === 0 ? (
+                        {safeLogs.length === 0 ? (
                             <tr>
                                 <td colSpan={5} className="py-6 text-center text-muted-foreground">
                                     Hozircha hech qanday sinxronizatsiya logi mavjud emas.
                                 </td>
                             </tr>
                         ) : (
-                            recentLogs.map((log) => (
+                            safeLogs.map((log) => (
                                 <tr key={log.id}>
                                     <td className="py-3 px-4 font-semibold uppercase">{log.crm_type}</td>
                                     <td className="py-3 px-4 font-mono">#{log.call_id || '—'}</td>
@@ -281,7 +474,7 @@ export default function IntegrationsIndex({
                                         </span>
                                     </td>
                                     <td className="py-3 px-4 text-muted-foreground font-mono">{log.error_message || 'OK'}</td>
-                                    <td className="py-3 px-4 text-right text-muted-foreground">{new Date(log.created_at).toLocaleTimeString('uz-UZ')}</td>
+                                    <td className="py-3 px-4 text-right text-muted-foreground">{formatLogTime(log.created_at)}</td>
                                 </tr>
                             ))
                         )}
@@ -289,5 +482,13 @@ export default function IntegrationsIndex({
                 </table>
             </div>
         </div>
+    );
+}
+
+export default function IntegrationsIndex(props: IntegrationsProps) {
+    return (
+        <IntegrationsErrorBoundary>
+            <IntegrationsContent {...props} />
+        </IntegrationsErrorBoundary>
     );
 }

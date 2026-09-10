@@ -27,14 +27,35 @@ class IntegrationController extends Controller
     ) {}
 
     /**
+     * Resolve the active tenant or ensure default tenant exists for superadmin.
+     */
+    protected function resolveTenant(Request $request, TenantContext $tenantContext): ?Tenant
+    {
+        $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
+
+        if (! $tenant && $request->user()?->isSuperAdmin()) {
+            $tenant = Tenant::first() ?? Tenant::create([
+                'name' => '1Call Asosiy Kompaniya',
+                'slug' => '1call-main',
+                'allowed_devices_count' => 10,
+                'audio_retention_days' => 90,
+                'is_active' => true,
+                'trial_ends_at' => now()->addYears(10),
+                'subscription_expires_at' => now()->addYears(10),
+            ]);
+
+            $tenantContext->setTenant($tenant);
+        }
+
+        return $tenant;
+    }
+
+    /**
      * Integrations Dashboard.
      */
     public function index(Request $request, TenantContext $tenantContext): Response
     {
-        $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
-        if (! $tenant && $request->user()?->isSuperAdmin()) {
-            $tenant = Tenant::first();
-        }
+        $tenant = $this->resolveTenant($request, $tenantContext);
 
         $amoCrm = $tenant ? TenantIntegration::where('tenant_id', $tenant->id)->where('crm_type', 'amocrm')->first() : null;
         $moySklad = $tenant ? TenantIntegration::where('tenant_id', $tenant->id)->where('crm_type', 'moysklad')->first() : null;
@@ -46,14 +67,16 @@ class IntegrationController extends Controller
 
         return Inertia::render('Integrations/Index', [
             'amoCrm' => $amoCrm ? [
-                'is_active' => $amoCrm->is_active,
+                'id' => $amoCrm->id,
+                'is_active' => (bool) $amoCrm->is_active,
                 'subdomain' => $amoCrm->credentials['subdomain'] ?? '',
-                'settings' => $amoCrm->settings,
+                'settings' => $amoCrm->settings ?? [],
             ] : null,
             'moySklad' => $moySklad ? [
-                'is_active' => $moySklad->is_active,
+                'id' => $moySklad->id,
+                'is_active' => (bool) $moySklad->is_active,
                 'login' => $moySklad->credentials['login'] ?? '',
-                'settings' => $moySklad->settings,
+                'settings' => $moySklad->settings ?? [],
             ] : null,
             'operators' => $operators,
             'mappings' => $mappings,
@@ -68,10 +91,7 @@ class IntegrationController extends Controller
      */
     public function saveAmoCrm(Request $request, TenantContext $tenantContext): RedirectResponse
     {
-        $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
-        if (! $tenant && $request->user()?->isSuperAdmin()) {
-            $tenant = Tenant::first();
-        }
+        $tenant = $this->resolveTenant($request, $tenantContext);
 
         if (! $tenant) {
             return back()->with('error', 'Kompaniya topilmadi.');
@@ -140,10 +160,7 @@ class IntegrationController extends Controller
      */
     public function saveMoySklad(Request $request, TenantContext $tenantContext): RedirectResponse
     {
-        $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
-        if (! $tenant && $request->user()?->isSuperAdmin()) {
-            $tenant = Tenant::first();
-        }
+        $tenant = $this->resolveTenant($request, $tenantContext);
 
         if (! $tenant) {
             return back()->with('error', 'Kompaniya topilmadi.');
@@ -177,10 +194,7 @@ class IntegrationController extends Controller
      */
     public function saveUserMapping(Request $request, TenantContext $tenantContext): RedirectResponse
     {
-        $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
-        if (! $tenant && $request->user()?->isSuperAdmin()) {
-            $tenant = Tenant::first();
-        }
+        $tenant = $this->resolveTenant($request, $tenantContext);
 
         if (! $tenant) {
             return back()->with('error', 'Kompaniya topilmadi.');
