@@ -10,7 +10,7 @@
 | **Tenantni aniqlash (Web)** | A-Variant: Markazlashgan Login → `user.tenant_id` → sessiya |
 | **Tenantni aniqlash (Mobil)** | Sanctum Device Token → `device.tenant_id` |
 | **Izolyatsiya** | 2 bosqichli: Laravel Eloquent TenantScope + PostgreSQL RLS |
-| **Foydalanuvchi Rollari (RBAC)** | 3 darajali: `admin`, `supervisor`, `operator` (+ global `superadmin`) |
+| **Foydalanuvchi Rollari (RBAC)** | 3 ta aniq rol: `superadmin` (Platforma egasi), `admin` (Kompaniya rahbari), `operator` (Xodim) |
 | **DBMS** | PostgreSQL 16+ |
 | **Billing & To'lov Usullari** | 1) Click, 2) Payme (`goodoneuz/pay-uz`), 3) Karta orqali to'lov (P2P + Skrinshot yuklash & Superadmin tasdiqlashi) |
 | **To'lov Tizimlari Boshqaruvi** | Superadmin to'lov usullarini Active/Passive qila oladi va Karta raqamlarini kirita oladi (`payment_methods` jadvali) |
@@ -83,17 +83,16 @@ class TenantContext
 }
 ```
 
-### 1.2. 3 Darajali RBAC Ruxsatlar Matritsasi
-| Imkoniyat / Bo'lim | Superadmin (Platforma egasi) | Admin (Kompaniya rahbari) | Supervisor (Bo'lim boshlig'i) | Operator (Xodim) |
-|---|---|---|---|---|
-| **Barcha tenantlar va foydalanuvchilar (`/admin/users`)** | ✅ To'liq nazorat | ❌ Kirish taqiqlangan | ❌ Kirish taqiqlangan | ❌ Kirish taqiqlangan |
-| **Kompaniyalar obunasini qo'lda uzaytirish/boshqarish** | ✅ Ha | ❌ Faqat o'zinikini to'laydi | ❌ Yo'q | ❌ Yo'q |
-| **Barcha qo'ng'iroqlarni ko'rish va eshitish** | ✅ Barcha xodimlar | ✅ Faqat o'z bo'limi operatorlari | ❌ Faqat o'zining qo'ng'iroqlari |
-| **Audio yozuvlarni yuklab olish (Download)** | ✅ Ruxsat berilgan | ❌ Faqat eshitish (Stream) | ❌ Yuklab ololmaydi |
-| **Qurilmalar va QR-kod ulash** | ✅ Ha | ⚠️ Faqat o'z xodimlariga | ❌ Yo'q |
-| **Billing va To'lovlar (Click/Payme)** | ✅ To'liq kirish | ❌ Kirish taqiqlangan | ❌ Kirish taqiqlangan |
-| **CRM/ERP sozlamalari** | ✅ Sozlay oladi | ❌ Faqat holatni ko'radi | ❌ Kirish taqiqlangan |
-| **Ish grafigi va maxfiylik sozlamalari** | ✅ Ha | ❌ Yo'q | ❌ Yo'q |
+### 1.2. 3 Ta Asosiy Rol (Superadmin, Admin, Operator) Ruxsatlar Matritsasi
+| Imkoniyat / Bo'lim | Superadmin (Platforma egasi) | Admin (Kompaniya rahbari) | Operator (Xodim) |
+|---|---|---|---|
+| **Barcha tenantlar va tizim sozlamalari (`/admin/*`)** | ✅ To'liq nazorat | ❌ Kirish taqiqlangan | ❌ Kirish taqiqlangan |
+| **To'lovlar, Tariflar va Karta sozlamalari** | ✅ Tasdiqlaydi / Narx belgilaydi | ✅ Obuna sotib oladi / To'laydi | ❌ Kirish taqiqlangan |
+| **Kompaniyaning barcha qo'ng'iroqlarini ko'rish va eshitish** | ✅ Barcha kompaniyalarni | ✅ O'z kompaniyasining barcha qo'ng'iroqlarini | ❌ Faqat o'zining qo'ng'iroqlarini |
+| **Audio yozuvlarni yuklab olish (Download)** | ✅ Ha | ✅ Ha | ❌ Faqat eshitish (yuklab ololmaydi) |
+| **Qurilmalar qo'shish va QR-kod chiqarish** | ✅ Ha | ✅ Ha | ❌ Yo'q |
+| **CRM/ERP integratsiyalari sozlash (amoCRM, MoySklad)** | ✅ Ha | ✅ Ha | ❌ Kirish taqiqlangan |
+| **Ish grafigi va maxfiylik sozlamalari** | ✅ Ha | ✅ Ha | ❌ Kirish taqiqlangan |
 
 ### 1.3. Superadmin Ichki Boshqaruv Sahifasi (`/admin/users` va `/admin/tenants`)
 Alohida og'ir paketlar (masalan Filament) o'rnatilmaydi. Mavjud Inertia.js + React stekida faqat `role === 'superadmin'` foydalanuvchilari uchun yengil boshqaruv sahifalari yaratiladi:
@@ -154,13 +153,11 @@ CREATE TABLE tenants (
 ```sql
 ALTER TABLE users
     ADD COLUMN tenant_id BIGINT REFERENCES tenants(id) ON DELETE CASCADE,
-    ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'operator', -- admin, supervisor, operator, superadmin
-    ADD COLUMN supervisor_id BIGINT NULL REFERENCES users(id) ON DELETE SET NULL, -- Operator kimga bo'ysunadi
+    ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'operator', -- superadmin, admin, operator
     ADD COLUMN phone_number VARCHAR(50) NULL,
     ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE;
 
 CREATE INDEX idx_users_tenant ON users(tenant_id);
-CREATE INDEX idx_users_supervisor ON users(supervisor_id);
 
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 CREATE POLICY users_tenant_isolation ON users
@@ -572,7 +569,7 @@ agent.1call.uz/
 │   │   ├── SetTenantContext.php
 │   │   ├── SuperadminBypassTenant.php
 │   │   ├── CheckTenantSubscription.php       # Grace period & Expiry tekshiruvi
-│   │   └── RoleMiddleware.php                # Admin / Supervisor / Operator RBAC
+│   │   └── RoleMiddleware.php                # Superadmin / Admin / Operator RBAC
 │   ├── Models/
 │   │   ├── Tenant.php
 │   │   ├── User.php
@@ -615,11 +612,11 @@ agent.1call.uz/
 - [ ] **1.0.** PostgreSQL o'rnatish va `.env` da `DB_CONNECTION=pgsql` ga o'tish.
 - [ ] **1.1.** Paketlarni o'rnatish: `laravel/sanctum`, `goodoneuz/pay-uz`.
 - [ ] **1.2.** `tenants` jadvali migratsiyasi (`allowed_devices_count`, `subscription_expires_at`, `grace_period_ends_at`, `work_schedule`, `privacy_blacklist`).
-- [ ] **1.3.** `users` jadvaliga `tenant_id`, 3 darajali `role` (`admin`, `supervisor`, `operator`), `supervisor_id` ustunlarini qo'shish.
+- [ ] **1.3.** `users` jadvaliga `tenant_id`, `role` (`superadmin`, `admin`, `operator`) ustunlarini qo'shish.
 - [ ] **1.4.** Baza migratsiyalari: `tariffs`, `tariff_discounts` (boshlang'ich qiymatlar bilan seed), `devices`, `calls`, `subscriptions` (chegirmalar ustunlari bilan), `invoices`, `tenant_integrations`, `integration_user_mappings`, `integration_sync_logs` va `pay-uz`.
 - [ ] **1.5.** Barcha tenant-jadvallarga PostgreSQL RLS siyosatlarini qo'llash.
 - [ ] **1.6.** `TenantContext` singleton va `SetTenantContext` middleware.
-- [ ] **1.7.** `RoleMiddleware` (Admin, Supervisor, Operator ruxsatlarini ajratish).
+- [ ] **1.7.** `RoleMiddleware` (Superadmin, Admin, Operator ruxsatlarini ajratish).
 - [ ] **1.8.** `SuperadminBypassTenant` middleware.
 - [ ] **1.9.** `POST /api/v1/devices/pair` APIsi (`allowed_devices_count` kvotasi tekshiruvi bilan).
 - [ ] **1.10.** Telemetriya qabul qilish APIsi: `POST /api/v1/telemetry/calls`.
@@ -648,7 +645,7 @@ agent.1call.uz/
 ---
 
 ### **Phase 4: Tenant Dashboard, RBAC & Audio Player (Inertia.js + React)**
-- [ ] **4.1.** `TenantLayout` va rollar bo'yicha navigatsiya (Supervisor faqat o'z jamoasini ko'radi).
+- [ ] **4.1.** `TenantLayout` va rollar bo'yicha navigatsiya (Admin barcha bo'limlarga, Operator faqat o'z qo'ng'iroqlariga kiradi).
 - [ ] **4.2.** Grace Period ogohlantirish banneri.
 - [ ] **4.3.** Qo'ng'iroqlar jurnali: Filtrlar, KPI kartalari, qoldirilgan qo'ng'iroqlar belgisi.
 - [ ] **4.4.** `WaveformPlayer.tsx` — Audio to'lqin vizualizatsiyasi (wavesurfer.js), xavfsiz streaming (Signed URL, yuklab olishni taqiqlash).
