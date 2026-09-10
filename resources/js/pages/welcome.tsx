@@ -26,6 +26,8 @@ import {
     ClickLogo,
     PaymeLogo,
     LemonSqueezyLogo,
+    UzcardLogo,
+    HumoLogo,
     GoogleGLogo,
 } from '@/components/brand-logos';
 import { Button } from '@/components/ui/button';
@@ -240,31 +242,31 @@ export default function Welcome() {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-6 sm:gap-8 items-center justify-center">
-                        <div className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 flex items-center justify-center shadow-xs hover:border-blue-500/50 transition-colors">
-                            <AmoCrmLogo className="h-9" />
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 sm:gap-6 items-center justify-center">
+                        <div className="h-20 px-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 flex items-center justify-center shadow-xs hover:border-blue-500/50 hover:scale-105 transition-all">
+                            <AmoCrmLogo className="h-8" />
                         </div>
-                        <div className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 flex items-center justify-center shadow-xs hover:border-orange-500/50 transition-colors">
-                            <MoySkladLogo className="h-9" />
+                        <div className="h-20 px-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 flex items-center justify-center shadow-xs hover:border-orange-500/50 hover:scale-105 transition-all">
+                            <MoySkladLogo className="h-8" />
                         </div>
-                        <div className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 flex items-center justify-center shadow-xs hover:border-blue-400/50 transition-colors">
-                            <ClickLogo className="h-9" />
+                        <div className="h-20 px-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 flex items-center justify-center shadow-xs hover:border-blue-400/50 hover:scale-105 transition-all">
+                            <ClickLogo className="h-8" />
                         </div>
-                        <div className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 flex items-center justify-center shadow-xs hover:border-teal-400/50 transition-colors">
-                            <PaymeLogo className="h-9" />
+                        <div className="h-20 px-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 flex items-center justify-center shadow-xs hover:border-teal-400/50 hover:scale-105 transition-all">
+                            <PaymeLogo className="h-8" />
                         </div>
-                        <div className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 flex items-center justify-center shadow-xs hover:border-yellow-400/50 transition-colors col-span-2 md:col-span-1">
-                            <LemonSqueezyLogo className="h-9" />
+                        <div className="h-20 px-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 flex items-center justify-center shadow-xs hover:border-yellow-400/50 hover:scale-105 transition-all col-span-2 md:col-span-1">
+                            <LemonSqueezyLogo className="h-8" />
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-center gap-6 pt-4 text-xs font-semibold text-slate-500">
-                        <span>O‘zbekiston va Xalqaro to‘lovlar:</span>
-                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-md">HUMO</span>
-                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-md">UZCARD</span>
-                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-md">VISA</span>
-                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-md">MASTERCARD</span>
-                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-md">P2P Bank Karta</span>
+                    <div className="flex flex-wrap items-center justify-center gap-4 pt-4 text-xs font-semibold text-slate-500">
+                        <span className="mr-2">O‘zbekiston va Xalqaro to‘lovlar:</span>
+                        <UzcardLogo />
+                        <HumoLogo />
+                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md font-bold">VISA</span>
+                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md font-bold">MASTERCARD</span>
+                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md">P2P Bank Karta</span>
                     </div>
                 </div>
             </section>
