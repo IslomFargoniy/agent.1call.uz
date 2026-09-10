@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Billing\BillingWebController;
 use App\Http\Controllers\Billing\LemonSqueezyController;
 use App\Http\Controllers\Billing\LocalPaymentController;
@@ -12,6 +13,10 @@ use App\Http\Controllers\Superadmin\SuperadminController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
+
+// Google OAuth2 Authentication
+Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 
 // 1. Payment Webhooks (CSRF-exempt)
 Route::prefix('payment')->group(function () {

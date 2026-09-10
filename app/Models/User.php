@@ -22,11 +22,13 @@ use Laravel\Sanctum\HasApiTokens;
  * @property int|null $tenant_id
  * @property string $name
  * @property string $email
+ * @property string|null $google_id
+ * @property string|null $avatar
  * @property string $role
  * @property string|null $phone_number
  * @property bool $is_active
  * @property Carbon|null $email_verified_at
- * @property string $password
+ * @property string|null $password
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -35,7 +37,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property Carbon|null $updated_at
  * @property-read Tenant|null $tenant
  */
-#[Fillable(['tenant_id', 'name', 'email', 'password', 'role', 'phone_number', 'is_active'])]
+#[Fillable(['tenant_id', 'name', 'email', 'google_id', 'avatar', 'password', 'role', 'phone_number', 'is_active'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
