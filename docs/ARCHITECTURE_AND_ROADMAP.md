@@ -890,7 +890,6 @@ Loyihada amoCRM va MoySklad integratsiyalari `panel.1call.uz` repozitoriyasida m
    - `responsible_user_id`: Operatorning telefoni `operator_mapping` orqali amoCRM menejeriga moslanadi.
    - **Xavfsiz Audio Havolasi:** HMAC SHA-256 xeshi bilan imzolangan havola uzatiladi:
      `url("/api/amocrm/play/{call_id}?token={hmac_token}")`.
-   - Qo'ng'iroq bahosi (agar mavjud bo'lsa): `"Mijoz bahosi: ⭐⭐⭐⭐⭐ (5/5)"`.
 5. **Javobsiz Qo'ng'iroq uchun Avto-Vazifa (`POST /api/v4/tasks`):**
    - Agar qo'ng'iroq javobsiz qolsa va `create_task_on_missed` yoqilgan bo'lsa, mas'ul xodimga 2 soat muddat bilan "Qayta qo'ng'iroq qiling" vazifasi qo'yiladi.
 6. **amoCRM Vidjeti (`amocrm-widget`):**
