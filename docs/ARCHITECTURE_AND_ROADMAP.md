@@ -12,7 +12,8 @@
 | **Izolyatsiya** | 2 bosqichli: Laravel Eloquent TenantScope + PostgreSQL RLS |
 | **Foydalanuvchi Rollari (RBAC)** | 3 darajali: `admin`, `supervisor`, `operator` (+ global `superadmin`) |
 | **DBMS** | PostgreSQL 16+ |
-| **Billing & To'lovlar** | Click va Payme (`composer require goodoneuz/pay-uz`) |
+| **Billing & To'lov Usullari** | 1) Click, 2) Payme (`goodoneuz/pay-uz`), 3) Karta orqali to'lov (P2P + Skrinshot yuklash & Superadmin tasdiqlashi) |
+| **To'lov Tizimlari Boshqaruvi** | Superadmin to'lov usullarini Active/Passive qila oladi va Karta raqamlarini kirita oladi (`payment_methods` jadvali) |
 | **Tarif Modeli** | Bazada boshqariluvchi (`tariffs`, `tariff_discounts`): Har bir telefon uchun (Dual-SIM = 1 telefon) |
 | **Chegirmalar Modeli** | Oylar kesimida (3/6/12 oy) VA Qurilmalar soni kesimida (5+, 10+, 20+ telefon) chegirma foizlari |
 | **Billing Dinamikasi** | Yangi telefonlar uchun **Pro-rata (Co-terming)** + **3 kunlik Grace Period** |
@@ -22,7 +23,7 @@
 | **CRM/ERP Integratsiyalari** | amoCRM, Bitrix24, MoySklad, BitoERP (Driver Pattern) |
 | **Server va Joylashtirish** | Linux VPS (Ubuntu 24.04, Nginx, PHP 8.3, PostgreSQL 16, Redis) |
 | **Audio Saqlash** | VPS Private Storage (`storage/app/private/recordings/`) + HTTP Range streaming |
-| **Superadmin Paneli** | Ichki Inertia.js/React boshqaruvi (`/admin/users`, `/admin/tenants`, `/admin/tariffs`) |
+| **Superadmin Paneli** | Ichki Inertia.js/React boshqaruvi (`/admin/users`, `/admin/tenants`, `/admin/tariffs`, `/admin/payment-methods`, `/admin/invoices`) |
 
 ---
 
@@ -106,6 +107,12 @@ Alohida og'ir paketlar (masalan Filament) o'rnatilmaydi. Mavjud Inertia.js + Rea
    - Asosiy tariflar va baza narxini belgilash (1 ta telefon uchun oylik narx).
    - **Oylar kesimidagi chegirmalar:** 3, 6, 12 oylik chegirma foizlarini qo'shish/tahrirlash.
    - **Qurilmalar soni kesimidagi chegirmalar:** Qanchadir miqdordan ortiq telefonlar uchun hajm chegirmalarini (masalan, 5+, 10+, 20+ telefon) belgilash.
+4. **`/admin/payment-methods` (To'lov Tizimlari Sozlamalari):**
+   - Click, Payme va Karta to'lov usullarini **Active / Passive** (yoqish/o'chirish) boshqaruvi.
+   - Karta to'lovi uchun Karta raqami (masalan: `8600 1234 5678 9012`), Karta egasi ismi va bank nomini kiritish/yangilash.
+5. **`/admin/invoices` (To'lovlarni Tasdiqlash Navbati):**
+   - Karta orqali qilingan to'lovlar skrinshotlarini kattalashtirib ko'rish.
+   - Bitta tugma bilan **"Tasdiqlash" (Approve)** → tenant obunasini avtomatik uzaytirish yoki **"Rad etish" (Reject)**.
    - RLS bu sahifalarda `SuperadminBypassTenant` middleware orqali avtomatik chetlab o'tiladi.
 
 ---
@@ -304,7 +311,24 @@ CREATE POLICY subscriptions_tenant_isolation ON subscriptions
     WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint);
 ```
 
-### 2.8. `invoices` (Hisob-fakturalar va To'lovlar)
+### 2.8. `payment_methods` (To'lov Tizimlari va Karta Sozlamalari)
+> [!NOTE]
+> Global konfiguratsiya jadvali (RLS talab etilmaydi). Superadmin qaysi to'lov usullari faol bo'lishini va karta rekvizitlarini boshqaradi.
+```sql
+CREATE TABLE payment_methods (
+    id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,            -- 'click', 'payme', 'card_transfer'
+    name VARCHAR(100) NOT NULL,                  -- 'Click', 'Payme', 'Karta orqali to''lov (P2P)'
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,     -- Active / Passive holati
+    settings JSONB NULL DEFAULT '{}',            -- Karta uchun: {"card_number": "8600 1234 5678 9012", "card_holder": "Islombek F.", "bank_name": "Kapitalbank"}
+    instructions TEXT NULL,                      -- To'lov ko'rsatmalari (mijozga ko'rsatiladigan matn)
+    sort_order SMALLINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NULL,
+    updated_at TIMESTAMPTZ NULL
+);
+```
+
+### 2.9. `invoices` (Hisob-fakturalar, Skrinshotlar va To'lovlar)
 ```sql
 CREATE TABLE invoices (
     id BIGSERIAL PRIMARY KEY,
@@ -314,15 +338,20 @@ CREATE TABLE invoices (
     invoice_number VARCHAR(50) UNIQUE NOT NULL,    -- Masalan: INV-202609-00042
     amount NUMERIC(14, 2) NOT NULL,
     currency VARCHAR(3) NOT NULL DEFAULT 'UZS',
-    payment_system VARCHAR(30) NULL,              -- 'click', 'payme'
+    payment_method VARCHAR(30) NOT NULL,          -- 'click', 'payme', 'card_transfer'
     transaction_id VARCHAR(100) NULL,             -- Provider / pay_uz tranzaksiya ID si
-    status VARCHAR(30) NOT NULL DEFAULT 'pending', -- pending, paid, cancelled, failed
+    receipt_image_path VARCHAR(500) NULL,         -- Karta to'lovida yuklangan skrinshot fayl yo'li
+    status VARCHAR(30) NOT NULL DEFAULT 'pending', -- 'pending', 'reviewing' (skrinshot tekshiruvda), 'paid', 'rejected', 'cancelled'
+    rejection_reason TEXT NULL,                   -- Rad etilgan bo'lsa sababi
+    approved_by BIGINT NULL REFERENCES users(id), -- Tasdiqlagan superadmin ID si
+    approved_at TIMESTAMPTZ NULL,
     paid_at TIMESTAMPTZ NULL,
     meta JSONB NULL,
     created_at TIMESTAMPTZ NULL,
     updated_at TIMESTAMPTZ NULL
 );
 CREATE INDEX idx_invoices_tenant ON invoices(tenant_id, status);
+CREATE INDEX idx_invoices_status ON invoices(status);
 
 ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
 CREATE POLICY invoices_tenant_isolation ON invoices
@@ -362,7 +391,46 @@ To'lov summasi bazadagi `tariffs` va `tariff_discounts` jadvallari qoidalariga a
 | **10 ta** | 12 oy | 6 000 000 UZS | 20% | 10% | **30%** | **4 200 000 UZS** | 1 800 000 UZS |
 | **25 ta** | 12 oy | 15 000 000 UZS | 20% | 15% | **35%** | **9 750 000 UZS** | 5 250 000 UZS |
 
-### 3.2. Pro-rata (Co-terming) Yangi Telefon Qo'shish Kalkulyatori
+### 3.2. To'lov Usullari va Karta Orqali To'lov (P2P + Skrinshot) Oqimi
+
+Tizimda 3 xil to'lov usuli mavjud:
+1. **Click** (Avtomatik merchant to'lovi via `goodoneuz/pay-uz`)
+2. **Payme** (Avtomatik merchant to'lovi via `goodoneuz/pay-uz`)
+3. **Karta orqali to'lov (P2P o'tkazma):**
+   - Mijoz tarifni tanlaganda ekranda Superadmin kiritgan faol karta raqami ko'rsatiladi (masalan: `8600 1234 5678 9012`, Islombek F., Kapitalbank).
+   - Mijoz to'lovni amalga oshirib, chek skrinshotini (PNG/JPG) tizimga yuklaydi.
+   - Invoys statusi `reviewing` (Tekshiruvda) holatiga o'tadi.
+   - Superadminga Telegram orqali darhol xabarnoma boradi: *"🔔 Yangi to'lov skrinshoti! Tenant: 'Artel', Summa: 1 275 000 UZS"*.
+   - Superadmin `/admin/invoices` sahifasida skrinshotni tekshirib, **"Tasdiqlash" (Approve)** tugmasini bosadi.
+   - Tasdiqlanishi bilan obuna avtomatik uzaytiriladi va tenantga Telegramda xabar boradi.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as Tenant Admin
+    participant Web as Web Dashboard
+    participant Backend as Laravel Backend
+    actor Super as Superadmin
+    participant TG as Telegram Bot
+    participant DB as PostgreSQL DB
+
+    Client->>Web: Tarif (5 ta telefon, 6 oy) va "Karta orqali to'lash"ni tanlaydi
+    Web->>Client: Superadmin kartasi (8600...) va to'lov summasi ko'rsatiladi
+    Client->>Client: Bank ilovasidan (Click/Payme/Uzum) kartaga pul o'tkazadi
+    Client->>Web: To'lov skrinshotini yuklaydi (PNG/JPG)
+    Web->>Backend: POST /billing/upload-receipt {invoice_id, image}
+    Backend->>DB: Invoices status = 'reviewing', receipt_image_path saqlanadi
+    Backend->>TG: Superadminga xabar: "🔔 Yangi to'lov skrinshoti keldi! Summa: 1 275 000 UZS"
+    Web-->>Client: "To'lovingiz qabul qilindi. Superadmin tasdiqlashi kutilmoqda..."
+    Super->>Web: /admin/invoices sahifasiga kiradi, skrinshotni tekshiradi
+    Super->>Web: "Tasdiqlash (Approve)" tugmasini bosadi
+    Web->>Backend: POST /admin/invoices/{id}/approve
+    Backend->>DB: Invoices status = 'paid', Subscriptions status = 'active'
+    Backend->>DB: Tenant: allowed_devices_count va subscription_expires_at yangilanadi
+    Backend->>TG: Tenantga xabar: "✅ To'lovingiz tasdiqlandi! Obuna faollashdi."
+```
+
+### 3.3. Pro-rata (Co-terming) Yangi Telefon Qo'shish Kalkulyatori
 Mijozda joriy obuna davom etayotgan bo'lsa va qo'shimcha yangi telefonlar ulamoqchi bo'lsa, ularning muddati alohida hisoblanmaydi, balki **mavjud obunaning tugash sanasiga moslanadi**:
 
 $$\text{Qolgan Kunlar} = \text{tenant.subscription\_expires\_at} - \text{NOW()}$$
@@ -371,7 +439,7 @@ $$\text{Pro-rata To'lov} = \text{Yangi Telefonlar Soni} \times \text{Kunlik Narx
 
 *Natija:* Barcha telefonlarning tugash sanasi yagona bo'ladi, hisob-kitobda chalkashlik bo'lmaydi.
 
-### 3.3. 3 Kunlik "Grace Period" (Imtiyozli Davr) Siyosati
+### 3.4. 3 Kunlik "Grace Period" (Imtiyozli Davr) Siyosati
 - Obuna muddati tugagach (`subscription_expires_at < now()`), xizmat darhol o'chirilmaydi.
 - Avtomatik `grace_period_ends_at = subscription_expires_at + INTERVAL '3 days'` faollashadi:
   - **Ilova va qo'ng'iroqlar:** 3 kun davomida odatdagidek yoziladi va serverga qabul qilinadi.
@@ -470,6 +538,7 @@ agent.1call.uz/
 │   │   ├── Call.php
 │   │   ├── Tariff.php                       # Asosiy tarif modeli
 │   │   ├── TariffDiscount.php               # Oylar va qurilmalar hajm chegirmalari
+│   │   ├── PaymentMethod.php                # To'lov usuli modeli (Click, Payme, Karta)
 │   │   ├── Subscription.php
 │   │   ├── Invoice.php
 │   │   └── TenantIntegration.php
@@ -485,7 +554,9 @@ agent.1call.uz/
 │   ├── Admin/
 │   │   ├── Users/Index.tsx                      # Superadmin Users sahifasi
 │   │   ├── Tenants/Index.tsx                    # Superadmin Tenants sahifasi
-│   │   └── Tariffs/Index.tsx                    # Tariflar va oylar/hajm chegirmalari boshqaruvi
+│   │   ├── Tariffs/Index.tsx                    # Tariflar va oylar/hajm chegirmalari boshqaruvi
+│   │   ├── PaymentMethods/Index.tsx             # To'lov tizimlarini active/passive qilish & karta raqami
+│   │   └── Invoices/Index.tsx                   # Skrinshotlarni ko'rish va tasdiqlash (Approve/Reject)
 │   ├── Billing/{Index, Invoices}.tsx
 │   ├── Settings/{WorkSchedule, Privacy}.tsx
 │   └── Integrations/{Index, AmoCrmConfig, UserMapping}.tsx
@@ -597,9 +668,12 @@ Loyihada amoCRM va MoySklad integratsiyalari `panel.1call.uz` repozitoriyasida m
    - `findContactByPhone()` funksiyasi bitta raqam uchun 5 xil format variatsiyasini (toza raqam, 998 bilan, oraliq bo'shliqlar bilan) hosil qiladi va `GET /api/v4/contacts?query=...` orqali qidiradi (100ms interval bilan so'rovlar limiti saqlanadi).
 3. **Avtomatik Kontakt va Lid (Bitim) Yaratish Qoidalari:**
    - Sozlamalarda 3 xil holat uchun alohida harakat belgilanadi:
-     * `incoming_action` (kiruvchi qo'ng'iroq) $ightarrow$ `contact`, `lead`, yoki `nothing`.
-     * `outgoing_action` (chiquvchi qo'ng'iroq) $ightarrow$ `contact`, `lead`, yoki `nothing`.
-     * `missed_action` (javobsiz qo'ng'iroq) $ightarrow$ `contact`, `lead`, yoki `nothing`.
+     * `incoming_action` (kiruvchi qo'ng'iroq) $
+ightarrow$ `contact`, `lead`, yoki `nothing`.
+     * `outgoing_action` (chiquvchi qo'ng'iroq) $
+ightarrow$ `contact`, `lead`, yoki `nothing`.
+     * `missed_action` (javobsiz qo'ng'iroq) $
+ightarrow$ `contact`, `lead`, yoki `nothing`.
    - Agar kontakt topilmasa, `createContact()` chaqiriladi.
    - Agar amal `lead` bo'lsa, `createLead()` orqali belgilangan `pipeline_id` voronkasiga yangi bitim ochiladi.
 4. **Qo'ng'iroqni amoCRM ga Yozish (`POST /api/v4/calls`):**
