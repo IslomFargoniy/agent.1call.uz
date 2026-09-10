@@ -1,29 +1,33 @@
 # Multi-Tenant SaaS "agent.1call.uz" — Texnik Arxitektura va Implementatsiya Rejasi
-**(Single Database + Centralized Auth + PostgreSQL RLS + Click/Payme/LemonSqueezy Billing + Telegram Bot + CRM/ERP)**
+**(Single Database + Centralized Auth + PostgreSQL RLS + Laravel 13 + Reverb WebSockets + Click/Payme/LemonSqueezy Billing + Telegram Bot + CRM/ERP)**
 
 ---
 
 ## Arxitektura Xulosasi
 | Qaror | Tanlangan Variant |
 |-------|-------------------|
+| **Texnologik Stack** | **Laravel 13** (`laravel/framework: ^13.17`), PHP 8.3+, Inertia.js v3 (`^3.0`), React 19, TailwindCSS, Pest 4 (`^4.7`) |
+| **Real-Time WebSockets** | **Laravel Reverb:** Jonli qo'ng'iroq monitoringi (Live call board), instant ringing popupi va live ro'yxat yangilanishi |
 | **Multi-Tenancy modeli** | Single Database with Row-Level / Tenant Scoping (`tenant_id`) |
 | **Tenantni aniqlash (Web)** | A-Variant: Markazlashgan Login → `user.tenant_id` → sessiya |
 | **Tenantni aniqlash (Mobil)** | Sanctum Device Token → `device.tenant_id` |
 | **Izolyatsiya** | 2 bosqichli: Laravel Eloquent TenantScope + PostgreSQL RLS |
 | **Foydalanuvchi Rollari (RBAC)** | 3 ta aniq rol: `superadmin` (Platforma egasi), `admin` (Kompaniya rahbari), `operator` (Xodim) |
-| **DBMS** | PostgreSQL 16+ |
-| **Billing & To'lov Usullari** | 1) Click, 2) Payme (`goodoneuz/pay-uz`), 3) Karta orqali to'lov (P2P + Skrinshot), 4) **Lemon Squeezy** (Xalqaro Visa/Mastercard/Apple Pay/USD — `1call.uz` tajribasi asosida) |
-| **To'lov Tizimlari Boshqaruvi** | Superadmin to'lov usullarini Active/Passive qila oladi, Karta raqamlarini hamda Lemon Squeezy API kalitlari va Webhook Secret'ni boshqaradi (`payment_methods` jadvali) |
+| **DBMS & Masshtab** | **PostgreSQL 16+ (Range Partitioning):** `calls` jadvali oylar kesimida bo'linadi (`PARTITION BY RANGE (call_timestamp)`) |
+| **Billing & To'lov Usullari** | 1) Click (UZS), 2) Payme (UZS), 3) Karta (P2P + Skrinshot), 4) **Lemon Squeezy** (To'g'ridan-to'g'ri USD tariflari/variantlari, `1call.uz` asosida) |
+| **Bepul Sinov Davri (Trial)** | Yangi ro'yxatdan o'tgan kompaniyalar uchun **14 kunlik bepul sinov (Free Trial)** (3 ta qurilmagacha) |
 | **Tarif Modeli** | Bazada boshqariluvchi (`tariffs`, `tariff_discounts`): Har bir telefon uchun (Dual-SIM = 1 telefon) |
 | **Chegirmalar Modeli** | Oylar kesimida (3/6/12 oy) VA Qurilmalar soni kesimida (5+, 10+, 20+ telefon) chegirma foizlari |
 | **Billing Dinamikasi** | Yangi telefonlar uchun **Pro-rata (Co-terming)** + **3 kunlik Grace Period** |
-| **Android Audio Capture** | **AccessibilityService** + MediaRecorder AudioSource fallback (Android 10+ qo'llab-quvvatlash) |
+| **Android Audio Capture** | **AccessibilityService** + MediaRecorder fallback (Android 10 - 15) |
+| **Audio Format & Siqish** | **AAC / Opus (16kHz, 24 kbps Mono, `.m4a`)** — 1 daqiqa suhbat atigi ~200 KB (xotira va internet tejaladi) |
+| **Android Barqarorlik** | **BootCompletedReceiver** (`ACTION_BOOT_COMPLETED`) + Accessibility Watchdog/Heartbeat + Instant Ringing Webhook |
+| **Dual-SIM Tanlash** | Operator ilovada **Faqat Korporativ SIM** ni tanlashi mumkin (`selected_sim_slot`), shaxsiy SIM qo'ng'iroqlari yozilmaydi |
 | **Maxfiylik (Privacy)** | **Ish vaqti rejimi (Work Schedule)** va shaxsiy raqamlar filtri (Blacklist) |
 | **Tezkor Bildirishnomalar** | **Telegram Bot:** Qoldirilgan qo'ng'iroqlar, kunlik hisobotlar va to'lov eslatmalari |
 | **CRM/ERP Integratsiyalari** | amoCRM, Bitrix24, MoySklad, BitoERP (Driver Pattern) |
-| **Server va Joylashtirish** | Linux VPS (Ubuntu 24.04, Nginx, PHP 8.3, PostgreSQL 16, Redis) |
-| **Audio Saqlash & Arxiv** | Sukut bo'yicha **30 kun** saqlanadi. Uzoqroq saqlash (60, 90, 180, 365 kun) uchun alohida narx belgilash imkoniyati |
-| **Audio Xotirasi** | VPS Private Storage (`storage/app/private/recordings/`) + HTTP Range streaming |
+| **Audio Saqlash & Xotira** | **Storage Abstraction:** VPS Private Storage (`storage/app/private/recordings/`) yoki Cloudflare R2 / AWS S3 (`RECORDINGS_STORAGE_DISK=local|r2|s3`) |
+| **Audio Arxiv Muddati** | Sukut bo'yicha **30 kun** saqlanadi. Uzoqroq saqlash (60, 90, 180, 365 kun) uchun alohida narx belgilash imkoniyati |
 | **Superadmin Paneli** | Ichki Inertia.js/React boshqaruvi (`/admin/users`, `/admin/tenants`, `/admin/tariffs`, `/admin/payment-methods`, `/admin/invoices`) |
 
 ---
@@ -111,7 +115,7 @@ Alohida og'ir paketlar (masalan Filament) o'rnatilmaydi. Mavjud Inertia.js + Rea
 4. **`/admin/payment-methods` (To'lov Tizimlari Sozlamalari):**
    - Click, Payme, Karta hamda **Lemon Squeezy** to'lov usullarini **Active / Passive** (yoqish/o'chirish) boshqaruvi.
    - Karta to'lovi uchun Karta raqami (masalan: `8600 1234 5678 9012`), Karta egasi ismi va bank nomini kiritish/yangilash.
-   - **Lemon Squeezy sozlamalari:** Store ID, API Key, Webhook Secret, Store Slug va USD valyuta kursini belgilash/yangilash.
+   - **Lemon Squeezy sozlamalari:** Store ID, API Key, Webhook Secret, Store Slug hamda oylik/yillik USD variantlarini belgilash/yangilash.
 5. **`/admin/invoices` (To'lovlarni Tasdiqlash Navbati):**
    - Karta orqali qilingan to'lovlar skrinshotlarini kattalashtirib ko'rish.
    - Bitta tugma bilan **"Tasdiqlash" (Approve)** → tenant obunasini avtomatik uzaytirish yoki **"Rad etish" (Reject)**.
@@ -183,7 +187,8 @@ CREATE TABLE devices (
     os_version VARCHAR(50) NULL,
     app_version VARCHAR(50) NULL,
     sim_slots_info JSONB NULL DEFAULT '[]',
-    accessibility_service_enabled BOOLEAN NOT NULL DEFAULT FALSE, -- Ovoz yozish xizmati holati
+    selected_sim_slot SMALLINT NULL DEFAULT NULL, -- NULL = barcha SIMlar, 1 = faqat SIM-1 (Korporativ), 2 = faqat SIM-2
+    accessibility_service_enabled BOOLEAN NOT NULL DEFAULT FALSE, -- Watchdog/Ovoz yozish xizmati holati
     battery_level SMALLINT NULL,
     is_charging BOOLEAN NOT NULL DEFAULT FALSE,
     work_schedule_override JSONB NULL,           -- Xodim uchun maxsus individual grafik (agar kerak bo'lsa)
@@ -206,9 +211,12 @@ CREATE POLICY devices_tenant_isolation ON devices
 
 ### 2.4. `calls` (Qo'ng'iroqlar va Audio Yozuvlar)
 ```sql
+> [!TIP]
+> **PostgreSQL Range Partitioning:** Millionlab qo'ng'iroqlarda yuqori tezlikni ta'minlash uchun `calls` jadvali `call_timestamp` bo'yicha oylar kesimida bo'linadi (masalan, `calls_2026_09`, `calls_2026_10`).
+```sql
 CREATE TABLE calls (
-    id BIGSERIAL PRIMARY KEY,
-    uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    id BIGSERIAL,
+    uuid UUID NOT NULL DEFAULT gen_random_uuid(),
     tenant_id BIGINT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     device_id BIGINT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
     user_id BIGINT NULL REFERENCES users(id) ON DELETE SET NULL,
@@ -218,17 +226,26 @@ CREATE TABLE calls (
     duration_seconds INTEGER NOT NULL DEFAULT 0,
     sim_slot SMALLINT NOT NULL DEFAULT 0,        -- 0 (SIM 1) yoki 1 (SIM 2)
     sim_operator VARCHAR(100) NULL,
-    recording_disk VARCHAR(50) NOT NULL DEFAULT 'private_storage',
+    recording_disk VARCHAR(50) NOT NULL DEFAULT 'local', -- 'local', 'r2', 's3'
     recording_path VARCHAR(500) NULL,
+    recording_format VARCHAR(10) NOT NULL DEFAULT 'm4a', -- 'm4a' (AAC / Opus 24kbps)
     recording_size_bytes BIGINT NULL,
-    recording_status VARCHAR(30) NOT NULL DEFAULT 'none', -- none, uploaded, processing, failed
+    recording_status VARCHAR(30) NOT NULL DEFAULT 'none', -- none, uploaded, processing, failed, expired
     audio_source_type VARCHAR(50) NULL,          -- accessibility_service, mic, voice_communication
     is_work_hours BOOLEAN NOT NULL DEFAULT TRUE, -- Ish vaqtida bo'lganmi
     call_timestamp TIMESTAMPTZ NOT NULL,
     synced_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMPTZ NULL,
-    updated_at TIMESTAMPTZ NULL
-);
+    updated_at TIMESTAMPTZ NULL,
+    PRIMARY KEY (id, call_timestamp)
+) PARTITION BY RANGE (call_timestamp);
+
+-- Oylik partitsiyalar namunasi (avtomat yaratiladi):
+CREATE TABLE calls_2026_09 PARTITION OF calls
+    FOR VALUES FROM ('2026-09-01 00:00:00+05') TO ('2026-10-01 00:00:00+05');
+CREATE TABLE calls_2026_10 PARTITION OF calls
+    FOR VALUES FROM ('2026-10-01 00:00:00+05') TO ('2026-11-01 00:00:00+05');
+
 CREATE INDEX idx_calls_tenant_ts ON calls(tenant_id, call_timestamp DESC);
 CREATE INDEX idx_calls_tenant_phone ON calls(tenant_id, phone_number);
 CREATE INDEX idx_calls_tenant_device ON calls(tenant_id, device_id);
@@ -238,6 +255,7 @@ CREATE POLICY calls_tenant_isolation ON calls
     FOR ALL
     USING (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint)
     WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint);
+```
 ```
 
 ### 2.5. `tariffs` (Asosiy Bosh Tariflar Jadvali)
@@ -249,7 +267,8 @@ CREATE TABLE tariffs (
     name VARCHAR(100) NOT NULL,                 -- Masalan: "Standart Korporativ"
     code VARCHAR(50) UNIQUE NOT NULL,           -- Masalan: "standard"
     description TEXT NULL,
-    base_price_monthly NUMERIC(12, 2) NOT NULL, -- 1 ta telefon uchun 1 oylik baza narxi (masalan: 50 000 UZS)
+    base_price_monthly NUMERIC(12, 2) NOT NULL, -- 1 ta telefon uchun 1 oylik baza narxi UZS da (masalan: 50 000 UZS)
+    price_usd_monthly NUMERIC(10, 2) NOT NULL DEFAULT 4.99, -- Lemon Squeezy uchun to'g'ridan-to'g'ri USD narxi (kursga bog'lanmagan)
     currency VARCHAR(3) NOT NULL DEFAULT 'UZS',
     min_devices INTEGER NOT NULL DEFAULT 1,     -- Minimal sotib olinadigan slotlar
     default_retention_days INTEGER NOT NULL DEFAULT 30, -- Standart kiritilgan audio arxiv muddati (30 kun)
@@ -341,7 +360,7 @@ CREATE TABLE payment_methods (
     code VARCHAR(50) UNIQUE NOT NULL,            -- 'click', 'payme', 'card_transfer', 'lemonsqueezy'
     name VARCHAR(100) NOT NULL,                  -- 'Click', 'Payme', 'Karta orqali to''lov (P2P)', 'Lemon Squeezy'
     is_active BOOLEAN NOT NULL DEFAULT TRUE,     -- Active / Passive holati
-    settings JSONB NULL DEFAULT '{}',            -- Karta: {"card_number", "card_holder", "bank_name"} | Lemon Squeezy: {"store_id", "api_key", "webhook_secret", "store_slug", "usd_exchange_rate"}
+    settings JSONB NULL DEFAULT '{}',            -- Karta: {"card_number", "card_holder", "bank_name"} | Lemon Squeezy: {"store_id", "api_key", "webhook_secret", "store_slug"}
     instructions TEXT NULL,                      -- To'lov ko'rsatmalari (mijozga ko'rsatiladigan matn)
     sort_order SMALLINT NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NULL,
@@ -450,13 +469,14 @@ Tizimda 4 xil to'lov usuli qo'llab-quvvatlanadi:
 
 4. **Lemon Squeezy (Xalqaro to'lovlar — `1call.uz` tajribasi asosida):**
    - **Qo'llanish maqsadi:** Chet el mijozlari, xalqaro hamkorlar yoki xalqaro kartalar (Visa, Mastercard, American Express, Apple Pay, Google Pay) orqali to'lovlarni qabul qilish.
+   - **To'g'ridan-to'g'ri USD Narxlari:** Lemon Squeezy uchun tariflar kursga bog'lanmagan holda to'g'ridan-to'g'ri **USD** da belgilanadi (masalan: 1 ta telefon uchun oylik $4.99, yillik $49.00). Kurs konvertatsiyasi talab etilmaydi.
    - **Superadmin Boshqaruvi (`/admin/payment-methods`):**
      * Active / Passive statusini yoqish/o'chirish.
      * `lemonsqueezy_store_id`: Lemon Squeezy do'kon identifikatori.
      * `lemonsqueezy_api_key`: Lemon Squeezy API kaliti.
      * `lemonsqueezy_webhook_secret`: Webhook imzosini tekshirish uchun maxfiy kalit.
      * `lemonsqueezy_store_slug`: Do'kon subdomeni (masalan: `1call.lemonsqueezy.com`).
-     * `usd_exchange_rate`: UZS hisob-fakturalarni USD ga avtomat o'girish kursi (masalan: 1 USD = 12 850 UZS) yoki USD tarif narxlari.
+     * `variant_monthly`, `variant_yearly`: Lemon Squeezy variant ID lari.
    - **Frontend integratsiyasi (`lemon.js`):**
      * Sahifaga `https://assets.lemonsqueezy.com/lemon.js` kutubxonasi yuklanadi.
      * Foydalanuvchi "Lemon Squeezy orqali to'lash"ni tanlaganda quyidagi formatdagi xavfsiz checkout URL generatsiya qilinadi:
@@ -566,6 +586,16 @@ Pro-rata To'lov = Yangi Telefonlar Soni × Kunlik Narx × Qolgan Kunlar
 
 ---
 
+### 3.5. 14 Kunlik Bepul Sinov Davri (Free Trial)
+- Yangi ro'yxatdan o'tgan kompaniya (tenant) uchun avtomatik ravishda **14 kunlik to'liq imkoniyatli bepul sinov (Free Trial)** beriladi:
+  - `trial_ends_at = NOW() + INTERVAL '14 days'`.
+  - Dastlabki **3 ta telefon slotigacha** bepul ulash imkoniyati.
+  - Barcha funksiyalar: audio yozish, CRM integratsiyalari va Telegram bildirishnomalari 14 kun davomida to'liq ishlaydi.
+- Sinov muddati tugashiga 3 kun va 1 kun qolganda Telegram bot va Web panel orqali ogohlantirish beriladi.
+- Sinov muddati tugagach, tizim avtomatik ravishda to'lov tanlash sahifasiga yo'naltiradi (Click, Payme, Karta yoki Lemon Squeezy).
+
+---
+
 ## 4. Android Audio Capture (AccessibilityService) & Maxfiylik Rejimi
 
 ### 4.1. Android 10+ (API 29+) Ovoz Yozish Strategiyasi
@@ -583,6 +613,50 @@ Xodimlarning shaxsiy hayotini himoya qilish va korporativ axloq qoidalariga rioy
    - Ish vaqtidan tashqaridagi qo'ng'iroqlar ilova tomonidan **umuman yozilmaydi va audio fayl saqlanmaydi**.
 2. **Qora Ro'yxat (Blacklist):**
    - Shaxsiy yoki yaqin qarindoshlar raqamlari qora ro'yxatga kiritilsa, bu raqamlar bilan bo'lgan suhbatlar avtomatik filtrlanadi va serverga jo'natilmaydi.
+
+---
+
+### 4.3. Audio Format va Siqish (AAC / Opus 24 kbps Mono)
+- Odatdagi siqilmagan WAV (1 daqiqasi ~10 MB) yoki standart MP3 (1 daqiqasi ~1 MB) o'rniga Android agentda **AAC / Opus** formatidan foydalaniladi:
+  - `MediaRecorder.OutputFormat.MPEG_4` konteyneri (`.m4a` kengaytmasi).
+  - `AudioEncoder.AAC` (yoki `Opus`), Namuna olish chastotasi: 16 000 Hz, Bitrate: 24 kbps, Kanal: Mono (1 kanal).
+- **Natija:** 1 daqiqalik suhbat atigi **~180-220 KB** bo'ladi!
+  - 1 soatlik suhbat atigi ~12 MB joy oladi.
+  - Xodimning mobil 3G/4G internet trafigi tejaladi, audio fayl serverga 1 soniyada yuklanadi.
+  - VPS yoki S3/R2 xotira sarfi 5 barobarga qisqaradi.
+
+### 4.4. Dual-SIM Slot Tanlash (Shaxsiy vs Korporativ SIM)
+- Smartfonda 2 ta SIM karta bo'lganda, xodimning shaxsiy qo'ng'iroqlarini yozib olmaslik uchun:
+  - Ilova sozlamalarida **"Yoziladigan SIM slotini tanlash"** imkoniyati beriladi (`selected_sim_slot`):
+    * `NULL`: Har ikkala SIM kartani ham yozish (standart).
+    * `1`: Faqat SIM-1 (Korporativ SIM) qo'ng'iroqlarini yozish.
+    * `2`: Faqat SIM-2 (Korporativ SIM) qo'ng'iroqlarini yozish.
+  - Boshqa slotdagi barcha kiruvchi va chiquvchi qo'ng'iroqlar ilova tomonidan avtomatik inkor qilinadi va hech qachon serverga uzatilmaydi.
+
+### 4.5. BootCompletedReceiver & Accessibility Watchdog
+- **Telefon qayta yoqilganda (Reboot):** `BootCompletedReceiver` (`android.intent.action.BOOT_COMPLETED`) orqali `CallForegroundService` avtomatik qayta ishga tushadi.
+- **OEM Killer (MIUI/HyperOS, OneUI) monitoringi:**
+  - Ilova har 15 daqiqada serverga `Heartbeat` telemetriyasini yuboradi (`POST /api/v1/telemetry/heartbeat`):
+    ```json
+    { "accessibility_active": true, "battery_level": 84, "is_charging": false, "app_version": "1.0.4" }
+    ```
+  - Agar operatsion tizim Accessibility xizmatini to'xtatib qo'ysa:
+    * Ilovaning o'zida baland ovozli doimiy bildirishnoma (Persistent Notification) chiqadi: *"⚠️ 1Call ovoz yozish xizmati o'chib qoldi, faollashtirish uchun bosing!"*.
+    * Web Dashboardda operator yonida qizil ogohlantirish belgisi ko'rinadi va Telegram orqali adminga xabar yuboriladi.
+
+### 4.6. Instant Ringing Webhook (Keltirilgan Qo'ng'iroqda Darhol Xabar)
+- Qo'ng'iroq tushishi bilanoq (`TelephonyManager.EXTRA_STATE_RINGING`), Android agent zudlik bilan serverga yengil HTTP so'rov yuboradi:
+  `POST /api/v1/telemetry/ringing { phone_number: "+998901234567", direction: "inbound", sim_slot: 1 }`.
+- Server bu signalni qabul qilib:
+  1. **Laravel Reverb (WebSockets)** orqali Web paneldagi admin ekranida real vaqtda *"Operator Sherzodga +998901234567 dan qo'ng'iroq kelmoqda..."* indikatorini ko'rsatadi.
+  2. **amoCRM / MoySklad** ga zudlik bilan so'rov yuboradi, natijada operator kompyuterida mijoz kartochkasi telefon jiringlashi bilanoq ochiladi.
+
+### 4.7. Real-Time WebSockets: Laravel Reverb
+- **Laravel 13 Reverb** (birinchi darajali rasmiy WebSocket serveri) quyidagi real-vaqt hodisalarini boshqaradi:
+  - `calls.ringing.{tenant_id}`: Kiruvchi qo'ng'iroq boshlanish signali.
+  - `calls.completed.{tenant_id}`: Qo'ng'iroq tugab audio yuklanganda, jadval avtomatik yangilanadi (sahifani qayta yuklamasdan).
+  - `devices.status.{tenant_id}`: Qurilma onlayn/oflayn, batareya foizi va Accessibility holatining jonli ko'rinishi.
+  - `invoices.paid.{tenant_id}`: To'lov tasdiqlanishi yoki Lemon Squeezy to'lovi muvaffaqiyati live bildirishnomasi.
 
 ---
 
@@ -625,7 +699,7 @@ agent.1call.uz/
 │   │   ├── workers/{CallSyncWorker, HeartbeatWorker}.kt
 │   │   └── ui/{pairing, permissions, status}/
 │   └── build.gradle.kts
-├── app/                             # Laravel 12
+├── app/                             # Laravel 13 (^13.17)
 │   ├── Http/Controllers/Api/
 │   │   ├── DevicePairingController.php
 │   │   ├── TelemetryIngestController.php
@@ -663,7 +737,7 @@ agent.1call.uz/
 │   ├── Services/Billing/
 │   │   ├── BillingCalculator.php             # 3/6/12 oy, chegirmalar, Pro-rata
 │   │   ├── SubscriptionService.php
-│   │   └── LemonSqueezyService.php           # Checkout generatsiyasi va valyuta kursi
+│   │   └── LemonSqueezyService.php           # Checkout generatsiyasi va USD variantlar
 │   ├── Services/Telegram/
 │   │   └── TelegramNotificationService.php   # Qoldirilgan qo'ng'iroq va hisobotlar
 │   ├── Services/Integrations/{CrmManager, AmoCrmDriver, Bitrix24Driver, MoySkladDriver, BitoErpDriver}.php
@@ -687,10 +761,12 @@ agent.1call.uz/
 
 ## 7. Qadam-baqadam Ishga Tushirish Yo'l Xaritasi (Phase 1 — Phase 6)
 
-### **Phase 1: Multi-Tenant Backend Core & RBAC Ingest API**
+### **Phase 1: Multi-Tenant Backend Core & RBAC Ingest API (Laravel 13 & PostgreSQL 16+)**
 - [ ] **1.0.** PostgreSQL o'rnatish va `.env` da `DB_CONNECTION=pgsql` ga o'tish.
-- [ ] **1.1.** Paketlarni o'rnatish: `laravel/sanctum`, `goodoneuz/pay-uz`.
-- [ ] **1.2.** `tenants` jadvali migratsiyasi (`allowed_devices_count`, `subscription_expires_at`, `grace_period_ends_at`, `work_schedule`, `privacy_blacklist`).
+- [ ] **1.1.** Paketlarni o'rnatish: `laravel/sanctum`, `laravel/reverb` (WebSockets), `goodoneuz/pay-uz`.
+- [ ] **1.2.** `tenants` jadvali migratsiyasi (`allowed_devices_count`, `audio_retention_days = 30`, `trial_ends_at` [14 kunlik bepul sinov], `subscription_expires_at`, `grace_period_ends_at`, `work_schedule`, `privacy_blacklist`).
+- [ ] **1.2.1.** `calls` jadvali migratsiyasi: **PostgreSQL Range Partitioning** (`PARTITION BY RANGE (call_timestamp)`).
+- [ ] **1.2.2.** Storage Abstraction: `RECORDINGS_STORAGE_DISK=local|r2|s3` (VPS lokal disk va Cloudflare R2 / AWS S3 qo'llab-quvvatlash).
 - [ ] **1.3.** `users` jadvaliga `tenant_id`, `role` (`superadmin`, `admin`, `operator`) ustunlarini qo'shish.
 - [ ] **1.4.** Baza migratsiyalari: `tariffs`, `tariff_discounts` (boshlang'ich qiymatlar bilan seed), `devices`, `calls`, `subscriptions` (chegirmalar ustunlari bilan), `invoices`, `tenant_integrations`, `integration_user_mappings`, `integration_sync_logs` va `pay-uz`.
 - [ ] **1.5.** Barcha tenant-jadvallarga PostgreSQL RLS siyosatlarini qo'llash.
@@ -714,9 +790,12 @@ agent.1call.uz/
 ---
 
 ### **Phase 3: Android Audio Yozish, Maxfiylik va Offline Sync**
-- [ ] **3.1.** `CallAccessibilityService` — Android 10+ da qo'ng'iroq ovozini ishonchli yozib olish servisi.
+- [ ] **3.1.** `CallAccessibilityService` — Android 10 - 15 da qo'ng'iroq ovozini ishonchli yozib olish servisi.
+- [ ] **3.1.1.** **Audio Siqish:** AAC / Opus encoder (16kHz, 24 kbps Mono, `.m4a`), 1 daqiqa = ~200 KB.
+- [ ] **3.1.2.** `BootCompletedReceiver` (`ACTION_BOOT_COMPLETED`) va Accessibility Watchdog / Heartbeat xizmati.
+- [ ] **3.1.3.** **Instant Ringing Webhook:** `POST /api/v1/telemetry/ringing` (jiringlagan zahoti CRM va Reverb ga signal).
 - [ ] **3.2.** `WorkHoursFilter` — Ish grafigi va qora ro'yxat tekshiruvi (shaxsiy qo'ng'iroqlarni yozmaslik).
-- [ ] **3.3.** Dual-SIM aniqlash (`SubscriptionManager` orqali ikkala SIMni aniqlab, 1 ta qurilma telemetriyasi sifatida uzatish).
+- [ ] **3.3.** **Dual-SIM Slot Tanlash:** Sozlamalardan faqat korporativ SIM ni tanlash (`selected_sim_slot`) va shaxsiy SIM ni avtomatik filtrlash.
 - [ ] **3.4.** Room Database (`LocalCallRecord`, DAO, Repository).
 - [ ] **3.5.** `CallSyncWorker` (WorkManager, avtomatik sinxronizatsiya va qayta urinish).
 - [ ] **3.6.** Batareya optimallashtirish chetlab o'tish onboardingi (MIUI, OneUI, HarmonyOS).
@@ -727,6 +806,7 @@ agent.1call.uz/
 - [ ] **4.1.** `TenantLayout` va rollar bo'yicha navigatsiya (Admin barcha bo'limlarga, Operator faqat o'z qo'ng'iroqlariga kiradi).
 - [ ] **4.2.** Grace Period ogohlantirish banneri.
 - [ ] **4.3.** Qo'ng'iroqlar jurnali: Filtrlar, KPI kartalari, qoldirilgan qo'ng'iroqlar belgisi.
+- [ ] **4.3.1.** **Laravel Reverb WebSockets:** Jonli monitoring (Live Call Board), telefon jiringlaganda instant kartochka va qo'ng'iroq tugaganda avtomatik ro'yxatga tushish.
 - [ ] **4.4.** `WaveformPlayer.tsx` — Audio to'lqin vizualizatsiyasi (wavesurfer.js), xavfsiz streaming (Signed URL, yuklab olishni taqiqlash).
 - [ ] **4.5.** Qurilmalar monitoringi va QR-kod generatsiya modali.
 - [ ] **4.6.** Ish grafigi va Maxfiylik sozlamalari sahifasi (`Settings/WorkSchedule.tsx`).
@@ -751,11 +831,11 @@ agent.1call.uz/
   - `LemonSqueezyController` webhook marshruti: `POST /payment/lemonsqueezy`.
   - `X-Signature` HMAC SHA-256 xavfsizlik tekshiruvi.
   - `order_created`, `subscription_created`, `order_refunded`, `subscription_cancelled` hodisalari orqali invoysni yopish va obunani uzaytirish.
-  - `LemonSqueezyService` — Dinamik checkout sessiyalari yoki variant URL lari generatsiyasi (UZS -> USD konvertatsiya bilan).
+  - `LemonSqueezyService` — Dinamik checkout sessiyalari yoki variant URL lari generatsiyasi.
   - `lemon.js` overlay integratsiyasi.
 - [ ] **5.7.** **Superadmin To'lov Tizimlari Boshqaruvi:**
   - `/admin/payment-methods`: Click, Payme, Karta va Lemon Squeezy usullarini Active/Passive qilish.
-  - Karta rekvizitlari va Lemon Squeezy API kalitlari (Store ID, API Key, Webhook Secret, Store Slug, USD kurs) sozlamalari.
+  - Karta rekvizitlari va Lemon Squeezy API kalitlari (Store ID, API Key, Webhook Secret, Store Slug) sozlamalari.
 - [ ] **5.8.** **3 kunlik Grace Period** mexanizmi va `CheckTenantSubscription` middleware.
 - [ ] **5.9.** Billing UI: `Billing/Index.tsx` (Click, Payme, Karta va Lemon Squeezy to'lov tugmalari), `Billing/Invoices.tsx`.
 
