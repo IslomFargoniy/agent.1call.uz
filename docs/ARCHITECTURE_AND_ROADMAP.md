@@ -399,9 +399,11 @@ To'lov summasi bazadagi `tariffs` va `tariff_discounts` jadvallari qoidalariga a
      * 10 - 19 ta telefon: 10% chegirma
      * 20+ ta telefon: 15% chegirma
 3. **Hisoblash Formulalari:**
-   $$\\text{Baza Summa} = \\text{Telefonlar Soni} \\times \\text{Baza Narx (tariffs.base_price_monthly)} \\times \\text{Oylar Soni}$$
-   $$\\text{Jami Chegirma \\%} = \\text{Davr Chegirmasi \\%} + \\text{Hajm Chegirmasi \\%}$$
-   $$\\text{Yakuniy To'lov Summasi} = \\text{Baza Summa} \\times \\left(1 - \\frac{\\text{Jami Chegirma \\%}}{100}\\right)$$
+   ```
+   Baza Summa = Telefonlar Soni × 1 ta Telefon Baza Narxi × Oylar Soni
+   Jami Chegirma (%) = Davr Chegirmasi (%) + Hajm Chegirmasi (%)
+   Yakuniy To'lov Summasi = Baza Summa × (1 - Jami Chegirma / 100)
+   ```
 
 *Misollar jadvali (Baza narx = 50 000 UZS):*
 | Telefonlar | Davr | Baza Summa | Davr Chegirmasi | Hajm Chegirmasi | Jami Chegirma | Yakuniy To'lov | Tejamkorlik |
@@ -420,9 +422,11 @@ To'lov summasi bazadagi `tariffs` va `tariff_discounts` jadvallari qoidalariga a
      * 180 kun (6 oy): +35 000 UZS / oy / telefon
      * 365 kun (1 yil): +60 000 UZS / oy / telefon
    - **Hisoblash Formulasi:**
-     $$\\text{1 ta Telefon Oylik Narxi} = \\text{Baza Narx (50 000)} + \\text{Arxiv Muddati Narxi}$$
-     $$\\text{Baza Summa} = \\text{Telefonlar Soni} \\times \\text{1 ta Telefon Oylik Narxi} \\times \\text{Oylar Soni}$$
-     $$\\text{Yakuniy To'lov} = \\text{Baza Summa} \\times \\left(1 - \\frac{\\text{Jami Chegirma \\%}}{100}\\right)$$
+     ```
+     1 ta Telefon Oylik Narxi = Baza Narx (50 000 UZS) + Arxiv Muddati Narxi
+     Baza Summa = Telefonlar Soni × 1 ta Telefon Oylik Narxi × Oylar Soni
+     Yakuniy To'lov = Baza Summa × (1 - Jami Chegirma / 100)
+     ```
 5. **Eskirgan Audiolarni Avtomatik Tozalash (Retention Cleanup Job):**
    - Har kecha ishga tushadigan `PruneExpiredRecordingsJob` cron-vazifasi:
      * Har bir tenantning `audio_retention_days` muddatini o'qiydi (masalan, 30 kun).
@@ -472,9 +476,11 @@ sequenceDiagram
 ### 3.3. Pro-rata (Co-terming) Yangi Telefon Qo'shish Kalkulyatori
 Mijozda joriy obuna davom etayotgan bo'lsa va qo'shimcha yangi telefonlar ulamoqchi bo'lsa, ularning muddati alohida hisoblanmaydi, balki **mavjud obunaning tugash sanasiga moslanadi**:
 
-$$\text{Qolgan Kunlar} = \text{tenant.subscription\_expires\_at} - \text{NOW()}$$
-$$\text{Kunlik Narx} = \frac{\text{1 ta telefonning oylik narxi}}{30}$$
-$$\text{Pro-rata To'lov} = \text{Yangi Telefonlar Soni} \times \text{Kunlik Narx} \times \text{Qolgan Kunlar}$$
+```
+Qolgan Kunlar = Obuna Tugash Sanasi - Hozirgi Sana
+Kunlik Narx = 1 ta Telefon Oylik Narxi / 30
+Pro-rata To'lov = Yangi Telefonlar Soni × Kunlik Narx × Qolgan Kunlar
+```
 
 *Natija:* Barcha telefonlarning tugash sanasi yagona bo'ladi, hisob-kitobda chalkashlik bo'lmaydi.
 
@@ -710,12 +716,9 @@ Loyihada amoCRM va MoySklad integratsiyalari `panel.1call.uz` repozitoriyasida m
    - `findContactByPhone()` funksiyasi bitta raqam uchun 5 xil format variatsiyasini (toza raqam, 998 bilan, oraliq bo'shliqlar bilan) hosil qiladi va `GET /api/v4/contacts?query=...` orqali qidiradi (100ms interval bilan so'rovlar limiti saqlanadi).
 3. **Avtomatik Kontakt va Lid (Bitim) Yaratish Qoidalari:**
    - Sozlamalarda 3 xil holat uchun alohida harakat belgilanadi:
-     * `incoming_action` (kiruvchi qo'ng'iroq) $
-ightarrow$ `contact`, `lead`, yoki `nothing`.
-     * `outgoing_action` (chiquvchi qo'ng'iroq) $
-ightarrow$ `contact`, `lead`, yoki `nothing`.
-     * `missed_action` (javobsiz qo'ng'iroq) $
-ightarrow$ `contact`, `lead`, yoki `nothing`.
+     * `incoming_action` (kiruvchi qo'ng'iroq) → `contact`, `lead`, yoki `nothing`.
+     * `outgoing_action` (chiquvchi qo'ng'iroq) → `contact`, `lead`, yoki `nothing`.
+     * `missed_action` (javobsiz qo'ng'iroq) → `contact`, `lead`, yoki `nothing`.
    - Agar kontakt topilmasa, `createContact()` chaqiriladi.
    - Agar amal `lead` bo'lsa, `createLead()` orqali belgilangan `pipeline_id` voronkasiga yangi bitim ochiladi.
 4. **Qo'ng'iroqni amoCRM ga Yozish (`POST /api/v4/calls`):**
@@ -745,6 +748,6 @@ ightarrow$ `contact`, `lead`, yoki `nothing`.
 4. **Toshkent Vaqtini To'g'rilash (Timezone Offset):**
    - MoySklad serveri kelgan vaqtga avtomatik +2 soat qo'shib saqlaydi.
    - Toshkent (UTC+5) vaqtida to'g'ri ko'rinishi uchun, serverimizdan vaqt Moskva (UTC+3) vaqt zonasida yuboriladi:
-     $$\\text{UTC+3} + 2\\text{h} = \\text{UTC+5 (Toshkent vaqti)}$$
+     `UTC+3 (Moskva yuborish) + 2 soat (MoySklad serveri) = UTC+5 (Toshkent vaqti)`
 5. **MoySklad Ilovasi (App Descriptor XML):**
    - `moysklad-app.xml` deskriptori orqali MoySklad shaxsiy ilovasi ulanadi va kontragent kartochkasida `1call` telefoniya iframe vidjeti paydo bo'ladi.
