@@ -19,6 +19,9 @@
 | **Maxfiylik (Privacy)** | **Ish vaqti rejimi (Work Schedule)** va shaxsiy raqamlar filtri (Blacklist) |
 | **Tezkor Bildirishnomalar** | **Telegram Bot:** Qoldirilgan qo'ng'iroqlar, kunlik hisobotlar va to'lov eslatmalari |
 | **CRM/ERP Integratsiyalari** | amoCRM, Bitrix24, MoySklad, BitoERP (Driver Pattern) |
+| **Server va Joylashtirish** | Linux VPS (Ubuntu 24.04, Nginx, PHP 8.3, PostgreSQL 16, Redis) |
+| **Audio Saqlash** | VPS Private Storage (`storage/app/private/recordings/`) + HTTP Range streaming |
+| **Superadmin Paneli** | Ichki yengil Inertia.js/React boshqaruvi (`/admin/users`, `/admin/tenants`) |
 
 ---
 
@@ -78,14 +81,27 @@ class TenantContext
 ```
 
 ### 1.2. 3 Darajali RBAC Ruxsatlar Matritsasi
-| Imkoniyat / Bo'lim | Admin (Kompaniya rahbari) | Supervisor (Bo'lim boshlig'i) | Operator (Xodim) |
-|--------------------|---------------------------|-------------------------------|------------------|
+| Imkoniyat / Bo'lim | Superadmin (Platforma egasi) | Admin (Kompaniya rahbari) | Supervisor (Bo'lim boshlig'i) | Operator (Xodim) |
+|---|---|---|---|---|
+| **Barcha tenantlar va foydalanuvchilar (`/admin/users`)** | ✅ To'liq nazorat | ❌ Kirish taqiqlangan | ❌ Kirish taqiqlangan | ❌ Kirish taqiqlangan |
+| **Kompaniyalar obunasini qo'lda uzaytirish/boshqarish** | ✅ Ha | ❌ Faqat o'zinikini to'laydi | ❌ Yo'q | ❌ Yo'q |
 | **Barcha qo'ng'iroqlarni ko'rish va eshitish** | ✅ Barcha xodimlar | ✅ Faqat o'z bo'limi operatorlari | ❌ Faqat o'zining qo'ng'iroqlari |
 | **Audio yozuvlarni yuklab olish (Download)** | ✅ Ruxsat berilgan | ❌ Faqat eshitish (Stream) | ❌ Yuklab ololmaydi |
 | **Qurilmalar va QR-kod ulash** | ✅ Ha | ⚠️ Faqat o'z xodimlariga | ❌ Yo'q |
 | **Billing va To'lovlar (Click/Payme)** | ✅ To'liq kirish | ❌ Kirish taqiqlangan | ❌ Kirish taqiqlangan |
 | **CRM/ERP sozlamalari** | ✅ Sozlay oladi | ❌ Faqat holatni ko'radi | ❌ Kirish taqiqlangan |
 | **Ish grafigi va maxfiylik sozlamalari** | ✅ Ha | ❌ Yo'q | ❌ Yo'q |
+
+### 1.3. Superadmin Ichki Boshqaruv Sahifasi (`/admin/users` va `/admin/tenants`)
+Alohida og'ir paketlar (masalan Filament) o'rnatilmaydi. Mavjud Inertia.js + React stekida faqat `role === 'superadmin'` foydalanuvchilari uchun yengil boshqaruv sahifalari yaratiladi:
+1. **`/admin/users`:**
+   - Platformadagi barcha tenantlar xodimlarining yagona jadvali.
+   - Filtrlash (Tenant bo'yicha, rol bo'yicha, status bo'yicha).
+   - Foydalanuvchini bloklash, faollashtirish yoki parolini yangilash.
+2. **`/admin/tenants`:**
+   - Barcha kompaniyalar (tenantlar) ro'yxati, ularning joriy tarifi, faol telefonlari soni va obuna tugash sanasi.
+   - Obunani qo'lda uzaytirish (masalan, to'lov bank orqali kelib tushganda yoki do'stona trial berilganda).
+   - RLS bu sahifalarda `SuperadminBypassTenant` middleware orqali avtomatik chetlab o'tiladi.
 
 ---
 
@@ -363,6 +379,9 @@ agent.1call.uz/
 │   │   ├── TelemetryIngestController.php
 │   │   └── PaymentWebhookController.php      # Click va Payme callbacklari
 │   ├── Http/Controllers/Web/
+│   │   ├── Admin/
+│   │   │   ├── SuperadminUsersController.php    # Superadmin barcha foydalanuvchilar sahifasi
+│   │   │   └── SuperadminTenantsController.php  # Superadmin barcha tenantlar sahifasi
 │   │   ├── DashboardController.php
 │   │   ├── CallsController.php
 │   │   ├── DevicesController.php
@@ -391,6 +410,9 @@ agent.1call.uz/
 │   └── Jobs/{SyncCallToIntegrationsJob, SendTelegramAlertJob}.php
 ├── resources/js/pages/
 │   ├── {Dashboard, Calls/Index, Devices/Index}.tsx
+│   ├── Admin/
+│   │   ├── Users/Index.tsx                      # Superadmin Users sahifasi
+│   │   └── Tenants/Index.tsx                    # Superadmin Tenants sahifasi
 │   ├── Billing/{Index, Invoices}.tsx
 │   ├── Settings/{WorkSchedule, Privacy}.tsx
 │   └── Integrations/{Index, AmoCrmConfig, UserMapping}.tsx
@@ -445,6 +467,7 @@ agent.1call.uz/
 - [ ] **4.4.** `WaveformPlayer.tsx` — Audio to'lqin vizualizatsiyasi (wavesurfer.js), xavfsiz streaming (Signed URL, yuklab olishni taqiqlash).
 - [ ] **4.5.** Qurilmalar monitoringi va QR-kod generatsiya modali.
 - [ ] **4.6.** Ish grafigi va Maxfiylik sozlamalari sahifasi (`Settings/WorkSchedule.tsx`).
+- [ ] **4.7.** **Superadmin Sahifalari:** `/admin/users` (barcha xodimlar boshqaruvi) va `/admin/tenants` (kompaniyalar va obuna boshqaruvi).
 
 ---
 
@@ -473,3 +496,4 @@ agent.1call.uz/
 - [ ] **6.7.** `SyncCallToIntegrationsJob` asinxron navbat va Retry Policy.
 - [ ] **6.8.** Integratsiyalar Dashboard UI.
 - [ ] **6.9.** GitHub Actions CI/CD (`backend-ci.yml`, `android-ci.yml`) va yuklama sinovlari.
+- [ ] **6.10.** **VPS Production Deploy:** Ubuntu 24.04 sozlash, Nginx, PHP 8.3-FPM, PostgreSQL 16, Redis, Supervisor (queues), Certbot SSL va deploy skripti.
