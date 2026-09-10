@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Call;
 use App\Models\IntegrationSyncLog;
 use App\Models\IntegrationUserMapping;
+use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Models\User;
 use App\Services\Integrations\AmoCrm\AmoCrmService;
@@ -30,15 +31,18 @@ class IntegrationController extends Controller
      */
     public function index(Request $request, TenantContext $tenantContext): Response
     {
-        $tenant = $tenantContext->getTenant() ?? $request->user()->tenant;
+        $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
+        if (! $tenant && $request->user()?->isSuperAdmin()) {
+            $tenant = Tenant::first();
+        }
 
-        $amoCrm = TenantIntegration::where('crm_type', 'amocrm')->first();
-        $moySklad = TenantIntegration::where('crm_type', 'moysklad')->first();
+        $amoCrm = $tenant ? TenantIntegration::where('tenant_id', $tenant->id)->where('crm_type', 'amocrm')->first() : null;
+        $moySklad = $tenant ? TenantIntegration::where('tenant_id', $tenant->id)->where('crm_type', 'moysklad')->first() : null;
 
-        $operators = User::where('role', 'operator')->select('id', 'name', 'phone_number')->get();
+        $operators = $tenant ? User::where('tenant_id', $tenant->id)->where('role', 'operator')->select('id', 'name', 'phone_number')->get() : collect();
 
-        $mappings = IntegrationUserMapping::with('user:id,name')->get();
-        $recentLogs = IntegrationSyncLog::orderByDesc('id')->limit(15)->get();
+        $mappings = $tenant ? IntegrationUserMapping::where('tenant_id', $tenant->id)->with('user:id,name')->get() : collect();
+        $recentLogs = $tenant ? IntegrationSyncLog::where('tenant_id', $tenant->id)->orderByDesc('id')->limit(15)->get() : collect();
 
         return Inertia::render('Integrations/Index', [
             'amoCrm' => $amoCrm ? [
@@ -54,6 +58,8 @@ class IntegrationController extends Controller
             'operators' => $operators,
             'mappings' => $mappings,
             'recentLogs' => $recentLogs,
+            'widgetDownloadUrl' => url('/downloads/amocrm-widget.zip'),
+            'moySkladDescriptorUrl' => url('/downloads/moysklad-app.xml'),
         ]);
     }
 
@@ -62,7 +68,14 @@ class IntegrationController extends Controller
      */
     public function saveAmoCrm(Request $request, TenantContext $tenantContext): RedirectResponse
     {
-        $tenant = $tenantContext->getTenant() ?? $request->user()->tenant;
+        $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
+        if (! $tenant && $request->user()?->isSuperAdmin()) {
+            $tenant = Tenant::first();
+        }
+
+        if (! $tenant) {
+            return back()->with('error', 'Kompaniya topilmadi.');
+        }
 
         $validated = $request->validate([
             'subdomain' => ['required', 'string'],
@@ -127,7 +140,14 @@ class IntegrationController extends Controller
      */
     public function saveMoySklad(Request $request, TenantContext $tenantContext): RedirectResponse
     {
-        $tenant = $tenantContext->getTenant() ?? $request->user()->tenant;
+        $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
+        if (! $tenant && $request->user()?->isSuperAdmin()) {
+            $tenant = Tenant::first();
+        }
+
+        if (! $tenant) {
+            return back()->with('error', 'Kompaniya topilmadi.');
+        }
 
         $validated = $request->validate([
             'login' => ['nullable', 'string'],
@@ -157,7 +177,14 @@ class IntegrationController extends Controller
      */
     public function saveUserMapping(Request $request, TenantContext $tenantContext): RedirectResponse
     {
-        $tenant = $tenantContext->getTenant() ?? $request->user()->tenant;
+        $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
+        if (! $tenant && $request->user()?->isSuperAdmin()) {
+            $tenant = Tenant::first();
+        }
+
+        if (! $tenant) {
+            return back()->with('error', 'Kompaniya topilmadi.');
+        }
 
         $validated = $request->validate([
             'tenant_integration_id' => ['required', 'exists:tenant_integrations,id'],

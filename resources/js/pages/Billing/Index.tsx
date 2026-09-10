@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PaymentMethodLogo } from '@/components/brand-logos';
+
 
 interface Tariff {
     id: number;
@@ -307,11 +309,14 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                                             : 'border-border bg-card hover:bg-muted/40'
                                     }`}
                                 >
-                                    <div>
-                                        <span className="font-bold text-sm block">{method.name}</span>
-                                        <span className="text-xs text-muted-foreground">
-                                            {method.code === 'lemonsqueezy' ? 'USD (Xalqaro kartalar)' : 'UZS (Humo / Uzcard)'}
-                                        </span>
+                                    <div className="flex items-center gap-3">
+                                        <PaymentMethodLogo code={method.code} className="h-6" />
+                                        <div>
+                                            <span className="font-bold text-sm block">{method.name}</span>
+                                            <span className="text-xs text-muted-foreground">
+                                                {method.code === 'lemonsqueezy' ? 'USD (Visa, Mastercard)' : 'UZS (Humo / Uzcard)'}
+                                            </span>
+                                        </div>
                                     </div>
                                     <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${
                                         selectedPaymentMethod === method.code ? 'border-primary bg-primary text-primary-foreground' : 'border-border'

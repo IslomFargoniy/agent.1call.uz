@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,9 +17,12 @@ class WorkScheduleController extends Controller
      */
     public function index(Request $request, TenantContext $tenantContext): Response
     {
-        $tenant = $tenantContext->getTenant() ?? $request->user()->tenant;
+        $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
+        if (! $tenant && $request->user()?->isSuperAdmin()) {
+            $tenant = Tenant::first();
+        }
 
-        return Inertia::render('Settings/WorkSchedule', [
+        return Inertia::render('WorkSchedule/Index', [
             'workSchedule' => $tenant?->work_schedule ?? [
                 'enabled' => false,
                 'start_time' => '09:00',
@@ -35,7 +39,14 @@ class WorkScheduleController extends Controller
      */
     public function update(Request $request, TenantContext $tenantContext): RedirectResponse
     {
-        $tenant = $tenantContext->getTenant() ?? $request->user()->tenant;
+        $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
+        if (! $tenant && $request->user()?->isSuperAdmin()) {
+            $tenant = Tenant::first();
+        }
+
+        if (! $tenant) {
+            return back()->with('error', 'Kompaniya topilmadi.');
+        }
 
         $validated = $request->validate([
             'work_schedule' => ['nullable', 'array'],

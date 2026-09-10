@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PaymentMethodLogo } from '@/components/brand-logos';
+
 
 interface PaymentMethodItem {
     id: number;
@@ -65,9 +67,12 @@ export default function AdminPaymentMethods({ methods }: PaymentMethodsProps) {
                 {methods.map((method) => (
                     <div key={method.id} className="bg-card p-6 rounded-2xl border border-border shadow-xs space-y-4">
                         <div className="flex justify-between items-start">
-                            <div>
-                                <span className="font-bold text-lg block">{method.name}</span>
-                                <span className="text-xs text-muted-foreground font-mono uppercase">{method.code}</span>
+                            <div className="flex items-center gap-3">
+                                <PaymentMethodLogo code={method.code} className="h-7" />
+                                <div>
+                                    <span className="font-bold text-lg block">{method.name}</span>
+                                    <span className="text-xs text-muted-foreground font-mono uppercase">{method.code}</span>
+                                </div>
                             </div>
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(method)}>
                                 <Edit3 className="h-4 w-4" />

@@ -8,9 +8,11 @@ import {
     ExternalLink,
     RefreshCw,
     UserCheck,
+    Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { AmoCrmLogo, MoySkladLogo } from '@/components/brand-logos';
 
 interface IntegrationsProps {
     amoCrm?: {
@@ -26,9 +28,19 @@ interface IntegrationsProps {
     operators: { id: number; name: string; phone_number?: string }[];
     mappings: { id: number; tenant_integration_id: number; user_id: number; external_user_id: string; external_user_name?: string; user?: { name: string } }[];
     recentLogs: { id: number; crm_type: string; call_id?: number; status: string; error_message?: string; created_at: string }[];
+    widgetDownloadUrl?: string;
+    moySkladDescriptorUrl?: string;
 }
 
-export default function IntegrationsIndex({ amoCrm, moySklad, operators, mappings, recentLogs }: IntegrationsProps) {
+export default function IntegrationsIndex({
+    amoCrm,
+    moySklad,
+    operators,
+    mappings,
+    recentLogs,
+    widgetDownloadUrl = '/downloads/amocrm-widget.zip',
+    moySkladDescriptorUrl = '/downloads/moysklad-app.xml',
+}: IntegrationsProps) {
     // amoCRM Form
     const amoForm = useForm({
         subdomain: amoCrm?.subdomain || '',
@@ -58,11 +70,13 @@ export default function IntegrationsIndex({ amoCrm, moySklad, operators, mapping
         <div className="p-6 space-y-8 max-w-6xl mx-auto">
             <Head title="CRM Integratsiyalari (amoCRM & MoySklad)" />
 
-            <div>
-                <h2 className="text-2xl font-bold tracking-tight">CRM & ERP Integratsiyalari</h2>
-                <p className="text-sm text-muted-foreground">
-                    Telefoniya qo'ng'iroqlari va audio yozuvlarini amoCRM va MoySklad tizimlari bilan avtomatik sinxronlash
-                </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight">CRM & ERP Integratsiyalari</h2>
+                    <p className="text-sm text-muted-foreground">
+                        Telefoniya qo'ng'iroqlari va audio yozuvlarini amoCRM va MoySklad tizimlari bilan avtomatik sinxronlash
+                    </p>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -70,12 +84,8 @@ export default function IntegrationsIndex({ amoCrm, moySklad, operators, mapping
                 <div className="bg-card p-6 rounded-2xl border border-border shadow-xs space-y-5">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-blue-500/10 text-blue-600 rounded-xl font-bold text-lg">
-                                amo
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-base">amoCRM</h3>
-                                <p className="text-xs text-muted-foreground">Leadlar, kontaktlar va audio yozuvlar integratsiyasi</p>
+                            <div className="p-2 bg-blue-500/10 rounded-xl">
+                                <AmoCrmLogo className="h-7" />
                             </div>
                         </div>
 
@@ -89,6 +99,10 @@ export default function IntegrationsIndex({ amoCrm, moySklad, operators, mapping
                             </span>
                         )}
                     </div>
+
+                    <p className="text-xs text-muted-foreground">
+                        Leadlar, kontaktlar, qo‘ng‘iroq kartochkalari va MP3/AAC audio yozuvlarini amoCRM bilan to‘liq sinxronlashtirish.
+                    </p>
 
                     <form onSubmit={submitAmo} className="space-y-4">
                         <div className="space-y-1">
@@ -139,18 +153,25 @@ export default function IntegrationsIndex({ amoCrm, moySklad, operators, mapping
                             {amoForm.processing ? 'Ulanmoqda...' : 'amoCRM bilan ulash (OAuth2)'}
                         </Button>
                     </form>
+
+                    <div className="pt-2 border-t border-border flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">amoCRM vidjet moduli:</span>
+                        <a
+                            href={widgetDownloadUrl}
+                            download
+                            className="inline-flex items-center gap-1.5 text-primary hover:underline font-medium"
+                        >
+                            <Download className="h-3.5 w-3.5" /> Vidjetni yuklab olish (.zip)
+                        </a>
+                    </div>
                 </div>
 
                 {/* MoySklad Integration Card */}
                 <div className="bg-card p-6 rounded-2xl border border-border shadow-xs space-y-5">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-orange-500/10 text-orange-600 rounded-xl font-bold text-lg">
-                                MS
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-base">MoySklad</h3>
-                                <p className="text-xs text-muted-foreground">Phone API 1.0 va Kontragentlar sinxroni</p>
+                            <div className="p-2 bg-orange-500/10 rounded-xl">
+                                <MoySkladLogo className="h-7" />
                             </div>
                         </div>
 
@@ -164,6 +185,10 @@ export default function IntegrationsIndex({ amoCrm, moySklad, operators, mapping
                             </span>
                         )}
                     </div>
+
+                    <p className="text-xs text-muted-foreground">
+                        Phone API 1.0, mijozlar (kontragentlar) kartasi, yangi qo‘ng‘iroqlarda bildirishnomalar va audio fayllar.
+                    </p>
 
                     <form onSubmit={submitMoy} className="space-y-4">
                         <div className="space-y-1">
@@ -204,6 +229,17 @@ export default function IntegrationsIndex({ amoCrm, moySklad, operators, mapping
                             {moyForm.processing ? 'Tekshirilmoqda...' : 'MoySklad bilan sinab ko\'rish'}
                         </Button>
                     </form>
+
+                    <div className="pt-2 border-t border-border flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">MoySklad integratsiya deskriptori:</span>
+                        <a
+                            href={moySkladDescriptorUrl}
+                            download
+                            className="inline-flex items-center gap-1.5 text-primary hover:underline font-medium"
+                        >
+                            <Download className="h-3.5 w-3.5" /> Ilova deskriptori (.xml)
+                        </a>
+                    </div>
                 </div>
             </div>
 
