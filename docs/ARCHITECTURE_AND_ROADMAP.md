@@ -565,11 +565,70 @@ agent.1call.uz/
   - Kunlik soat 19:00 statistik hisobot.
   - Obuna tugashiga 7, 3, 1 kun qolganda to'lov eslatmalari.
 - [ ] **6.2.** `CrmDriverInterface` va `CrmManager` (Driver Pattern).
-- [ ] **6.3.** **amoCRM Drayveri:** OAuth2, kontaktlar va qo'ng'iroqlarni sinxronlash, Redis Rate Limiter (7 req/sec).
+- [ ] **6.3.** **amoCRM Integratsiyasi (panel.1call.uz asosida):**
+  - `AmoCrmService` (OAuth2, 5 xil formatdagi telefon qidiruvi, auto-contact/lead, HMAC SHA-256 audio link).
+  - `SendCallToAmoCrmJob` (Cache Lock bilan dublikatsiz sinxronlash, javobsiz qo'ng'iroq avto-vazifasi).
+  - `amocrm-widget` ZIP arxivi va Events API v2 bildirishnomalari.
 - [ ] **6.4.** **Bitrix24 Drayveri:** `telephony.externalcall` integratsiyasi.
-- [ ] **6.5.** **MoySklad Drayveri:** JSON API 1.2 kontragent va voqealar.
+- [ ] **6.5.** **MoySklad Integratsiyasi (panel.1call.uz asosida):**
+  - `MoySkladService` (Phone API 1.0 + Remap JSON API 1.2, xodimlar mappingi).
+  - `SendCallToMoySkladJob` (UTC+3 -> UTC+5 vaqt korreksiyasi, kontragent nomi sinxroni).
+  - `moysklad-app.xml` ilova deskriptori va iframe interfeysi.
 - [ ] **6.6.** **BitoERP & Universal Webhook Drayveri:** REST Webhook (HMAC SHA-256).
 - [ ] **6.7.** `SyncCallToIntegrationsJob` asinxron navbat va Retry Policy.
 - [ ] **6.8.** Integratsiyalar Dashboard UI.
 - [ ] **6.9.** GitHub Actions CI/CD (`backend-ci.yml`, `android-ci.yml`) va yuklama sinovlari.
 - [ ] **6.10.** **VPS Production Deploy:** Ubuntu 24.04 sozlash, Nginx, PHP 8.3-FPM, PostgreSQL 16, Redis, Supervisor (queues), Certbot SSL va deploy skripti.
+
+---
+
+## 8. amoCRM va MoySklad Integratsiya Mantig'i (panel.1call.uz tajribasi asosida)
+
+Loyihada amoCRM va MoySklad integratsiyalari `panel.1call.uz` repozitoriyasida muvaffaqiyatli sinovdan o'tgan, amaliy nozik jihatlar (edge cases) hisobga olingan to'liq ishlab turgan logika asosida quriladi.
+
+### 8.1. amoCRM Integratsiya Arxitekturasi (`AmoCrmService`)
+1. **OAuth2 Ulanish va Tokenlarni Avtomatik Yangilash:**
+   - Standart `client_id`, `client_secret`, `subdomain` orqali avtorizatsiya havolasi generatsiya qilinadi:
+     `https://www.amocrm.ru/oauth?client_id={id}&redirect_uri={callback}&state={tenant_id}&mode=post_message`
+   - Callbackda olingan `authorization_code` orqali dastlabki `access_token` va `refresh_token` olinadi.
+   - Har bir so'rov oldidan token muddati tekshiriladi (`token_expires_at`). Agar eskirgan bo'lsa yoki so'rov 401 qaytarsa, `refreshToken()` avtomatik yangi token olib, bazani yangilaydi.
+2. **O'zbekiston Telefon Raqamlari Qidiruvi (Dublikatlarni oldini olish):**
+   - amoCRM ba'zi raqamlarni xalqaro (`+998 90 123 45 67`), ba'zilarini mahalliy (`90 123 45 67`), hatto ba'zi operator kodlarini (masalan, 33...) Frantsiya formati (`+33 ...`) sifatida formatlab saqlaydi.
+   - `findContactByPhone()` funksiyasi bitta raqam uchun 5 xil format variatsiyasini (toza raqam, 998 bilan, oraliq bo'shliqlar bilan) hosil qiladi va `GET /api/v4/contacts?query=...` orqali qidiradi (100ms interval bilan so'rovlar limiti saqlanadi).
+3. **Avtomatik Kontakt va Lid (Bitim) Yaratish Qoidalari:**
+   - Sozlamalarda 3 xil holat uchun alohida harakat belgilanadi:
+     * `incoming_action` (kiruvchi qo'ng'iroq) $ightarrow$ `contact`, `lead`, yoki `nothing`.
+     * `outgoing_action` (chiquvchi qo'ng'iroq) $ightarrow$ `contact`, `lead`, yoki `nothing`.
+     * `missed_action` (javobsiz qo'ng'iroq) $ightarrow$ `contact`, `lead`, yoki `nothing`.
+   - Agar kontakt topilmasa, `createContact()` chaqiriladi.
+   - Agar amal `lead` bo'lsa, `createLead()` orqali belgilangan `pipeline_id` voronkasiga yangi bitim ochiladi.
+4. **Qo'ng'iroqni amoCRM ga Yozish (`POST /api/v4/calls`):**
+   - `direction`: `inbound` yoki `outbound`.
+   - `call_status`: 4 (muvaffaqiyatli suhbat) yoki 6 (javobsiz qo'ng'iroq).
+   - `responsible_user_id`: Operatorning telefoni `operator_mapping` orqali amoCRM menejeriga moslanadi.
+   - **Xavfsiz Audio Havolasi:** HMAC SHA-256 xeshi bilan imzolangan havola uzatiladi:
+     `url("/api/amocrm/play/{call_id}?token={hmac_token}")`.
+   - Qo'ng'iroq bahosi (agar mavjud bo'lsa): `"Mijoz bahosi: ⭐⭐⭐⭐⭐ (5/5)"`.
+5. **Javobsiz Qo'ng'iroq uchun Avto-Vazifa (`POST /api/v4/tasks`):**
+   - Agar qo'ng'iroq javobsiz qolsa va `create_task_on_missed` yoqilgan bo'lsa, mas'ul xodimga 2 soat muddat bilan "Qayta qo'ng'iroq qiling" vazifasi qo'yiladi.
+6. **amoCRM Vidjeti (`amocrm-widget`):**
+   - `manifest.json` va `script.js` dan iborat ZIP arxivi.
+   - amoCRM kartochkasida Click-to-call (bir bosishda qo'ng'iroq qilish) va qo'ng'iroq kelganda brauzerda mijoz kartochkasini chiqarish (Events API v2 `notifyRinging`) ta'minlanadi.
+
+---
+
+### 8.2. MoySklad Integratsiya Arxitekturasi (`MoySkladService`)
+1. **Ikki Qatlamli API:**
+   - **Phone API 1.0 (`api.moysklad.ru/api/phone/1.0/`):** Telefoniya hodisalari, qo'ng'iroqni kiritish (`POST /call`), yangilash (`PUT /call/{id}`), va kartochkani boshqarish (`SHOW`, `STARTTIME`, `HIDE`).
+   - **Remap JSON API 1.2 (`api.moysklad.ru/api/remap/1.2/`):** Kontragentlar (`/entity/counterparty`) va xodimlarni (`/entity/employee`) qidirish.
+2. **Xodimlar va Operatorlar Moslashuvi (`operator_mapping`):**
+   - MoySklad xodimlari ro'yxati olinadi (`getEmployees`) va ularning `href` havolasi bizning telefonlarimizga biriktiriladi.
+3. **Kontragent Qidiruvi va Kontakt Nomini Yangilash:**
+   - `findCounterpartyByPhone`: Telefon raqami va oxirgi 9 ta raqami bo'yicha MoySklad qidiriladi.
+   - Agar MoySkladda mijoz nomi mavjud bo'lsa, `1call` dagi kontakt nomi avtomatik MoySkladdagi kontragent nomiga yangilanadi.
+4. **Toshkent Vaqtini To'g'rilash (Timezone Offset):**
+   - MoySklad serveri kelgan vaqtga avtomatik +2 soat qo'shib saqlaydi.
+   - Toshkent (UTC+5) vaqtida to'g'ri ko'rinishi uchun, serverimizdan vaqt Moskva (UTC+3) vaqt zonasida yuboriladi:
+     $$\\text{UTC+3} + 2\\text{h} = \\text{UTC+5 (Toshkent vaqti)}$$
+5. **MoySklad Ilovasi (App Descriptor XML):**
+   - `moysklad-app.xml` deskriptori orqali MoySklad shaxsiy ilovasi ulanadi va kontragent kartochkasida `1call` telefoniya iframe vidjeti paydo bo'ladi.
