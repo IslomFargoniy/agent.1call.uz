@@ -25,7 +25,7 @@
 | **Dual-SIM Tanlash** | Operator ilovada **Faqat Korporativ SIM** ni tanlashi mumkin (`selected_sim_slot`), shaxsiy SIM qo'ng'iroqlari yozilmaydi |
 | **Maxfiylik (Privacy)** | **Ish vaqti rejimi (Work Schedule)** va shaxsiy raqamlar filtri (Blacklist) |
 | **Tezkor Bildirishnomalar** | **Telegram Bot:** Qoldirilgan qo'ng'iroqlar, kunlik hisobotlar va to'lov eslatmalari |
-| **CRM/ERP Integratsiyalari** | amoCRM, Bitrix24, MoySklad, BitoERP (Driver Pattern) |
+| **CRM Integratsiyalari** | **amoCRM va MoySklad** (Driver Pattern, `panel.1call.uz` tajribasi asosida) |
 | **Audio Saqlash & Xotira** | **Storage Abstraction:** VPS Private Storage (`storage/app/private/recordings/`) yoki Cloudflare R2 / AWS S3 (`RECORDINGS_STORAGE_DISK=local|r2|s3`) |
 | **Audio Arxiv Muddati** | Sukut bo'yicha **30 kun** saqlanadi. Uzoqroq saqlash (60, 90, 180, 365 kun) uchun alohida narx belgilash imkoniyati |
 | **Superadmin Paneli** | Ichki Inertia.js/React boshqaruvi (`/admin/users`, `/admin/tenants`, `/admin/tariffs`, `/admin/payment-methods`, `/admin/invoices`) |
@@ -740,7 +740,7 @@ agent.1call.uz/
 │   │   └── LemonSqueezyService.php           # Checkout generatsiyasi va USD variantlar
 │   ├── Services/Telegram/
 │   │   └── TelegramNotificationService.php   # Qoldirilgan qo'ng'iroq va hisobotlar
-│   ├── Services/Integrations/{CrmManager, AmoCrmDriver, Bitrix24Driver, MoySkladDriver, BitoErpDriver}.php
+│   ├── Services/Integrations/{CrmManager, AmoCrmDriver, MoySkladDriver}.php
 │   └── Jobs/{SyncCallToIntegrationsJob, SendTelegramAlertJob, PruneExpiredRecordingsJob}.php
 ├── resources/js/pages/
 │   ├── {Dashboard, Calls/Index, Devices/Index}.tsx
@@ -841,26 +841,24 @@ agent.1call.uz/
 
 ---
 
-### **Phase 6: Telegram Bot, CRM Integratsiyalari va Production**
+### **Phase 6: Telegram Bot, amoCRM va MoySklad Integratsiyalari**
 - [ ] **6.1.** **Telegram Bot integratsiyasi:**
   - Real-vaqtda qoldirilgan qo'ng'iroqlar haqida ogohlantirish (`SendTelegramAlertJob`).
   - Kunlik soat 19:00 statistik hisobot.
   - Obuna tugashiga 7, 3, 1 kun qolganda to'lov eslatmalari.
-- [ ] **6.2.** `CrmDriverInterface` va `CrmManager` (Driver Pattern).
-- [ ] **6.3.** **amoCRM Integratsiyasi (panel.1call.uz asosida):**
-  - `AmoCrmService` (OAuth2, 5 xil formatdagi telefon qidiruvi, auto-contact/lead, HMAC SHA-256 audio link).
+- [ ] **6.2.** `CrmDriverInterface` va `CrmManager` (Driver Pattern: faqat amoCRM va MoySklad).
+- [ ] **6.3.** **amoCRM Integratsiyasi (panel.1call.uz tajribasi asosida):**
+  - `AmoCrmService` (OAuth2, 5 xil formatdagi O'zbekiston telefon qidiruvi, auto-contact/lead, HMAC SHA-256 audio link).
   - `SendCallToAmoCrmJob` (Cache Lock bilan dublikatsiz sinxronlash, javobsiz qo'ng'iroq avto-vazifasi).
-  - `amocrm-widget` ZIP arxivi va Events API v2 bildirishnomalari.
-- [ ] **6.4.** **Bitrix24 Drayveri:** `telephony.externalcall` integratsiyasi.
-- [ ] **6.5.** **MoySklad Integratsiyasi (panel.1call.uz asosida):**
+  - `amocrm-widget` ZIP arxivi va Events API v2 bildirishnomalari (Click-to-call va jiringlaganda popup).
+- [ ] **6.4.** **MoySklad Integratsiyasi (panel.1call.uz tajribasi asosida):**
   - `MoySkladService` (Phone API 1.0 + Remap JSON API 1.2, xodimlar mappingi).
   - `SendCallToMoySkladJob` (UTC+3 -> UTC+5 vaqt korreksiyasi, kontragent nomi sinxroni).
   - `moysklad-app.xml` ilova deskriptori va iframe interfeysi.
-- [ ] **6.6.** **BitoERP & Universal Webhook Drayveri:** REST Webhook (HMAC SHA-256).
-- [ ] **6.7.** `SyncCallToIntegrationsJob` asinxron navbat va Retry Policy.
-- [ ] **6.8.** Integratsiyalar Dashboard UI.
-- [ ] **6.9.** GitHub Actions CI/CD (`backend-ci.yml`, `android-ci.yml`) va yuklama sinovlari.
-- [ ] **6.10.** **VPS Production Deploy:** Ubuntu 24.04 sozlash, Nginx, PHP 8.3-FPM, PostgreSQL 16, Redis, Supervisor (queues), Certbot SSL va deploy skripti.
+- [ ] **6.5.** `SyncCallToIntegrationsJob` asinxron navbat va Retry Policy (amoCRM & MoySklad uchun).
+- [ ] **6.6.** Integratsiyalar Dashboard UI (`resources/js/Pages/Integrations/{Index, AmoCrmConfig, MoySkladConfig, UserMapping}.tsx`).
+- [ ] **6.7.** GitHub Actions CI/CD (`backend-ci.yml`, `android-ci.yml`) va yuklama sinovlari.
+- [x] **6.8.** **VPS Production Deploy:** Fastpanel / Ubuntu 22.04 LTS (`193.180.213.188`), Nginx, PHP 8.3-FPM, PostgreSQL 16, Redis, Reverb (port 8085) va `deploy.sh` orqali to'liq ishga tushirildi!
 
 ---
 
