@@ -1,66 +1,96 @@
 import React from 'react';
 
+export function AmoCrmIcon({ className = "h-6 w-6" }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 36 36" fill="currentColor" className={`flex-shrink-0 ${className}`}>
+            <circle cx="18" cy="18" r="18" fill="#167FFB" />
+            <path d="M11 18c0-3.866 3.134-7 7-7s7 3.134 7 7-3.134 7-7 7-7-3.134-7-7zm7-3.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7z" fill="#FFFFFF" />
+        </svg>
+    );
+}
+
+export function MoySkladIcon({ className = "h-6 w-6" }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 36 36" fill="currentColor" className={`flex-shrink-0 ${className}`}>
+            <rect width="36" height="36" rx="8" fill="#F46738" />
+            <path d="M10 12h5l3 6 3-6h5v12h-4v-7l-3 6h-2l-3-6v7h-4V12z" fill="#FFFFFF" />
+        </svg>
+    );
+}
+
+export function ClickIcon({ className = "h-6 w-6" }: { className?: string }) {
+    return (
+        <div className={`aspect-square rounded-lg bg-[#00A5FF] flex items-center justify-center p-1 text-white font-black text-xs shadow-xs flex-shrink-0 ${className}`}>
+            C
+        </div>
+    );
+}
+
+export function PaymeIcon({ className = "h-6 w-6" }: { className?: string }) {
+    return (
+        <div className={`aspect-square rounded-lg bg-[#00CCCC] flex items-center justify-center p-1 text-white font-black text-xs shadow-xs flex-shrink-0 ${className}`}>
+            P
+        </div>
+    );
+}
+
+export function LemonSqueezyIcon({ className = "h-6 w-6" }: { className?: string }) {
+    return (
+        <div className={`aspect-square rounded-lg bg-[#FFC233] flex items-center justify-center p-1 text-slate-900 font-black text-xs shadow-xs flex-shrink-0 ${className}`}>
+            🍋
+        </div>
+    );
+}
+
 export function AmoCrmLogo({ className = "h-7" }: { className?: string }) {
     return (
-        <div className={`flex items-center gap-2 font-bold tracking-tight text-[#167FFB] ${className}`}>
-            <svg viewBox="0 0 36 36" fill="currentColor" className="h-full aspect-square flex-shrink-0">
-                <circle cx="18" cy="18" r="18" fill="#167FFB" />
-                <path d="M11 18c0-3.866 3.134-7 7-7s7 3.134 7 7-3.134 7-7 7-7-3.134-7-7zm7-3.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7z" fill="#FFFFFF" />
-            </svg>
-            <span className="text-lg font-black text-slate-900 dark:text-white">amo<span className="text-[#167FFB]">CRM</span></span>
+        <div className={`flex items-center gap-2.5 font-bold tracking-tight text-[#167FFB] ${className}`}>
+            <AmoCrmIcon className="h-full aspect-square" />
+            <span className="text-lg font-black text-slate-900 dark:text-white leading-none">amo<span className="text-[#167FFB]">CRM</span></span>
         </div>
     );
 }
 
 export function MoySkladLogo({ className = "h-7" }: { className?: string }) {
     return (
-        <div className={`flex items-center gap-2 font-bold text-[#F46738] ${className}`}>
-            <svg viewBox="0 0 36 36" fill="currentColor" className="h-full aspect-square flex-shrink-0">
-                <rect width="36" height="36" rx="8" fill="#F46738" />
-                <path d="M10 12h5l3 6 3-6h5v12h-4v-7l-3 6h-2l-3-6v7h-4V12z" fill="#FFFFFF" />
-            </svg>
-            <span className="text-lg font-black text-slate-900 dark:text-white">Мой<span className="text-[#F46738]">Склад</span></span>
+        <div className={`flex items-center gap-2.5 font-bold text-[#F46738] ${className}`}>
+            <MoySkladIcon className="h-full aspect-square" />
+            <span className="text-lg font-black text-slate-900 dark:text-white leading-none">Мой<span className="text-[#F46738]">Склад</span></span>
         </div>
     );
 }
 
 export function ClickLogo({ className = "h-7" }: { className?: string }) {
     return (
-        <div className={`flex items-center gap-2 ${className}`}>
-            <div className="h-full aspect-square rounded-lg bg-[#00A5FF] flex items-center justify-center p-1 text-white font-black text-xs shadow-xs flex-shrink-0">
-                C
-            </div>
-            <span className="text-base font-extrabold tracking-tight text-[#00A5FF]">CLICK</span>
+        <div className={`flex items-center gap-2.5 ${className}`}>
+            <ClickIcon className="h-full" />
+            <span className="text-base font-extrabold tracking-tight text-[#00A5FF] leading-none">CLICK</span>
         </div>
     );
 }
 
 export function PaymeLogo({ className = "h-7" }: { className?: string }) {
     return (
-        <div className={`flex items-center gap-2 ${className}`}>
-            <div className="h-full aspect-square rounded-lg bg-[#00CCCC] flex items-center justify-center p-1 text-white font-black text-xs shadow-xs flex-shrink-0">
-                P
-            </div>
-            <span className="text-base font-extrabold tracking-tight text-[#00CCCC]">payme</span>
+        <div className={`flex items-center gap-2.5 ${className}`}>
+            <PaymeIcon className="h-full" />
+            <span className="text-base font-extrabold tracking-tight text-[#00CCCC] leading-none">payme</span>
         </div>
     );
 }
 
 export function LemonSqueezyLogo({ className = "h-7" }: { className?: string }) {
     return (
-        <div className={`flex items-center gap-2 ${className}`}>
-            <div className="h-full aspect-square rounded-lg bg-[#FFC233] flex items-center justify-center p-1 text-slate-900 font-black text-xs shadow-xs flex-shrink-0">
-                🍋
-            </div>
-            <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white">Lemon <span className="text-[#E0A800]">Squeezy</span></span>
+        <div className={`flex items-center gap-2.5 ${className}`}>
+            <LemonSqueezyIcon className="h-full" />
+            <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white leading-none">Lemon <span className="text-[#E0A800]">Squeezy</span></span>
         </div>
     );
 }
 
 export function UzcardLogo({ className = "h-6" }: { className?: string }) {
     return (
-        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#102a5c] text-white font-bold text-xs ${className}`}>
-            <span className="w-2 h-2 rounded-full bg-[#35b8e0]"></span>
+        <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#102a5c] text-white font-bold text-xs ${className}`}>
+            <span className="w-2 h-2 rounded-full bg-[#35b8e0] flex-shrink-0"></span>
             <span>UZCARD</span>
         </div>
     );
@@ -68,8 +98,8 @@ export function UzcardLogo({ className = "h-6" }: { className?: string }) {
 
 export function HumoLogo({ className = "h-6" }: { className?: string }) {
     return (
-        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#f57c00] text-white font-bold text-xs ${className}`}>
-            <span className="w-2 h-2 rounded-full bg-white"></span>
+        <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#f57c00] text-white font-bold text-xs ${className}`}>
+            <span className="w-2 h-2 rounded-full bg-white flex-shrink-0"></span>
             <span>HUMO</span>
         </div>
     );

@@ -21,6 +21,8 @@ import {
 import {
     AmoCrmLogo,
     MoySkladLogo,
+    AmoCrmIcon,
+    MoySkladIcon,
     ClickLogo,
     PaymeLogo,
     LemonSqueezyLogo,
@@ -189,35 +191,35 @@ export default function Welcome() {
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 flex items-center gap-4">
-                                    <div className="h-11 w-11 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold">
+                                    <div className="h-12 w-12 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold flex-shrink-0 shadow-xs">
                                         <Radio className="h-6 w-6 animate-pulse" />
                                     </div>
-                                    <div>
-                                        <div className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase">Kiruvchi Qo‘ng‘iroq</div>
-                                        <div className="text-base font-bold text-slate-900 dark:text-white">+998 90 123 45 67</div>
-                                        <div className="text-xs text-slate-500">SIM 1 (Korporativ) • 00:42</div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Kiruvchi Qo‘ng‘iroq</div>
+                                        <div className="text-base font-bold text-slate-900 dark:text-white truncate">+998 90 123 45 67</div>
+                                        <div className="text-xs text-slate-500 truncate">SIM 1 (Korporativ) • 00:42</div>
                                     </div>
                                 </div>
 
-                                <div className="p-4 rounded-2xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200/60 dark:border-purple-900/40 flex items-center gap-4">
-                                    <div className="h-11 w-11 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold">
-                                        <AmoCrmLogo className="h-6 text-white" />
+                                <div className="p-4 rounded-2xl bg-sky-50/50 dark:bg-sky-950/20 border border-sky-200/60 dark:border-sky-900/40 flex items-center gap-4">
+                                    <div className="h-12 w-12 rounded-xl bg-[#167FFB]/15 flex items-center justify-center flex-shrink-0 shadow-xs">
+                                        <AmoCrmIcon className="h-7 w-7" />
                                     </div>
-                                    <div>
-                                        <div className="text-xs font-semibold text-purple-700 dark:text-purple-400 uppercase">amoCRM Sinxron</div>
-                                        <div className="text-base font-bold text-slate-900 dark:text-white">Jasur Aliyev (Lead)</div>
-                                        <div className="text-xs text-slate-500">Mijoz kartasi ochildi</div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="text-xs font-semibold text-[#167FFB] uppercase tracking-wider">amoCRM Sinxron</div>
+                                        <div className="text-base font-bold text-slate-900 dark:text-white truncate">Jasur Aliyev (Lead)</div>
+                                        <div className="text-xs text-slate-500 truncate">Mijoz kartasi ochildi</div>
                                     </div>
                                 </div>
 
-                                <div className="p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 flex items-center gap-4">
-                                    <div className="h-11 w-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
-                                        <MoySkladLogo className="h-6 text-white" />
+                                <div className="p-4 rounded-2xl bg-orange-50/50 dark:bg-orange-950/20 border border-orange-200/60 dark:border-orange-900/40 flex items-center gap-4">
+                                    <div className="h-12 w-12 rounded-xl bg-[#F46738]/15 flex items-center justify-center flex-shrink-0 shadow-xs">
+                                        <MoySkladIcon className="h-7 w-7" />
                                     </div>
-                                    <div>
-                                        <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase">MoySklad Remap</div>
-                                        <div className="text-base font-bold text-slate-900 dark:text-white">Kontragent Topildi</div>
-                                        <div className="text-xs text-slate-500">Vaqt korreksiyasi: UTC+5</div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="text-xs font-semibold text-[#F46738] uppercase tracking-wider">MoySklad Remap</div>
+                                        <div className="text-base font-bold text-slate-900 dark:text-white truncate">Kontragent Topildi</div>
+                                        <div className="text-xs text-slate-500 truncate">Vaqt korreksiyasi: UTC+5</div>
                                     </div>
                                 </div>
                             </div>
