@@ -14,13 +14,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
 
-// Trailing slash redirect fallbacks
-Route::redirect('/integrations/', '/integrations');
-Route::redirect('/devices/', '/devices');
-Route::redirect('/calls/', '/calls');
-Route::redirect('/billing/', '/billing');
-Route::redirect('/settings/work-schedule/', '/settings/work-schedule');
-
 // Google OAuth2 Authentication
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
