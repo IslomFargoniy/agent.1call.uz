@@ -100,7 +100,7 @@ class GoogleAuthController extends Controller
         request()->session()->regenerate();
 
         if ($user->isSuperAdmin()) {
-            return redirect()->intended(route('admin.tenants'));
+            return redirect()->intended(route('admin.tenants.index'));
         }
 
         return redirect()->intended(route('dashboard'));
