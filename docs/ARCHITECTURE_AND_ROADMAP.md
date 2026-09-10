@@ -22,7 +22,8 @@
 | **Tezkor Bildirishnomalar** | **Telegram Bot:** Qoldirilgan qo'ng'iroqlar, kunlik hisobotlar va to'lov eslatmalari |
 | **CRM/ERP Integratsiyalari** | amoCRM, Bitrix24, MoySklad, BitoERP (Driver Pattern) |
 | **Server va Joylashtirish** | Linux VPS (Ubuntu 24.04, Nginx, PHP 8.3, PostgreSQL 16, Redis) |
-| **Audio Saqlash** | VPS Private Storage (`storage/app/private/recordings/`) + HTTP Range streaming |
+| **Audio Saqlash & Arxiv** | Sukut bo'yicha **30 kun** saqlanadi. Uzoqroq saqlash (60, 90, 180, 365 kun) uchun alohida narx belgilash imkoniyati |
+| **Audio Xotirasi** | VPS Private Storage (`storage/app/private/recordings/`) + HTTP Range streaming |
 | **Superadmin Paneli** | Ichki Inertia.js/React boshqaruvi (`/admin/users`, `/admin/tenants`, `/admin/tariffs`, `/admin/payment-methods`, `/admin/invoices`) |
 
 ---
@@ -105,6 +106,7 @@ Alohida og'ir paketlar (masalan Filament) o'rnatilmaydi. Mavjud Inertia.js + Rea
    - Obunani qo'lda uzaytirish (masalan, to'lov bank orqali kelib tushganda yoki do'stona trial berilganda).
 3. **`/admin/tariffs`:**
    - Asosiy tariflar va baza narxini belgilash (1 ta telefon uchun oylik narx).
+   - **Audio arxiv saqlash muddati narxlari:** Standart kunlar (30 kun) va 60, 90, 180, 365 kunlik arxiv saqlash uchun qo'shimcha oylik narxlarni belgilash.
    - **Oylar kesimidagi chegirmalar:** 3, 6, 12 oylik chegirma foizlarini qo'shish/tahrirlash.
    - **Qurilmalar soni kesimidagi chegirmalar:** Qanchadir miqdordan ortiq telefonlar uchun hajm chegirmalarini (masalan, 5+, 10+, 20+ telefon) belgilash.
 4. **`/admin/payment-methods` (To'lov Tizimlari Sozlamalari):**
@@ -129,6 +131,7 @@ CREATE TABLE tenants (
     plan VARCHAR(50) NOT NULL DEFAULT 'standard',
     plan_limits JSONB NOT NULL DEFAULT '{"max_devices": 10, "retention_days": 90, "audio_storage_gb": 20}',
     allowed_devices_count INTEGER NOT NULL DEFAULT 2, -- Sotib olingan faol telefon slotlari
+    audio_retention_days INTEGER NOT NULL DEFAULT 30, -- Audio saqlash muddati (standart: 30 kun)
     subscription_expires_at TIMESTAMPTZ NULL,        -- Obuna rasmiy tugash sanasi
     grace_period_ends_at TIMESTAMPTZ NULL,           -- 3 kunlik imtiyozli davr tugash sanasi
     trial_ends_at TIMESTAMPTZ NULL,                  -- Bepul sinov davri (masalan, 14 kun)
@@ -251,6 +254,7 @@ CREATE TABLE tariffs (
     base_price_monthly NUMERIC(12, 2) NOT NULL, -- 1 ta telefon uchun 1 oylik baza narxi (masalan: 50 000 UZS)
     currency VARCHAR(3) NOT NULL DEFAULT 'UZS',
     min_devices INTEGER NOT NULL DEFAULT 1,     -- Minimal sotib olinadigan slotlar
+    default_retention_days INTEGER NOT NULL DEFAULT 30, -- Standart kiritilgan audio arxiv muddati (30 kun)
     trial_days INTEGER NOT NULL DEFAULT 14,     -- Bepul sinov kunlari
     trial_device_slots INTEGER NOT NULL DEFAULT 2, -- Sinovdagi bepul qurilmalar
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -280,16 +284,35 @@ CREATE TABLE tariff_discounts (
 CREATE INDEX idx_tariff_discounts ON tariff_discounts(tariff_id, type, is_active);
 ```
 
-### 2.7. `subscriptions` (Tarif va Obunalar)
+### 2.7. `tariff_retention_options` (Audio Arxivini Uzoqroq Saqlash Narxlari)
+> [!NOTE]
+> Standart holatda audio arxiv 30 kun bepul saqlanadi. Mijoz audiolarni 60, 90, 180 yoki 365 kun saqlashni xohlasa, Superadmin ushbu jadval orqali qo'shimcha oylik narx belgilaydi.
+```sql
+CREATE TABLE tariff_retention_options (
+    id BIGSERIAL PRIMARY KEY,
+    tariff_id BIGINT NOT NULL REFERENCES tariffs(id) ON DELETE CASCADE,
+    retention_days INTEGER NOT NULL,               -- 60, 90, 180, 365 kun
+    name VARCHAR(100) NOT NULL,                    -- Masalan: "60 kunlik arxiv (+30 kun)", "1 yillik arxiv"
+    additional_price_monthly NUMERIC(12, 2) NOT NULL DEFAULT 0, -- 1 ta telefon uchun oylik qo'shimcha narx
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NULL,
+    updated_at TIMESTAMPTZ NULL,
+    CONSTRAINT uq_retention_days UNIQUE (tariff_id, retention_days)
+);
+```
+
+### 2.8. `subscriptions` (Tarif va Obunalar)
 ```sql
 CREATE TABLE subscriptions (
     id BIGSERIAL PRIMARY KEY,
     uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     tenant_id BIGINT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     tariff_id BIGINT NULL REFERENCES tariffs(id) ON DELETE SET NULL,
-    period_months SMALLINT NOT NULL,              -- 3, 6, 12 oy (yoki 0 agar pro-rata bo'lsa)
+    period_months SMALLINT NOT NULL,              -- 3, 6, 12 oy
     device_count INTEGER NOT NULL,               -- Obunadagi telefonlar soni
     unit_price_monthly NUMERIC(12, 2) NOT NULL,  -- 1 ta telefon uchun 1 oylik baza narxi
+    retention_days INTEGER NOT NULL DEFAULT 30,  -- Tanlangan audio arxiv muddati (30, 60, 90, 180, 365 kun)
+    retention_addon_price_monthly NUMERIC(12, 2) NOT NULL DEFAULT 0, -- Arxiv muddati uchun oylik qo'shimcha narx
     period_discount_percent NUMERIC(5, 2) NOT NULL DEFAULT 0, -- Oylar kesimidagi chegirma foizi
     volume_discount_percent NUMERIC(5, 2) NOT NULL DEFAULT 0, -- Qurilmalar soni bo'yicha chegirma foizi
     total_discount_percent NUMERIC(5, 2) NOT NULL DEFAULT 0,  -- Jami qo'llangan chegirma foizi
@@ -311,7 +334,7 @@ CREATE POLICY subscriptions_tenant_isolation ON subscriptions
     WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::bigint);
 ```
 
-### 2.8. `payment_methods` (To'lov Tizimlari va Karta Sozlamalari)
+### 2.9. `payment_methods` (To'lov Tizimlari va Karta Sozlamalari)
 > [!NOTE]
 > Global konfiguratsiya jadvali (RLS talab etilmaydi). Superadmin qaysi to'lov usullari faol bo'lishini va karta rekvizitlarini boshqaradi.
 ```sql
@@ -328,7 +351,7 @@ CREATE TABLE payment_methods (
 );
 ```
 
-### 2.9. `invoices` (Hisob-fakturalar, Skrinshotlar va To'lovlar)
+### 2.10. `invoices` (Hisob-fakturalar, Skrinshotlar va To'lovlar)
 ```sql
 CREATE TABLE invoices (
     id BIGSERIAL PRIMARY KEY,
@@ -390,6 +413,25 @@ To'lov summasi bazadagi `tariffs` va `tariff_discounts` jadvallari qoidalariga a
 | **5 ta** | 6 oy | 1 500 000 UZS | 10% | 5% | **15%** | **1 275 000 UZS** | 225 000 UZS |
 | **10 ta** | 12 oy | 6 000 000 UZS | 20% | 10% | **30%** | **4 200 000 UZS** | 1 800 000 UZS |
 | **25 ta** | 12 oy | 15 000 000 UZS | 20% | 15% | **35%** | **9 750 000 UZS** | 5 250 000 UZS |
+
+4. **Audio Arxivini Saqlash Muddati va Narxi (Retention Extension):**
+   - **Standart (Default): 30 kun** — Har qanday tarif ichida mutlaqo bepul (0 UZS).
+   - **Qo'shimcha muddatlar:** Agar kompaniya audiolarni 30 kundan uzoqroq saqlamoqchi bo'lsa, Superadmin belgilagan qo'shimcha oylik tarif qo'shiladi:
+     * 30 kun (Standart): +0 UZS / oy / telefon
+     * 60 kun: +10 000 UZS / oy / telefon
+     * 90 kun: +20 000 UZS / oy / telefon
+     * 180 kun (6 oy): +35 000 UZS / oy / telefon
+     * 365 kun (1 yil): +60 000 UZS / oy / telefon
+   - **Hisoblash Formulasi:**
+     $$\\text{1 ta Telefon Oylik Narxi} = \\text{Baza Narx (50 000)} + \\text{Arxiv Muddati Narxi}$$
+     $$\\text{Baza Summa} = \\text{Telefonlar Soni} \\times \\text{1 ta Telefon Oylik Narxi} \\times \\text{Oylar Soni}$$
+     $$\\text{Yakuniy To'lov} = \\text{Baza Summa} \\times \\left(1 - \\frac{\\text{Jami Chegirma \\%}}{100}\\right)$$
+5. **Eskirgan Audiolarni Avtomatik Tozalash (Retention Cleanup Job):**
+   - Har kecha ishga tushadigan `PruneExpiredRecordingsJob` cron-vazifasi:
+     * Har bir tenantning `audio_retention_days` muddatini o'qiydi (masalan, 30 kun).
+     * `call_timestamp < (NOW() - audio_retention_days)` bo'lgan qo'ng'iroqlarning diskdagi audio faylini o'chiradi (`unlink`).
+     * Qo'ng'iroqning o'zi, statistikasi (raqam, davomiylik, xodim, sana) bazada abadiy saqlanadi, faqat `recording_status = 'expired'` qilib qo'yiladi.
+
 
 ### 3.2. To'lov Usullari va Karta Orqali To'lov (P2P + Skrinshot) Oqimi
 
@@ -538,6 +580,7 @@ agent.1call.uz/
 │   │   ├── Call.php
 │   │   ├── Tariff.php                       # Asosiy tarif modeli
 │   │   ├── TariffDiscount.php               # Oylar va qurilmalar hajm chegirmalari
+│   │   ├── TariffRetentionOption.php        # Audio arxivini uzoqroq saqlash narxlari modeli
 │   │   ├── PaymentMethod.php                # To'lov usuli modeli (Click, Payme, Karta)
 │   │   ├── Subscription.php
 │   │   ├── Invoice.php
@@ -548,7 +591,7 @@ agent.1call.uz/
 │   ├── Services/Telegram/
 │   │   └── TelegramNotificationService.php   # Qoldirilgan qo'ng'iroq va hisobotlar
 │   ├── Services/Integrations/{CrmManager, AmoCrmDriver, Bitrix24Driver, MoySkladDriver, BitoErpDriver}.php
-│   └── Jobs/{SyncCallToIntegrationsJob, SendTelegramAlertJob}.php
+│   └── Jobs/{SyncCallToIntegrationsJob, SendTelegramAlertJob, PruneExpiredRecordingsJob}.php
 ├── resources/js/pages/
 │   ├── {Dashboard, Calls/Index, Devices/Index}.tsx
 │   ├── Admin/
@@ -621,6 +664,8 @@ agent.1call.uz/
 ### **Phase 5: Billing, Pro-rata va To'lov Tizimi (Click, Payme, goodoneuz/pay-uz)**
 - [ ] **5.1.** `config/pay-uz.php` sozlash (Click va Payme merchant kalitlari).
 - [ ] **5.2.** `BillingCalculator` servisi:
+  - Baza narx + tanlangan arxiv muddati qo'shimcha narxi (30 kun bepul, 60/90/180/365 kunlik narxlar).
+  - Oylar va qurilmalar soni bo'yicha dinamik chegirmalar kalkulyatori.
   - Bazadagi `tariffs` va `tariff_discounts` jadvallaridan oylar va qurilmalar soni chegirmalarini dinamik o'qib hisoblovchi dvigatel.
   - Yangi telefonlar uchun **Pro-rata (Co-terming)** kalkulyatori.
 - [ ] **5.3.** `SubscriptionService` (yangi obuna, hisob-faktura, slotlar soni va muddatni yangilash).
