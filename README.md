@@ -1,6 +1,6 @@
-# ZvonkiPro - Multi-Tenant SaaS Platform
+# agent.1call.uz - Multi-Tenant SaaS Platform
 
-"Moi Zvonki" servisining to'liq analogi bo'lgan korporativ **Multi-Tenant SaaS** platformasi.
+Korporativ **Multi-Tenant SaaS** telefoniya va qo'ng'iroqlar monitoringi platformasi ("Moi Zvonki" analogi).
 
 ## Texnologik Stack
 | Qatlam | Texnologiya |

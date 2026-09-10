@@ -1,4 +1,4 @@
-# Multi-Tenant SaaS "1Call.uz" (ZvonkiPro) — Texnik Arxitektura va Implementatsiya Rejasi
+# Multi-Tenant SaaS "agent.1call.uz" — Texnik Arxitektura va Implementatsiya Rejasi
 **(Single Database + Centralized Auth + PostgreSQL RLS + Click/Payme Billing + Telegram Bot + CRM/ERP)**
 
 ---
@@ -318,7 +318,7 @@ Xodimlarning shaxsiy hayotini himoya qilish va korporativ axloq qoidalariga rioy
 
 ---
 
-## 5. ZvonkiPro Telegram Boti (Real-time Xabarnomalar)
+## 5. agent.1call.uz Telegram Boti (Real-time Xabarnomalar)
 
 ### 5.1. Bot Funksional Imkoniyatlari
 - **Qoldirilgan Qo'ng'iroqlar (Missed Call Alert):** Operator mijoz qo'ng'irog'iga javob bermasa, 60 soniya ichida rahbar yoki bo'lim guruhiga xabar keladi:
@@ -340,12 +340,12 @@ Xodimlarning shaxsiy hayotini himoya qilish va korporativ axloq qoidalariga rioy
 
 ## 6. Monorepo Fayl Daraxti
 ```
-zvonkipro/
+agent.1call.uz/
 ├── .github/workflows/
 │   ├── backend-ci.yml
 │   └── android-ci.yml
 ├── android/                         # Native Kotlin
-│   ├── app/src/main/java/com/zvonkipro/agent/
+│   ├── app/src/main/java/uz/onecall/agent/
 │   │   ├── data/{local, remote, repository}/
 │   │   ├── service/
 │   │   │   ├── CallAccessibilityService.kt   # Android 10+ audio capture servisi
