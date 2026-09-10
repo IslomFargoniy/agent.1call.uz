@@ -1,0 +1,69 @@
+# ========================
+# OS & IDE
+# ========================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.fleet/
+.nova/
+.zed/
+*.swp
+*.swo
+
+# ========================
+# Laravel & PHP
+# ========================
+/vendor/
+/.phpunit.cache
+.phpunit.result.cache
+/bootstrap/ssr
+/public/build
+/public/fonts-manifest.dev.json
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/storage/app/private/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+.env
+.env.backup
+.env.production
+.phpactor.json
+Homestead.json
+Homestead.yaml
+/auth.json
+/resources/js/actions
+/resources/js/routes
+/resources/js/wayfinder
+
+# ========================
+# Frontend & Node
+# ========================
+/node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ========================
+# Android Native (Kotlin)
+# ========================
+android/.gradle/
+android/build/
+android/*/build/
+android/*.iml
+android/*/*.iml
+android/local.properties
+android/.navigation/
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+
+# Keystores and Certificates (CRITICAL)
+*.jks
+*.keystore
+android/release-keystore.properties
+google-services.json
