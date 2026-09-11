@@ -12,6 +12,7 @@ import {
     RefreshCw,
     Copy,
     Check,
+    Download,
 } from "lucide-react";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
@@ -147,6 +148,13 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <a
+                        href="/downloads/app"
+                        download="1call-agent.apk"
+                        className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 gap-1.5"
+                    >
+                        <Download className="h-4 w-4 text-primary" /> Android APK yuklab olish
+                    </a>
                     <Button onClick={generateCode} size="sm" className="h-9 gap-1.5">
                         <Plus className="h-4 w-4" /> Yangi telefon ulash
                     </Button>
@@ -354,7 +362,16 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                                 <Smartphone className="h-4 w-4 text-primary" /> Android telefonda bajariladigan amallar:
                             </p>
                             <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-                                <li>Telefonda <b>1Call Agent</b> ilovasini oching.</li>
+                                <li>
+                                    Telefonda <b>1Call Agent</b> ilovasini oching. (Hali o'rnatilmagan bo'lsa:{" "}
+                                    <a
+                                        href="/downloads/app"
+                                        download="1call-agent.apk"
+                                        className="text-primary underline font-semibold hover:opacity-80"
+                                    >
+                                        APK ni yuklab oling
+                                    </a>)
+                                </li>
                                 <li><b>"QR-kodni skanerlash"</b> tugmasini bosing va kamerani ushbu QR-kodga qarating.</li>
                                 <li>Qurilma avtomatik ulanadi va audio yozish uchun ruxsatlar faollashadi.</li>
                             </ol>

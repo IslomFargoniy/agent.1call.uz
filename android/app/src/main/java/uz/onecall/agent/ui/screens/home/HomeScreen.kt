@@ -42,6 +42,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import uz.onecall.agent.core.AppUpdateManager
+import uz.onecall.agent.core.UpdateCheckResult
+import uz.onecall.agent.data.remote.AppVersionResponse
+
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -92,6 +101,16 @@ fun HomeScreen(
     val todayCount by dao.getTodayCallsCountFlow(startOfDay).collectAsState(initial = 0)
     val pendingCount by dao.getPendingCallsCountFlow().collectAsState(initial = 0)
     val recentCalls by dao.getRecentCallsFlow().collectAsState(initial = emptyList())
+
+        var updateAvailableInfo by remember { mutableStateOf<AppVersionResponse?>(null) }
+    LaunchedEffect(Unit) {
+        when (val res = AppUpdateManager.checkForUpdate()) {
+            is UpdateCheckResult.UpdateAvailable -> {
+                updateAvailableInfo = res.versionInfo
+            }
+            else -> {}
+        }
+    }
 
     var selectedSimSlot by remember { mutableIntStateOf(prefs.selectedSimSlot) }
 
@@ -156,6 +175,47 @@ fun HomeScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Update Available Banner
+            if (updateAvailableInfo != null) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = PrimaryBlue.copy(alpha = 0.12f)),
+                        border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.4f))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.CloudDownload, contentDescription = null, tint = PrimaryBlue)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Yangi versiya mavjud: v${updateAvailableInfo?.version}",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    text = "Ilovani yangilash uchun bosing",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                )
+                            }
+                            Button(
+                                onClick = onNavigateToSettings,
+                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text("Yangilash", fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+            }
+
             // Service Status Banner
             item {
                 Card(

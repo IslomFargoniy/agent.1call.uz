@@ -14,6 +14,18 @@ use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
 
+// Direct APK Download
+Route::get('/downloads/app', function () {
+    $apkPath = public_path('downloads/1call-agent.apk');
+    if (file_exists($apkPath)) {
+        return response()->download($apkPath, '1call-agent.apk', [
+            'Content-Type' => 'application/vnd.android.package-archive',
+        ]);
+    }
+    return redirect('/devices')->with('error', 'APK fayli hali serverga yuklanmagan');
+})->name('app.download');
+
+
 // Google OAuth2 Authentication
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');

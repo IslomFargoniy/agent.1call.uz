@@ -39,3 +39,12 @@ data class CommonResponse(
     @SerializedName("message") val message: String? = null,
     @SerializedName("call_id") val callId: String? = null
 )
+
+data class AppVersionResponse(
+    @SerializedName("version") val version: String,
+    @SerializedName("version_code") val versionCode: Int,
+    @SerializedName("download_url") val downloadUrl: String,
+    @SerializedName("file_size") val fileSize: Long = 0,
+    @SerializedName("changelog") val changelog: String? = null,
+    @SerializedName("force_update") val forceUpdate: Boolean = false
+)
