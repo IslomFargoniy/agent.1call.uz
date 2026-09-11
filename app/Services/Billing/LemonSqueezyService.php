@@ -20,6 +20,7 @@ class LemonSqueezyService
         return [
             'api_key' => $settings['api_key'] ?? config('services.lemonsqueezy.api_key', ''),
             'store_id' => $settings['store_id'] ?? config('services.lemonsqueezy.store_id', ''),
+            'variant_id' => $settings['variant_id'] ?? config('services.lemonsqueezy.variant_id', ''),
             'webhook_secret' => $settings['webhook_secret'] ?? config('services.lemonsqueezy.webhook_secret', ''),
             'store_slug' => $settings['store_slug'] ?? '1call',
         ];
@@ -70,7 +71,7 @@ class LemonSqueezyService
                             'variant' => [
                                 'data' => [
                                     'type' => 'variants',
-                                    'id' => (string) ($variantId ?? '1'),
+                                    'id' => (string) ($variantId ?? ($settings['variant_id'] ?: '1')),
                                 ],
                             ],
                         ],

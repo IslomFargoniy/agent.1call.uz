@@ -90,7 +90,7 @@ export default function AdminPaymentMethods({ methods }: PaymentMethodsProps) {
                             ) : method.code === 'lemonsqueezy' ? (
                                 <>
                                     <p>Store ID: <b>{method.settings?.store_id || 'Kiritilmagan'}</b></p>
-                                    <p>Store Slug: <b>{method.settings?.store_slug || '1call'}</b></p>
+                                    <p>Variant ID: <b>{method.settings?.variant_id || 'Standart'}</b></p>
                                 </>
                             ) : (
                                 <>
@@ -165,6 +165,14 @@ export default function AdminPaymentMethods({ methods }: PaymentMethodsProps) {
                                         value={data.settings?.store_id || ''}
                                         onChange={(e) => setData('settings', { ...data.settings, store_id: e.target.value })}
                                         placeholder="12345"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold">Product Variant ID:</label>
+                                    <Input
+                                        value={data.settings?.variant_id || ''}
+                                        onChange={(e) => setData('settings', { ...data.settings, variant_id: e.target.value })}
+                                        placeholder="masalan, 123456"
                                     />
                                 </div>
                                 <div className="space-y-1">
