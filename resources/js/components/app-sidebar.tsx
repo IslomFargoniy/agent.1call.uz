@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Link, usePage } from '@inertiajs/react';
 import {
     Building2,
@@ -28,6 +29,7 @@ import {
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
+    const { t } = useTranslation();
     const { auth } = usePage<{ auth: { user: { role: string; name: string } | null; tenant?: { name: string } | null } }>().props;
     const role = auth?.user?.role || 'operator';
     const isSuperAdmin = role === 'superadmin';
@@ -35,12 +37,12 @@ export function AppSidebar() {
 
     const mainNavItems: NavItem[] = [
         {
-            title: 'Bosh sahifa',
+            title: t('sidebar.dashboard', 'Bosh sahifa'),
             href: '/dashboard',
             icon: LayoutGrid,
         },
         {
-            title: 'Qo\'ng\'iroqlar jurnali',
+            title: t('sidebar.calls', 'Qo\'ng\'iroqlar jurnali'),
             href: '/calls',
             icon: PhoneCall,
         },
@@ -48,22 +50,22 @@ export function AppSidebar() {
 
     const adminNavItems: NavItem[] = [
         {
-            title: 'Telefonlar',
+            title: t('sidebar.devices', 'Telefonlar'),
             href: '/devices',
             icon: Smartphone,
         },
         {
-            title: 'amoCRM & MoySklad',
+            title: t('sidebar.integrations', 'amoCRM & MoySklad'),
             href: '/integrations',
             icon: Share2,
         },
         {
-            title: 'Ish grafigi & Maxfiylik',
+            title: t('sidebar.workSchedule', 'Ish grafigi & Maxfiylik'),
             href: '/settings/work-schedule',
             icon: Clock,
         },
         {
-            title: 'To\'lovlar & Obuna',
+            title: t('sidebar.billing', 'To\'lovlar & Obuna'),
             href: '/billing',
             icon: CreditCard,
         },
@@ -71,27 +73,27 @@ export function AppSidebar() {
 
     const superadminNavItems: NavItem[] = [
         {
-            title: 'Kompaniyalar (Tenants)',
+            title: t('sidebar.tenants', 'Kompaniyalar (Tenants)'),
             href: '/admin/tenants',
             icon: Building2,
         },
         {
-            title: 'Barcha xodimlar',
+            title: t('sidebar.allUsers', 'Barcha xodimlar'),
             href: '/admin/users',
             icon: Users,
         },
         {
-            title: 'Tariflar boshqaruvi',
+            title: t('sidebar.tariffs', 'Tariflar boshqaruvi'),
             href: '/admin/tariffs',
             icon: Coins,
         },
         {
-            title: 'To\'lov tizimlari',
+            title: t('sidebar.paymentMethods', 'To\'lov tizimlari'),
             href: '/admin/payment-methods',
             icon: CreditCard,
         },
         {
-            title: 'Karta cheklari',
+            title: t('sidebar.invoices', 'Karta cheklari'),
             href: '/admin/invoices',
             icon: Receipt,
         },
@@ -116,14 +118,14 @@ export function AppSidebar() {
 
                 {isAdmin && (
                     <SidebarGroup>
-                        <SidebarGroupLabel>Kompaniya Boshqaruvi</SidebarGroupLabel>
+                        <SidebarGroupLabel>{t('sidebar.companyManagement', 'Kompaniya Boshqaruvi')}</SidebarGroupLabel>
                         <NavMain items={adminNavItems} />
                     </SidebarGroup>
                 )}
 
                 {isSuperAdmin && (
                     <SidebarGroup>
-                        <SidebarGroupLabel>Superadmin Paneli</SidebarGroupLabel>
+                        <SidebarGroupLabel>{t('sidebar.superadminPanel', 'Superadmin Paneli')}</SidebarGroupLabel>
                         <NavMain items={superadminNavItems} />
                     </SidebarGroup>
                 )}

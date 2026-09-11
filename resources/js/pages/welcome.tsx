@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import React, { useState } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
@@ -94,28 +96,29 @@ export default function Welcome() {
                     </Link>
 
                     <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600 dark:text-slate-300">
-                        <a href="#features" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Imkoniyatlar</a>
-                        <a href="#integrations" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Integratsiyalar</a>
-                        <a href="#pricing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Tariflar</a>
-                        <a href="#how-it-works" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Qanday ishlaydi?</a>
-                        <a href="#faq" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">FAQ</a>
+                        <a href="#features" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{t('welcome.features', 'Imkoniyatlar')}</a>
+                        <a href="#integrations" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{t('welcome.integrations', 'Integratsiyalar')}</a>
+                        <a href="#pricing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{t('welcome.pricing', 'Tariflar')}</a>
+                        <a href="#how-it-works" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{t('welcome.howItWorks', 'Qanday ishlaydi?')}</a>
+                        <a href="#faq" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{t('welcome.faq', 'FAQ')}</a>
                     </nav>
 
                     <div className="flex items-center gap-3">
+                        <LanguageSwitcher />
                         {auth.user ? (
                             <Link href="/dashboard">
                                 <Button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-xs">
-                                    Boshqaruv Paneli
+                                    {t('welcome.dashboard', 'Boshqaruv Paneli')}
                                 </Button>
                             </Link>
                         ) : (
                             <>
                                 <Link href="/login" className="hidden sm:inline-block text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2">
-                                    Kirish
+                                    {t('welcome.login', 'Kirish')}
                                 </Link>
                                 <Link href="/register">
                                     <Button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl px-5 shadow-md shadow-blue-500/20 flex items-center gap-2">
-                                        <span>14 kun bepul</span>
+                                        <span>{t('welcome.register', '14 kun bepul')}</span>
                                         <ArrowRight className="h-4 w-4" />
                                     </Button>
                                 </Link>
@@ -612,12 +615,12 @@ export default function Welcome() {
                             className="h-8 w-8 rounded-lg object-contain"
                         />
                         <span className="font-bold text-white text-base">1Call Agent</span>
-                        <span className="text-xs">© {new Date().getFullYear()} Barcha huquqlar himoyalangan.</span>
+                        <span className="text-xs">© {new Date().getFullYear()} {t('welcome.copyright', 'Barcha huquqlar himoyalangan.')}</span>
                     </div>
 
                     <div className="flex items-center gap-6 text-xs">
                         <a href="https://t.me/onecall_support" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
-                            Telegram Qo‘llab-quvvatlash
+                            {t('welcome.telegramSupport', 'Telegram Qo\'llab-quvvatlash')}
                         </a>
                         <Link href="/login" className="hover:text-white transition-colors">
                             Kirish
