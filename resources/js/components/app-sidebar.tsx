@@ -82,7 +82,7 @@ export function AppSidebar() {
             icon: Users,
         },
         {
-            title: t('sidebar.tariffs', 'Tariflar boshqaruvi'),
+            title: t('sidebar.tariffs', 'Tariflar & Valyuta kursi'),
             href: '/admin/tariffs',
             icon: Coins,
         },

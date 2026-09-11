@@ -126,9 +126,74 @@ class SuperadminController extends Controller
     public function tariffs(): Response
     {
         $tariffs = Tariff::with(['discounts', 'retentionOptions'])->get();
+        $usdRate = (float) SystemSetting::get('usd_exchange_rate', 12850);
+        $rateUpdatedAt = SystemSetting::where('key', 'usd_exchange_rate')->value('updated_at')?->toDateTimeString();
 
         return Inertia::render('Admin/Tariffs', [
             'tariffs' => $tariffs,
+            'usdRate' => $usdRate,
+            'rateUpdatedAt' => $rateUpdatedAt,
+        ]);
+    }
+
+    /**
+     * Save USD exchange rate and optionally re-calculate all tariffs.
+     */
+    public function saveExchangeRate(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'usd_rate' => ['required', 'numeric', 'min:1000'],
+            'recalculate_tariffs' => ['nullable', 'boolean'],
+        ]);
+
+        $rate = (float) $validated['usd_rate'];
+        SystemSetting::set('usd_exchange_rate', $rate, 'billing');
+
+        if (! empty($validated['recalculate_tariffs'])) {
+            $tariffs = Tariff::with('retentionOptions')->get();
+            foreach ($tariffs as $tariff) {
+                $tariff->update([
+                    'price_usd_monthly' => round($tariff->base_price_monthly / $rate, 2),
+                ]);
+
+                foreach ($tariff->retentionOptions as $option) {
+                    $option->update([
+                        'additional_price_usd_monthly' => round($option->additional_price_monthly / $rate, 2),
+                    ]);
+                }
+            }
+
+            return back()->with('success', "Valyuta kursi (1 USD = {$rate} UZS) saqlandi va barcha tariflar dollar narxlari avtomatik qayta hisoblandi!");
+        }
+
+        return back()->with('success', "Valyuta kursi (1 USD = {$rate} UZS) saqlandi!");
+    }
+
+    /**
+     * Get real-time exchange rate from Central Bank of Uzbekistan (CBU).
+     */
+    public function getCbuRate(): JsonResponse
+    {
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(5)->get('https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/');
+            if ($response->successful() && ! empty($response->json())) {
+                $data = $response->json()[0] ?? [];
+                $rate = (float) ($data['Rate'] ?? 12850);
+                $date = $data['Date'] ?? now()->toDateString();
+
+                return response()->json([
+                    'success' => true,
+                    'rate' => $rate,
+                    'date' => $date,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('CBU API fetch failed: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'success' => false,
+            'rate' => (float) SystemSetting::get('usd_exchange_rate', 12850),
         ]);
     }
 
@@ -158,9 +223,11 @@ class SuperadminController extends Controller
     public function paymentMethods(): Response
     {
         $methods = PaymentMethod::orderBy('sort_order')->get();
+        $usdRate = (float) SystemSetting::get('usd_exchange_rate', 12850);
 
         return Inertia::render('Admin/PaymentMethods', [
             'methods' => $methods,
+            'usdRate' => $usdRate,
         ]);
     }
 

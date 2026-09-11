@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, Link } from '@inertiajs/react';
 import {
     CreditCard,
     Edit3,
@@ -25,9 +25,10 @@ interface PaymentMethodItem {
 
 interface PaymentMethodsProps {
     methods: PaymentMethodItem[];
+    usdRate?: number;
 }
 
-export default function AdminPaymentMethods({ methods }: PaymentMethodsProps) {
+export default function AdminPaymentMethods({ methods, usdRate = 12850 }: PaymentMethodsProps) {
     const { t } = useTranslation();
     const [editingMethod, setEditingMethod] = useState<PaymentMethodItem | null>(null);
 
@@ -91,6 +92,12 @@ export default function AdminPaymentMethods({ methods }: PaymentMethodsProps) {
                                 <>
                                     <p>Store ID: <b>{method.settings?.store_id || 'Kiritilmagan'}</b></p>
                                     <p>Variant ID: <b>{method.settings?.variant_id || 'Standart'}</b></p>
+                                    <div className="pt-2 mt-1 border-t border-border/50 flex flex-wrap items-center justify-between gap-2 text-xs">
+                                        <span className="text-muted-foreground">Kurs: <b>1 USD = {Number(usdRate).toLocaleString('uz-UZ')} UZS</b></span>
+                                        <Link href="/admin/tariffs" className="text-primary hover:underline font-semibold">
+                                            Valyuta kursini boshqarish →
+                                        </Link>
+                                    </div>
                                 </>
                             ) : (
                                 <>

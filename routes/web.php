@@ -92,6 +92,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/tariffs', [SuperadminController::class, 'tariffs'])->name('tariffs.index');
         Route::post('/tariffs', [SuperadminController::class, 'saveTariff'])->name('tariffs.save');
+        Route::post('/tariffs/exchange-rate', [SuperadminController::class, 'saveExchangeRate'])->name('tariffs.exchange-rate');
+        Route::get('/tariffs/cbu-rate', [SuperadminController::class, 'getCbuRate'])->name('tariffs.cbu-rate');
 
         Route::get('/payment-methods', [SuperadminController::class, 'paymentMethods'])->name('payment-methods.index');
         Route::put('/payment-methods/{method}', [SuperadminController::class, 'updatePaymentMethod'])->name('payment-methods.update');

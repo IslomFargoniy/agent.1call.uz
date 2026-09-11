@@ -2,6 +2,7 @@
 
 namespace App\Services\Billing;
 
+use App\Models\SystemSetting;
 use App\Models\Tariff;
 use App\Models\Tenant;
 use Illuminate\Support\Carbon;
@@ -32,6 +33,15 @@ class BillingCalculator
         $baseMonthlyUzs = (int) $tariff->base_price_monthly;
         $baseMonthlyUsd = (float) $tariff->price_usd_monthly;
 
+        $exchangeRate = (float) SystemSetting::get('usd_exchange_rate', 12850);
+        if ($exchangeRate <= 0) {
+            $exchangeRate = 12850;
+        }
+
+        if ($baseMonthlyUsd <= 0 && $baseMonthlyUzs > 0) {
+            $baseMonthlyUsd = round($baseMonthlyUzs / $exchangeRate, 2);
+        }
+
         // Retention Option Addon
         $retentionAddonUzs = 0;
         $retentionAddonUsd = 0.0;
@@ -45,6 +55,9 @@ class BillingCalculator
             if ($retOption) {
                 $retentionAddonUzs = (int) $retOption->additional_price_monthly;
                 $retentionAddonUsd = (float) $retOption->additional_price_usd_monthly;
+                if ($retentionAddonUsd <= 0 && $retentionAddonUzs > 0) {
+                    $retentionAddonUsd = round($retentionAddonUzs / $exchangeRate, 2);
+                }
             }
         }
 
