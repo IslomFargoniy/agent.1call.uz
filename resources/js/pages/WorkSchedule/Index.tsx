@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Head, useForm } from '@inertiajs/react';
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Head, useForm } from "@inertiajs/react";
 import {
     Clock,
     Shield,
     Plus,
     Trash2,
     Send,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface WorkScheduleProps {
     workSchedule?: {
@@ -25,68 +25,56 @@ interface WorkScheduleProps {
 export default function WorkScheduleSettings({ workSchedule, privacyBlacklist, telegramChatId }: WorkScheduleProps) {
     const { t } = useTranslation();
     const [blacklist, setBlacklist] = useState<string[]>(privacyBlacklist || []);
-    const [newPhone, setNewPhone] = useState('');
+    const [newPhone, setNewPhone] = useState("");
 
     const { data, setData, put, processing } = useForm({
         work_schedule: {
             enabled: workSchedule?.enabled ?? true,
-            start_time: workSchedule?.start_time || '09:00',
-            end_time: workSchedule?.end_time || '18:00',
+            start_time: workSchedule?.start_time || "09:00",
+            end_time: workSchedule?.end_time || "18:00",
             days: workSchedule?.days || [1, 2, 3, 4, 5],
         },
         privacy_blacklist: privacyBlacklist || [],
-        telegram_chat_id: telegramChatId || '',
+        telegram_chat_id: telegramChatId || "",
     });
 
     const addPhoneToBlacklist = () => {
         if (!newPhone.trim()) return;
         const updated = [...blacklist, newPhone.trim()];
         setBlacklist(updated);
-        setData('privacy_blacklist', updated);
-        setNewPhone('');
+        setData("privacy_blacklist", updated);
+        setNewPhone("");
     };
 
     const removePhoneFromBlacklist = (index: number) => {
         const updated = blacklist.filter((_, i) => i !== index);
         setBlacklist(updated);
-        setData('privacy_blacklist', updated);
+        setData("privacy_blacklist", updated);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        put('/settings/work-schedule');
+        put("/settings/work-schedule");
     };
 
     const dayLabels = [
-        { id: 1, label: 'Dush' },
-        { id: 2, label: 'Sesh' },
-        { id: 3, label: 'Chor' },
-        { id: 4, label: 'Pay' },
-        { id: 5, label: 'Jum' },
-        { id: 6, label: 'Shan' },
-        { id: 7, label: 'Yak' },
+        { id: 1, label: t("workSchedule.dayMon", "Dush") },
+        { id: 2, label: t("workSchedule.dayTue", "Sesh") },
+        { id: 3, label: t("workSchedule.dayWed", "Chor") },
+        { id: 4, label: t("workSchedule.dayThu", "Pay") },
+        { id: 5, label: t("workSchedule.dayFri", "Jum") },
+        { id: 6, label: t("workSchedule.daySat", "Shan") },
+        { id: 7, label: t("workSchedule.daySun", "Yak") },
     ];
-
-    const toggleDay = (dayId: number) => {
-        const currentDays = data.work_schedule.days;
-        const nextDays = currentDays.includes(dayId)
-            ? currentDays.filter((d) => d !== dayId)
-            : [...currentDays, dayId];
-
-        setData('work_schedule', {
-            ...data.work_schedule,
-            days: nextDays,
-        });
-    };
 
     return (
         <div className="p-6 space-y-8 max-w-4xl mx-auto">
-            <Head title={t('workSchedule.title', "Ish grafigi va Maxfiylik")} />
+            <Head title={t("workSchedule.title", "Ish Grafigi va Maxfiylik")} />
 
             <div>
-                <h2 className="text-2xl font-bold tracking-tight">{t('workSchedule.title', "Ish Grafigi va Maxfiylik")}</h2>
+                <h2 className="text-2xl font-bold tracking-tight">{t("workSchedule.title", "Ish Grafigi va Maxfiylik")}</h2>
                 <p className="text-sm text-muted-foreground">
-                    Ish vaqtini sozlash va shaxsiy qo'ng'iroqlarni yozib olishdan himoyalash
+                    {t("workSchedule.subtitle", "Ish vaqtini sozlash va shaxsiy qo'ng'iroqlarni yozib olishdan himoyalash")}
                 </p>
             </div>
 
@@ -99,15 +87,15 @@ export default function WorkScheduleSettings({ workSchedule, privacyBlacklist, t
                                 <Clock className="h-5 w-5" />
                             </div>
                             <div>
-                                <h3 className="font-bold text-base">Kompaniya ish vaqti</h3>
-                                <p className="text-xs text-muted-foreground">Ish vaqtidan tashqaridagi suhbatlar avtomatik filtrlanadi</p>
+                                <h3 className="font-bold text-base">{t("workSchedule.companyScheduleTitle", "Kompaniya ish vaqti")}</h3>
+                                <p className="text-xs text-muted-foreground">{t("workSchedule.companyScheduleDesc", "Ish vaqtidan tashqaridagi suhbatlar avtomatik filtrlanadi")}</p>
                             </div>
                         </div>
 
                         <input
                             type="checkbox"
                             checked={data.work_schedule.enabled}
-                            onChange={(e) => setData('work_schedule', { ...data.work_schedule, enabled: e.target.checked })}
+                            onChange={(e) => setData("work_schedule", { ...data.work_schedule, enabled: e.target.checked })}
                             className="rounded text-primary focus:ring-primary h-5 w-5"
                         />
                     </div>
@@ -116,35 +104,41 @@ export default function WorkScheduleSettings({ workSchedule, privacyBlacklist, t
                         <div className="space-y-4 pt-2 border-t border-border">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Ish boshlanishi:</label>
+                                    <label className="text-xs font-semibold">{t("workSchedule.startTimeLabel", "Ish boshlanishi:")}</label>
                                     <Input
                                         type="time"
                                         value={data.work_schedule.start_time}
-                                        onChange={(e) => setData('work_schedule', { ...data.work_schedule, start_time: e.target.value })}
+                                        onChange={(e) => setData("work_schedule", { ...data.work_schedule, start_time: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Ish yakuni:</label>
+                                    <label className="text-xs font-semibold">{t("workSchedule.endTimeLabel", "Ish yakuni:")}</label>
                                     <Input
                                         type="time"
                                         value={data.work_schedule.end_time}
-                                        onChange={(e) => setData('work_schedule', { ...data.work_schedule, end_time: e.target.value })}
+                                        onChange={(e) => setData("work_schedule", { ...data.work_schedule, end_time: e.target.value })}
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold">Ish kunlari:</label>
+                                <label className="text-xs font-semibold">{t("workSchedule.workDaysLabel", "Ish kunlari:")}</label>
                                 <div className="flex gap-2">
                                     {dayLabels.map((day) => (
                                         <button
                                             key={day.id}
                                             type="button"
-                                            onClick={() => toggleDay(day.id)}
+                                            onClick={() => {
+                                                const currentDays = data.work_schedule.days;
+                                                const updatedDays = currentDays.includes(day.id)
+                                                    ? currentDays.filter((d: number) => d !== day.id)
+                                                    : [...currentDays, day.id].sort();
+                                                setData("work_schedule", { ...data.work_schedule, days: updatedDays });
+                                            }}
                                             className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-all ${
                                                 data.work_schedule.days.includes(day.id)
-                                                    ? 'bg-primary text-primary-foreground border-primary'
-                                                    : 'bg-secondary/50 border-border text-muted-foreground'
+                                                    ? "bg-primary text-primary-foreground border-primary"
+                                                    : "bg-secondary/50 border-border text-muted-foreground"
                                             }`}
                                         >
                                             {day.label}
@@ -163,8 +157,8 @@ export default function WorkScheduleSettings({ workSchedule, privacyBlacklist, t
                             <Shield className="h-5 w-5" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-base">Shaxsiy raqamlar qora ro'yxati (Blacklist)</h3>
-                            <p className="text-xs text-muted-foreground">Ushbu raqamlar bilan suhbatlar HECH QACHON yozilmaydi va saqlanmaydi</p>
+                            <h3 className="font-bold text-base">{t("workSchedule.blacklistTitle", "Shaxsiy raqamlar qora ro'yxati (Blacklist)")}</h3>
+                            <p className="text-xs text-muted-foreground">{t("workSchedule.blacklistDesc", "Ushbu raqamlar bilan suhbatlar HECH QACHON yozilmaydi va saqlanmaydi")}</p>
                         </div>
                     </div>
 
@@ -176,14 +170,14 @@ export default function WorkScheduleSettings({ workSchedule, privacyBlacklist, t
                             className="font-mono text-sm"
                         />
                         <Button type="button" onClick={addPhoneToBlacklist} variant="secondary">
-                            <Plus className="h-4 w-4 mr-1" /> Qo'shish
+                            <Plus className="h-4 w-4 mr-1" /> {t("workSchedule.addBtn", "Qo'shish")}
                         </Button>
                     </div>
 
                     <div className="divide-y divide-border border border-border rounded-xl overflow-hidden max-h-48 overflow-y-auto">
                         {blacklist.length === 0 ? (
                             <div className="p-4 text-center text-xs text-muted-foreground">
-                                Qora ro'yxat bo'sh. Istalgan raqamni kiritishingiz mumkin.
+                                {t("workSchedule.blacklistEmpty", "Qora ro'yxat bo'sh. Istalgan raqamni kiritishingiz mumkin.")}
                             </div>
                         ) : (
                             blacklist.map((phone, idx) => (
@@ -211,24 +205,24 @@ export default function WorkScheduleSettings({ workSchedule, privacyBlacklist, t
                             <Send className="h-5 w-5" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-base">Telegram Bildirishnomalar Guruxi</h3>
-                            <p className="text-xs text-muted-foreground">Qoldirilgan qo'ng'iroqlar kelib tushadigan Telegram Chat ID</p>
+                            <h3 className="font-bold text-base">{t("workSchedule.telegramTitle", "Telegram Bildirishnomalar Guruxi")}</h3>
+                            <p className="text-xs text-muted-foreground">{t("workSchedule.telegramDesc", "Qoldirilgan qo'ng'iroqlar kelib tushadigan Telegram Chat ID")}</p>
                         </div>
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-xs font-semibold">Telegram Chat ID (-100... yoki shaxsiy ID):</label>
+                        <label className="text-xs font-semibold">{t("workSchedule.telegramChatIdLabel", "Telegram Chat ID (-100... yoki shaxsiy ID):")}</label>
                         <Input
                             placeholder="-1001234567890"
                             value={data.telegram_chat_id}
-                            onChange={(e) => setData('telegram_chat_id', e.target.value)}
+                            onChange={(e) => setData("telegram_chat_id", e.target.value)}
                             className="font-mono"
                         />
                     </div>
                 </div>
 
                 <Button type="submit" size="lg" className="w-full" disabled={processing}>
-                    {processing ? 'Saqlanmoqda...' : 'Barcha sozlamalarni saqlash'}
+                    {processing ? t("workSchedule.saving", "Saqlanmoqda...") : t("workSchedule.saveAllSettings", "Barcha sozlamalarni saqlash")}
                 </Button>
             </form>
         </div>

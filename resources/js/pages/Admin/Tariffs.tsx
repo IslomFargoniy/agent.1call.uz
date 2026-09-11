@@ -73,18 +73,16 @@ export default function AdminTariffs({ tariffs }: TariffsProps) {
 
     return (
         <div className="p-6 space-y-6 max-w-6xl mx-auto">
-            <Head title="Superadmin — Tariflar" />
+            <Head title={t("admin.tariffsHead", "Superadmin — Tariflar")} />
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">{t('admin.tariffs.title', "Tariflar Boshqaruvi")}</h2>
-                    <p className="text-sm text-muted-foreground">
-                        Baza narxlari (UZS va USD) hamda muddat/hajm parametrlarini belgilash
-                    </p>
+                    <h2 className="text-2xl font-bold tracking-tight">{t("admin.tariffsTitle", "Tariflar Boshqaruvi")}</h2>
+                    <p className="text-sm text-muted-foreground">{t("admin.tariffsDesc", "Baza narxlari (UZS va USD) hamda muddat/hajm parametrlarini belgilash")}</p>
                 </div>
 
                 <Button onClick={openCreate} size="sm" className="h-9">
-                    <Plus className="h-4 w-4 mr-1.5" /> Yangi tarif qo'shish
+                    <Plus className="h-4 w-4 mr-1.5" /> {t("admin.addNewTariff", "Yangi tarif qo'shish")}
                 </Button>
             </div>
 
@@ -103,30 +101,30 @@ export default function AdminTariffs({ tariffs }: TariffsProps) {
 
                         <div className="border-t border-b border-border py-4 space-y-2">
                             <div className="flex justify-between items-baseline">
-                                <span className="text-xs text-muted-foreground">Baza narx (1 telefon/oy):</span>
+                                <span className="text-xs text-muted-foreground">{t("admin.basePricePerDevice", "Baza narx (1 telefon/oy):")}</span>
                                 <span className="text-xl font-extrabold font-mono text-primary">
                                     {Number(tariff.base_price_monthly).toLocaleString('uz-UZ')} UZS
                                 </span>
                             </div>
                             <div className="flex justify-between items-baseline text-xs text-muted-foreground">
-                                <span>USD narxi (Lemon Squeezy):</span>
+                                <span>{t("admin.usdPrice", "USD narxi (Lemon Squeezy):")}</span>
                                 <span className="font-mono font-bold">${tariff.price_usd_monthly}</span>
                             </div>
                             <div className="flex justify-between items-baseline text-xs text-muted-foreground">
-                                <span>Standart arxiv muddati:</span>
+                                <span>{t("admin.standardRetention", "Standart arxiv muddati:")}</span>
                                 <span className="font-mono">{tariff.default_retention_days} kun</span>
                             </div>
                         </div>
 
                         <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">Holati:</span>
+                            <span className="text-muted-foreground">{t("admin.status", "Holati")}:</span>
                             {tariff.is_active ? (
                                 <span className="text-emerald-600 font-semibold flex items-center gap-1">
-                                    <CheckCircle2 className="h-3.5 w-3.5" /> Faol
+                                    <CheckCircle2 className="h-3.5 w-3.5" /> {t("admin.active", "Faol")}
                                 </span>
                             ) : (
                                 <span className="text-red-600 font-semibold flex items-center gap-1">
-                                    <XCircle className="h-3.5 w-3.5" /> O'chirilgan
+                                    <XCircle className="h-3.5 w-3.5" /> {t("devices.disabled", "O'chirilgan")}
                                 </span>
                             )}
                         </div>
@@ -138,10 +136,10 @@ export default function AdminTariffs({ tariffs }: TariffsProps) {
             {showModal && (
                 <div className="fixed inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
                     <form onSubmit={handleSave} className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4">
-                        <h3 className="text-lg font-bold">{editingTariff ? 'Tarifni tahrirlash' : 'Yangi tarif yaratish'}</h3>
+                        <h3 className="text-lg font-bold">{editingTariff ? t("admin.editTariff", "Tarifni tahrirlash") : t("admin.createTariff", "Yangi tarif yaratish")}</h3>
 
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold">Tarif nomi</label>
+                            <label className="text-xs font-semibold">{t("admin.tariffName", "Tarif nomi")}</label>
                             <Input
                                 value={data.name}
                                 onChange={(e) => setData('name', e.target.value)}
@@ -151,7 +149,7 @@ export default function AdminTariffs({ tariffs }: TariffsProps) {
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold">Kod (Slug)</label>
+                            <label className="text-xs font-semibold">{t("admin.tariffCode", "Kod (Slug)")}</label>
                             <Input
                                 value={data.code}
                                 onChange={(e) => setData('code', e.target.value)}
@@ -162,7 +160,7 @@ export default function AdminTariffs({ tariffs }: TariffsProps) {
 
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
-                                <label className="text-xs font-semibold">Narx UZS (so'm/oy)</label>
+                                <label className="text-xs font-semibold">{t("admin.priceUzs", "Narx UZS (so'm/oy)")}</label>
                                 <Input
                                     type="number"
                                     value={data.base_price_monthly}
@@ -171,7 +169,7 @@ export default function AdminTariffs({ tariffs }: TariffsProps) {
                                 />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-semibold">Narx USD ($/oy)</label>
+                                <label className="text-xs font-semibold">{t("admin.priceUsd", "Narx USD ($/oy)")}</label>
                                 <Input
                                     type="number"
                                     step="0.01"
@@ -183,7 +181,7 @@ export default function AdminTariffs({ tariffs }: TariffsProps) {
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold">Standart arxiv muddati (kun)</label>
+                            <label className="text-xs font-semibold">{t("admin.archiveRetentionDays", "Standart arxiv muddati (kun)")}</label>
                             <Input
                                 type="number"
                                 value={data.default_retention_days}
@@ -201,16 +199,16 @@ export default function AdminTariffs({ tariffs }: TariffsProps) {
                                 className="rounded text-primary h-4 w-4"
                             />
                             <label htmlFor="tariffActive" className="text-xs font-medium">
-                                Tarif faol va tanlash uchun ochiq
+                                {t("admin.tariffActive", "Tarif faol va tanlash uchun ochiq")}
                             </label>
                         </div>
 
                         <div className="flex gap-2 pt-2">
                             <Button type="button" variant="outline" className="flex-1" onClick={() => setShowModal(false)}>
-                                Bekor qilish
+                                {t("admin.cancel", "Bekor qilish")}
                             </Button>
                             <Button type="submit" className="flex-1" disabled={processing}>
-                                Saqlash
+                                {t("admin.save", "Saqlash")}
                             </Button>
                         </div>
                     </form>

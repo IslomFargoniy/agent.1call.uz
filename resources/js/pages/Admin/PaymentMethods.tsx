@@ -100,14 +100,14 @@ export default function AdminPaymentMethods({ methods }: PaymentMethodsProps) {
                         </div>
 
                         <div className="flex items-center justify-between text-xs pt-2">
-                            <span className="text-muted-foreground">Holati:</span>
+                            <span className="text-muted-foreground">{t("admin.status", "Holati")}:</span>
                             {method.is_active ? (
                                 <span className="text-emerald-600 font-semibold flex items-center gap-1">
-                                    <CheckCircle2 className="h-3.5 w-3.5" /> Faol (To'lov qabul qilinadi)
+                                    <CheckCircle2 className="h-3.5 w-3.5" /> {t("admin.activeAccepting", "Faol (To'lov qabul qilinadi)")}
                                 </span>
                             ) : (
                                 <span className="text-muted-foreground flex items-center gap-1">
-                                    <XCircle className="h-3.5 w-3.5" /> O'chirilgan
+                                    <XCircle className="h-3.5 w-3.5" /> {t("devices.disabled", "O'chirilgan")}
                                 </span>
                             )}
                         </div>
@@ -119,7 +119,7 @@ export default function AdminPaymentMethods({ methods }: PaymentMethodsProps) {
             {editingMethod && (
                 <div className="fixed inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
                     <form onSubmit={handleSave} className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4">
-                        <h3 className="text-lg font-bold">To'lov tizimini sozlash: {editingMethod.name}</h3>
+                        <h3 className="text-lg font-bold">{t("admin.configurePaymentMethod", "To'lov tizimini sozlash")}: {editingMethod.name}</h3>
 
                         <div className="flex items-center gap-2 pb-2 border-b border-border">
                             <input
@@ -130,14 +130,14 @@ export default function AdminPaymentMethods({ methods }: PaymentMethodsProps) {
                                 className="rounded text-primary h-4 w-4"
                             />
                             <label htmlFor="methodActive" className="text-xs font-semibold">
-                                Ushbu to'lov usulini faollashtirish
+                                {t("admin.enablePaymentMethod", "Ushbu to'lov usulini faollashtirish")}
                             </label>
                         </div>
 
                         {editingMethod.code === 'card_transfer' && (
                             <>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Karta raqami (P2P o'tkazmalar uchun):</label>
+                                    <label className="text-xs font-semibold">{t("admin.cardNumberLabel", "Karta raqami (P2P o'tkazmalar uchun):")}</label>
                                     <Input
                                         value={data.settings?.card_number || ''}
                                         onChange={(e) => setData('settings', { ...data.settings, card_number: e.target.value })}
@@ -146,7 +146,7 @@ export default function AdminPaymentMethods({ methods }: PaymentMethodsProps) {
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Karta egasining ismi-sharifi:</label>
+                                    <label className="text-xs font-semibold">{t("admin.cardHolderLabel", "Karta egasining ismi-sharifi:")}</label>
                                     <Input
                                         value={data.settings?.card_holder || ''}
                                         onChange={(e) => setData('settings', { ...data.settings, card_holder: e.target.value })}
@@ -189,7 +189,7 @@ export default function AdminPaymentMethods({ methods }: PaymentMethodsProps) {
                         )}
 
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold">Mijoz uchun ko'rsatma (Instructions):</label>
+                            <label className="text-xs font-semibold">{t("admin.customerInstructionsLabel", "Mijoz uchun ko'rsatma (Instructions):")}</label>
                             <Input
                                 value={data.instructions || ''}
                                 onChange={(e) => setData('instructions', e.target.value)}
@@ -199,10 +199,10 @@ export default function AdminPaymentMethods({ methods }: PaymentMethodsProps) {
 
                         <div className="flex gap-2 pt-2">
                             <Button type="button" variant="outline" className="flex-1" onClick={() => setEditingMethod(null)}>
-                                Bekor qilish
+                                {t("admin.cancel", "Bekor qilish")}
                             </Button>
                             <Button type="submit" className="flex-1" disabled={processing}>
-                                Saqlash
+                                {t("admin.save", "Saqlash")}
                             </Button>
                         </div>
                     </form>

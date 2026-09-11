@@ -75,20 +75,20 @@ export default function AdminInvoices({ invoices }: InvoicesProps) {
                 <table className="w-full text-left text-sm">
                     <thead className="bg-muted/50 border-b border-border text-muted-foreground text-xs uppercase font-medium">
                         <tr>
-                            <th className="py-3 px-4">Invoys raqami</th>
-                            <th className="py-3 px-4">Kompaniya</th>
-                            <th className="py-3 px-4">Summa</th>
-                            <th className="py-3 px-4">To'lov usuli</th>
-                            <th className="py-3 px-4">Holati</th>
-                            <th className="py-3 px-4">Chek</th>
-                            <th className="py-3 px-4 text-right">Amallar</th>
+                            <th className="py-3 px-4">{t("billing.invoiceNumber", "Invoys raqami")}</th>
+                            <th className="py-3 px-4">{t("admin.company", "Kompaniya")}</th>
+                            <th className="py-3 px-4">{t("billing.amount", "Summa")}</th>
+                            <th className="py-3 px-4">{t("billing.paymentMethod", "To'lov usuli")}</th>
+                            <th className="py-3 px-4">{t("billing.status", "Holati")}</th>
+                            <th className="py-3 px-4">{t("admin.receipt", "Chek")}</th>
+                            <th className="py-3 px-4 text-right">{t("admin.actions", "Amallar")}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                         {invoices.data.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="py-8 text-center text-muted-foreground text-sm">
-                                    Hozircha hech qanday invoys topilmadi.
+                                    {t("admin.noInvoicesFound", "Hozircha hech qanday invoys topilmadi.")}
                                 </td>
                             </tr>
                         ) : (
@@ -116,17 +116,17 @@ export default function AdminInvoices({ invoices }: InvoicesProps) {
                                     <td className="py-3.5 px-4">
                                         {inv.status === 'paid' && (
                                             <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-full font-semibold">
-                                                <CheckCircle2 className="h-3 w-3" /> To'langan
+                                                <CheckCircle2 className="h-3 w-3" /> {t("billing.paid", "To'langan")}
                                             </span>
                                         )}
                                         {inv.status === 'pending' && (
                                             <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 rounded-full font-semibold">
-                                                <Clock className="h-3 w-3" /> Kutilmoqda
+                                                <Clock className="h-3 w-3" /> {t("billing.pending", "Kutilmoqda")}
                                             </span>
                                         )}
                                         {inv.status === 'rejected' && (
                                             <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 px-2 py-0.5 rounded-full font-semibold">
-                                                <XCircle className="h-3 w-3" /> Rad etilgan
+                                                <XCircle className="h-3 w-3" /> {t("billing.rejected", "Rad etilgan")}
                                             </span>
                                         )}
                                     </td>
@@ -138,10 +138,10 @@ export default function AdminInvoices({ invoices }: InvoicesProps) {
                                                 className="h-8 text-xs gap-1"
                                                 onClick={() => setViewingReceipt(inv)}
                                             >
-                                                <Eye className="h-3.5 w-3.5" /> Ko'rish
+                                                <Eye className="h-3.5 w-3.5" /> {t("admin.view", "Ko'rish")}
                                             </Button>
                                         ) : (
-                                            <span className="text-xs text-muted-foreground italic">Yuklanmagan</span>
+                                            <span className="text-xs text-muted-foreground italic">{t("admin.notUploaded", "Yuklanmagan")}</span>
                                         )}
                                     </td>
                                     <td className="py-3.5 px-4 text-right">
@@ -153,7 +153,7 @@ export default function AdminInvoices({ invoices }: InvoicesProps) {
                                                     className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
                                                     onClick={() => handleApprove(inv)}
                                                 >
-                                                    <Check className="h-3.5 w-3.5" /> Tasdiqlash
+                                                    <Check className="h-3.5 w-3.5" /> {t("admin.approve", "Tasdiqlash")}
                                                 </Button>
                                                 <Button
                                                     size="sm"
@@ -161,7 +161,7 @@ export default function AdminInvoices({ invoices }: InvoicesProps) {
                                                     className="h-8 text-xs text-destructive hover:bg-destructive/10 gap-1"
                                                     onClick={() => setRejectingInvoice(inv)}
                                                 >
-                                                    <X className="h-3.5 w-3.5" /> Rad etish
+                                                    <X className="h-3.5 w-3.5" /> {t("admin.reject", "Rad etish")}
                                                 </Button>
                                             </div>
                                         )}
@@ -178,7 +178,7 @@ export default function AdminInvoices({ invoices }: InvoicesProps) {
                 <div className="fixed inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
                     <div className="bg-card border border-border rounded-2xl p-6 max-w-lg w-full shadow-xl space-y-4">
                         <div className="flex justify-between items-center">
-                            <h3 className="text-lg font-bold">To'lov cheki skrinshoti</h3>
+                            <h3 className="text-lg font-bold">{t("admin.receiptScreenshotModal", "To'lov cheki skrinshoti")}</h3>
                             <Button variant="ghost" size="icon" onClick={() => setViewingReceipt(null)}>
                                 <X className="h-4 w-4" />
                             </Button>
@@ -193,7 +193,7 @@ export default function AdminInvoices({ invoices }: InvoicesProps) {
                         <div className="flex justify-between items-center text-xs text-muted-foreground pt-2">
                             <span>Invoys: <b>{viewingReceipt.invoice_number}</b></span>
                             <Button variant="outline" size="sm" onClick={() => setViewingReceipt(null)}>
-                                Yopish
+                                {t("devices.closeBtn", "Yopish")}
                             </Button>
                         </div>
                     </div>
@@ -204,14 +204,14 @@ export default function AdminInvoices({ invoices }: InvoicesProps) {
             {rejectingInvoice && (
                 <div className="fixed inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
                     <form onSubmit={handleRejectSubmit} className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4">
-                        <h3 className="text-lg font-bold">Invoysni rad etish sababi</h3>
+                        <h3 className="text-lg font-bold">{t("admin.rejectReasonTitle", "Invoysni rad etish sababi")}</h3>
                         <p className="text-xs text-muted-foreground">Invoys: {rejectingInvoice.invoice_number}</p>
 
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold">Sabab:</label>
+                            <label className="text-xs font-semibold">{t("admin.reasonLabel", "Sabab:")}</label>
                             <textarea
                                 className="w-full h-24 rounded-md border border-input bg-transparent p-3 text-xs"
-                                placeholder="To'lov summasi kam yoki chek soxta..."
+                                placeholder={t("admin.rejectReasonPlaceholder", "To'lov summasi kam yoki chek soxta...")}
                                 value={rejectReason}
                                 onChange={(e) => setRejectReason(e.target.value)}
                                 required
@@ -220,10 +220,10 @@ export default function AdminInvoices({ invoices }: InvoicesProps) {
 
                         <div className="flex gap-2 pt-2">
                             <Button type="button" variant="outline" className="flex-1" onClick={() => setRejectingInvoice(null)}>
-                                Bekor qilish
+                                {t("admin.cancel", "Bekor qilish")}
                             </Button>
                             <Button type="submit" variant="destructive" className="flex-1">
-                                Rad etish
+                                {t("admin.reject", "Rad etish")}
                             </Button>
                         </div>
                     </form>

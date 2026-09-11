@@ -73,11 +73,11 @@ export default function AdminUsers({ users, tenants, filters }: UsersProps) {
 
     return (
         <div className="p-6 space-y-6 max-w-7xl mx-auto">
-            <Head title="Superadmin — Foydalanuvchilar" />
+            <Head title={t("admin.usersHead", "Superadmin — Foydalanuvchilar")} />
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Foydalanuvchilar Boshqaruvi</h2>
+                    <h2 className="text-2xl font-bold tracking-tight">{t("admin.usersTitle", "Foydalanuvchilar Boshqaruvi")}</h2>
                     <p className="text-sm text-muted-foreground">
                         Barcha kompaniyalar rahbarlari, xodimlari va tizim administratorlari
                     </p>
@@ -95,7 +95,7 @@ export default function AdminUsers({ users, tenants, filters }: UsersProps) {
                         onChange={(e) => setRoleFilter(e.target.value)}
                         className="h-9 rounded-md border border-input bg-transparent px-3 text-xs"
                     >
-                        <option value="">Barcha rollar</option>
+                        <option value="">{t("admin.allRoles", "Barcha rollar")}</option>
                         <option value="superadmin">Superadmin</option>
                         <option value="admin">Admin</option>
                         <option value="operator">Operator</option>
@@ -111,12 +111,12 @@ export default function AdminUsers({ users, tenants, filters }: UsersProps) {
                 <table className="w-full text-left text-sm">
                     <thead className="bg-muted/50 border-b border-border text-muted-foreground text-xs uppercase font-medium">
                         <tr>
-                            <th className="py-3 px-4">Foydalanuvchi</th>
-                            <th className="py-3 px-4">Rol</th>
-                            <th className="py-3 px-4">Kompaniya</th>
-                            <th className="py-3 px-4">Telefon</th>
-                            <th className="py-3 px-4">Holati</th>
-                            <th className="py-3 px-4 text-right">Amal</th>
+                            <th className="py-3 px-4">{t("admin.user", "Foydalanuvchi")}</th>
+                            <th className="py-3 px-4">{t("admin.role", "Rol")}</th>
+                            <th className="py-3 px-4">{t("admin.company", "Kompaniya")}</th>
+                            <th className="py-3 px-4">{t("admin.phone", "Telefon")}</th>
+                            <th className="py-3 px-4">{t("admin.status", "Holati")}</th>
+                            <th className="py-3 px-4 text-right">{t("admin.actions", "Amal")}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -144,11 +144,11 @@ export default function AdminUsers({ users, tenants, filters }: UsersProps) {
                                 <td className="py-3.5 px-4">
                                     {u.is_active ? (
                                         <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                                            <CheckCircle2 className="h-3.5 w-3.5" /> Faol
+                                            <CheckCircle2 className="h-3.5 w-3.5" /> {t("admin.active", "Faol")}
                                         </span>
                                     ) : (
                                         <span className="inline-flex items-center gap-1 text-xs text-red-600 font-medium">
-                                            <XCircle className="h-3.5 w-3.5" /> Bloklangan
+                                            <XCircle className="h-3.5 w-3.5" /> {t("admin.blocked", "Bloklangan")}
                                         </span>
                                     )}
                                 </td>
@@ -167,30 +167,30 @@ export default function AdminUsers({ users, tenants, filters }: UsersProps) {
             {editingUser && (
                 <div className="fixed inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
                     <form onSubmit={handleUpdate} className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4">
-                        <h3 className="text-lg font-bold">Foydalanuvchini tahrirlash: {editingUser.name}</h3>
+                        <h3 className="text-lg font-bold">{t("admin.editUserTitle", "Foydalanuvchini tahrirlash")}: {editingUser.name}</h3>
 
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold">Tizim roli</label>
+                            <label className="text-xs font-semibold">{t("admin.systemRole", "Tizim roli")}</label>
                             <select
                                 value={data.role}
                                 onChange={(e) => setData('role', e.target.value)}
                                 className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-xs"
                             >
-                                <option value="operator">Operator (Faqat o'z qo'ng'iroqlari)</option>
-                                <option value="admin">Admin (Kompaniya rahbari)</option>
-                                <option value="superadmin">Superadmin (Platforma egasi)</option>
+                                <option value="operator">{t("admin.roleOperator", "Operator (Faqat o'z qo'ng'iroqlari)")}</option>
+                                <option value="admin">{t("admin.roleAdmin", "Admin (Kompaniya rahbari)")}</option>
+                                <option value="superadmin">{t("admin.roleSuperadmin", "Superadmin (Platforma egasi)")}</option>
                             </select>
                         </div>
 
                         {data.role !== 'superadmin' && (
                             <div className="space-y-1">
-                                <label className="text-xs font-semibold">Biriktirilgan Kompaniya</label>
+                                <label className="text-xs font-semibold">{t("admin.assignedCompany", "Biriktirilgan Kompaniya")}</label>
                                 <select
                                     value={data.tenant_id}
                                     onChange={(e) => setData('tenant_id', e.target.value)}
                                     className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-xs"
                                 >
-                                    <option value="">Tanlang...</option>
+                                    <option value="">{t("admin.selectPlaceholder", "Tanlang...")}</option>
                                     {tenants.map((t) => (
                                         <option key={t.id} value={t.id}>{t.name}</option>
                                     ))}
@@ -199,10 +199,10 @@ export default function AdminUsers({ users, tenants, filters }: UsersProps) {
                         )}
 
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold">Yangi parol (ixtiyoriy)</label>
+                            <label className="text-xs font-semibold">{t("admin.newPasswordOptional", "Yangi parol (ixtiyoriy)")}</label>
                             <Input
                                 type="password"
-                                placeholder="Parolni o'zgartirish uchun kiriting..."
+                                placeholder={t("admin.passwordPlaceholder", "Parolni o'zgartirish uchun kiriting...")}
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
                             />
@@ -217,16 +217,16 @@ export default function AdminUsers({ users, tenants, filters }: UsersProps) {
                                 className="rounded text-primary h-4 w-4"
                             />
                             <label htmlFor="userActive" className="text-xs font-medium">
-                                Foydalanuvchi faol
+                                {t("admin.userActive", "Foydalanuvchi faol")}
                             </label>
                         </div>
 
                         <div className="flex gap-2 pt-2">
                             <Button type="button" variant="outline" className="flex-1" onClick={() => setEditingUser(null)}>
-                                Bekor qilish
+                                {t("admin.cancel", "Bekor qilish")}
                             </Button>
                             <Button type="submit" className="flex-1" disabled={processing}>
-                                Saqlash
+                                {t("admin.save", "Saqlash")}
                             </Button>
                         </div>
                     </form>

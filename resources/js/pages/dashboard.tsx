@@ -252,8 +252,8 @@ export default function Dashboard({ tenant, stats, recent_calls }: DashboardProp
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                                            <span>{call.device?.name || 'Telefon'}</span>
-                                            {call.user && <span>• Operator: {call.user.name}</span>}
+                                            <span>{call.device?.name || t("calls.device", "Telefon")}</span>
+                                            {call.user && <span>• {t("calls.operator", "Operator")}: {call.user.name}</span>}
                                             <span>• {new Date(call.call_timestamp).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
                                     </div>

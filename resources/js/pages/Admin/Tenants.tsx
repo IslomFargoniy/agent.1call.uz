@@ -80,19 +80,17 @@ export default function AdminTenants({ tenants, filters }: TenantsProps) {
 
     return (
         <div className="p-6 space-y-6 max-w-7xl mx-auto">
-            <Head title="Superadmin — Kompaniyalar" />
+            <Head title={t("admin.tenantsHead", "Superadmin — Kompaniyalar")} />
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Kompaniyalar (Tenants) Boshqaruvi</h2>
-                    <p className="text-sm text-muted-foreground">
-                        Platformadagi barcha mijoz tashkilotlar va ularning obuna parametrlari
-                    </p>
+                    <h2 className="text-2xl font-bold tracking-tight">{t("admin.tenantsTitle", "Kompaniyalar (Tenants) Boshqaruvi")}</h2>
+                    <p className="text-sm text-muted-foreground">{t("admin.tenantsDesc", "Platformadagi barcha mijoz tashkilotlar va ularning obuna parametrlari")}</p>
                 </div>
 
                 <form onSubmit={handleSearch} className="flex gap-2">
                     <Input
-                        placeholder="Kompaniya qidirish..."
+                        placeholder={t("admin.searchTenant", "Kompaniya qidirish...")}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="h-9 w-64 text-xs"
@@ -108,12 +106,12 @@ export default function AdminTenants({ tenants, filters }: TenantsProps) {
                 <table className="w-full text-left text-sm">
                     <thead className="bg-muted/50 border-b border-border text-muted-foreground text-xs uppercase font-medium">
                         <tr>
-                            <th className="py-3 px-4">Kompaniya</th>
-                            <th className="py-3 px-4">Statistika</th>
-                            <th className="py-3 px-4">Limit / Arxiv</th>
-                            <th className="py-3 px-4">Obuna muddati</th>
-                            <th className="py-3 px-4">Holati</th>
-                            <th className="py-3 px-4 text-right">Amal</th>
+                            <th className="py-3 px-4">{t("admin.company", "Kompaniya")}</th>
+                            <th className="py-3 px-4">{t("admin.statistics", "Statistika")}</th>
+                            <th className="py-3 px-4">{t("admin.limitArchive", "Limit / Arxiv")}</th>
+                            <th className="py-3 px-4">{t("admin.subscriptionExpires", "Obuna muddati")}</th>
+                            <th className="py-3 px-4">{t("admin.status", "Holati")}</th>
+                            <th className="py-3 px-4 text-right">{t("admin.actions", "Amal")}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -137,8 +135,8 @@ export default function AdminTenants({ tenants, filters }: TenantsProps) {
                                     </div>
                                 </td>
                                 <td className="py-3.5 px-4 text-xs">
-                                    <span className="font-semibold">{tenant.allowed_devices_count} ta telefon</span>
-                                    <span className="block text-muted-foreground">{tenant.audio_retention_days} kun arxiv</span>
+                                    <span className="font-semibold">{tenant.allowed_devices_count} {t("admin.devicesUnit", "ta telefon")}</span>
+                                    <span className="block text-muted-foreground">{tenant.audio_retention_days} {t("admin.archiveUnit", "kun arxiv")}</span>
                                 </td>
                                 <td className="py-3.5 px-4 text-xs font-mono">
                                     {tenant.subscription_expires_at ? (
@@ -147,20 +145,20 @@ export default function AdminTenants({ tenants, filters }: TenantsProps) {
                                         </span>
                                     ) : tenant.trial_ends_at ? (
                                         <span className="text-amber-600">
-                                            Sinov: {new Date(tenant.trial_ends_at).toLocaleDateString('uz-UZ')}
+                                            {t("admin.trialPrefix", "Sinov:")} {new Date(tenant.trial_ends_at).toLocaleDateString('uz-UZ')}
                                         </span>
                                     ) : (
-                                        'Muddatsiz'
+                                        t("admin.unlimited", "Muddatsiz")
                                     )}
                                 </td>
                                 <td className="py-3.5 px-4">
                                     {tenant.is_active ? (
                                         <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-full font-semibold">
-                                            <CheckCircle2 className="h-3 w-3" /> Faol
+                                            <CheckCircle2 className="h-3 w-3" /> {t("admin.active", "Faol")}
                                         </span>
                                     ) : (
                                         <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 px-2 py-0.5 rounded-full font-semibold">
-                                            <XCircle className="h-3 w-3" /> To'xtatilgan
+                                            <XCircle className="h-3 w-3" /> {t("admin.suspended", "To'xtatilgan")}
                                         </span>
                                     )}
                                 </td>
@@ -179,10 +177,10 @@ export default function AdminTenants({ tenants, filters }: TenantsProps) {
             {editingTenant && (
                 <div className="fixed inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
                     <form onSubmit={handleUpdate} className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4">
-                        <h3 className="text-lg font-bold">Kompaniya parametrlarini tahrirlash</h3>
+                        <h3 className="text-lg font-bold">{t("admin.editTenantTitle", "Kompaniya parametrlarini tahrirlash")}</h3>
 
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold">Nomi</label>
+                            <label className="text-xs font-semibold">{t("admin.tenantName", "Nomi")}</label>
                             <Input
                                 value={data.name}
                                 onChange={(e) => setData('name', e.target.value)}
@@ -192,7 +190,7 @@ export default function AdminTenants({ tenants, filters }: TenantsProps) {
 
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
-                                <label className="text-xs font-semibold">Ruxsat etilgan telefonlar</label>
+                                <label className="text-xs font-semibold">{t("admin.allowedDevices", "Ruxsat etilgan telefonlar")}</label>
                                 <Input
                                     type="number"
                                     min={1}
@@ -202,7 +200,7 @@ export default function AdminTenants({ tenants, filters }: TenantsProps) {
                                 />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-semibold">Arxiv muddati (kun)</label>
+                                <label className="text-xs font-semibold">{t("admin.archiveRetentionDays", "Arxiv muddati (kun)")}</label>
                                 <Input
                                     type="number"
                                     value={data.audio_retention_days}
@@ -213,7 +211,7 @@ export default function AdminTenants({ tenants, filters }: TenantsProps) {
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold">Obuna tugash sanasi</label>
+                            <label className="text-xs font-semibold">{t("admin.subscriptionExpiryDate", "Obuna tugash sanasi")}</label>
                             <Input
                                 type="date"
                                 value={data.subscription_expires_at}
@@ -230,16 +228,16 @@ export default function AdminTenants({ tenants, filters }: TenantsProps) {
                                 className="rounded text-primary h-4 w-4"
                             />
                             <label htmlFor="tenantActive" className="text-xs font-medium">
-                                Kompaniya faol (Xizmat yoqilgan)
+                                {t("admin.tenantActiveLabel", "Kompaniya faol (Xizmat yoqilgan)")}
                             </label>
                         </div>
 
                         <div className="flex gap-2 pt-2">
                             <Button type="button" variant="outline" className="flex-1" onClick={() => setEditingTenant(null)}>
-                                Bekor qilish
+                                {t("admin.cancel", "Bekor qilish")}
                             </Button>
                             <Button type="submit" className="flex-1" disabled={processing}>
-                                Saqlash
+                                {t("admin.save", "Saqlash")}
                             </Button>
                         </div>
                     </form>

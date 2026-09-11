@@ -127,20 +127,20 @@ function IntegrationsContent({
     const submitMoy = (e: React.FormEvent) => {
         e.preventDefault();
         if (!moyForm.data.token && (!moyForm.data.login || !moyForm.data.password)) {
-            alert("Iltimos, MoySklad API tokenini yoki Login va Parolni kiriting.");
+            alert(t("integrations.enterTokenOrCredentials", "Iltimos, MoySklad API tokenini yoki Login va Parolni kiriting."));
             return;
         }
         moyForm.post("/integrations/moysklad");
     };
 
     const disconnectAmo = () => {
-        if (confirm("Haqiqatan ham amoCRM integratsiyasini uzmoqchimisiz?")) {
+        if (confirm(t("integrations.disconnectConfirmAmo", "Haqiqatan ham amoCRM integratsiyasini uzmoqchimisiz?"))) {
             router.delete("/integrations/amocrm");
         }
     };
 
     const disconnectMoy = () => {
-        if (confirm("Haqiqatan ham MoySklad integratsiyasini uzmoqchimisiz?")) {
+        if (confirm(t("integrations.disconnectConfirmMoy", "Haqiqatan ham MoySklad integratsiyasini uzmoqchimisiz?"))) {
             router.delete("/integrations/moysklad");
         }
     };
@@ -173,7 +173,7 @@ function IntegrationsContent({
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">{t("integrations.title", "CRM & ERP Integratsiyalari")}</h2>
                     <p className="text-sm text-muted-foreground">
-                        Telefoniya qo'ng'iroqlari va audio yozuvlarini amoCRM va MoySklad tizimlari bilan avtomatik sinxronlash
+                        {t("integrations.subtitle", "Telefoniya qo'ng'iroqlari va audio yozuvlarini amoCRM va MoySklad tizimlari bilan avtomatik sinxronlash")}
                     </p>
                 </div>
             </div>
@@ -191,25 +191,25 @@ function IntegrationsContent({
 
                             {amoCrm?.is_active ? (
                                 <span className="flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 px-2.5 py-1 rounded-full font-semibold">
-                                    <CheckCircle2 className="h-3.5 w-3.5" /> Ulangan
+                                    <CheckCircle2 className="h-3.5 w-3.5" /> {t("integrations.connected", "Ulangan")}
                                 </span>
                             ) : (
                                 <span className="flex items-center gap-1 text-xs bg-secondary text-muted-foreground px-2.5 py-1 rounded-full font-medium">
-                                    <XCircle className="h-3.5 w-3.5" /> Ulanmagan
+                                    <XCircle className="h-3.5 w-3.5" /> {t("integrations.notConnected", "Ulanmagan")}
                                 </span>
                             )}
                         </div>
 
                         <p className="text-xs text-muted-foreground">
-                            Leadlar, kontaktlar, qo'ng'iroq kartochkalari va audio yozuvlarini amoCRM bilan to'liq sinxronlashtirish.
+                            {t("integrations.amoDesc", "Leadlar, kontaktlar, qo'ng'iroq kartochkalari va audio yozuvlarini amoCRM bilan to'liq sinxronlashtirish.")}
                         </p>
 
                         {amoCrm?.is_active ? (
                             <div className="bg-secondary/30 rounded-xl p-4 space-y-3 border border-border/60">
                                 <div className="text-xs space-y-1">
-                                    <span className="text-muted-foreground">Ulangan amoCRM Subdomain:</span>
+                                    <span className="text-muted-foreground">{t("integrations.connectedSubdomain", "Ulangan amoCRM Subdomain:")}</span>
                                     <div className="font-mono font-semibold text-sm text-foreground">
-                                        {amoCrm.subdomain ? `${amoCrm.subdomain}.amocrm.ru` : "Ulangan"}
+                                        {amoCrm.subdomain ? `${amoCrm.subdomain}.amocrm.ru` : t("integrations.connected", "Ulangan")}
                                     </div>
                                 </div>
 
@@ -221,16 +221,16 @@ function IntegrationsContent({
                                         onClick={disconnectAmo}
                                         className="gap-1.5 h-8 text-xs"
                                     >
-                                        <Unlink className="h-3.5 w-3.5" /> Integratsiyani uzish
+                                        <Unlink className="h-3.5 w-3.5" /> {t("integrations.disconnectIntegration", "Integratsiyani uzish")}
                                     </Button>
                                 </div>
                             </div>
                         ) : (
                             <form onSubmit={submitAmo} className="space-y-4">
                                 <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Subdomain (masalan: kompaniya):</label>
+                                    <label className="text-xs font-semibold">{t("integrations.amoSubdomainLabel", "Subdomain (masalan: kompaniya):")}</label>
                                     <Input
-                                        placeholder="mycompany"
+                                        placeholder={t("integrations.amoSubdomainPlaceholder", "mycompany")}
                                         value={amoForm.data.subdomain}
                                         onChange={(e) => amoForm.setData("subdomain", e.target.value)}
                                         required
@@ -238,7 +238,7 @@ function IntegrationsContent({
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Integratsiya ID (Client ID):</label>
+                                    <label className="text-xs font-semibold">{t("integrations.amoClientIdLabel", "Integratsiya ID (Client ID):")}</label>
                                     <Input
                                         placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                                         value={amoForm.data.client_id}
@@ -248,7 +248,7 @@ function IntegrationsContent({
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Maxfiy kalit (Client Secret):</label>
+                                    <label className="text-xs font-semibold">{t("integrations.amoClientSecretLabel", "Maxfiy kalit (Client Secret):")}</label>
                                     <Input
                                         type="password"
                                         placeholder="••••••••••••••••"
@@ -267,12 +267,12 @@ function IntegrationsContent({
                                         className="rounded text-primary focus:ring-primary h-4 w-4"
                                     />
                                     <label htmlFor="taskOnMissed" className="text-xs">
-                                        Javobsiz qo'ng'iroqlarda avtomatik vazifa yaratish
+                                        {t("integrations.amoCreateTaskOnMissed", "Javobsiz qo'ng'iroqlarda avtomatik vazifa yaratish")}
                                     </label>
                                 </div>
 
                                 <Button type="submit" className="w-full" disabled={amoForm.processing}>
-                                    {amoForm.processing ? "Ulanmoqda..." : "amoCRM bilan ulash (OAuth2)"}
+                                    {amoForm.processing ? t("billing.loading", "Yuklanmoqda...") : t("integrations.amoConnectBtn", "amoCRM bilan ulash (OAuth2)")}
                                 </Button>
                             </form>
                         )}
@@ -291,25 +291,25 @@ function IntegrationsContent({
 
                             {moySklad?.is_active ? (
                                 <span className="flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 px-2.5 py-1 rounded-full font-semibold">
-                                    <CheckCircle2 className="h-3.5 w-3.5" /> Ulangan
+                                    <CheckCircle2 className="h-3.5 w-3.5" /> {t("integrations.connected", "Ulangan")}
                                 </span>
                             ) : (
                                 <span className="flex items-center gap-1 text-xs bg-secondary text-muted-foreground px-2.5 py-1 rounded-full font-medium">
-                                    <XCircle className="h-3.5 w-3.5" /> Ulanmagan
+                                    <XCircle className="h-3.5 w-3.5" /> {t("integrations.notConnected", "Ulanmagan")}
                                 </span>
                             )}
                         </div>
 
                         <p className="text-xs text-muted-foreground">
-                            Phone API 1.0, mijozlar (kontragentlar) kartasi, yangi qo'ng'iroqlarda bildirishnomalar va audio fayllar.
+                            {t("integrations.moyDesc", "Phone API 1.0, mijozlar (kontragentlar) kartasi, yangi qo'ng'iroqlarda bildirishnomalar va audio fayllar.")}
                         </p>
 
                         {moySklad?.is_active ? (
                             <div className="bg-secondary/30 rounded-xl p-4 space-y-3 border border-border/60">
                                 <div className="text-xs space-y-1">
-                                    <span className="text-muted-foreground">Ulangan MoySklad Hisobi:</span>
+                                    <span className="text-muted-foreground">{t("integrations.connectedMoyAccount", "Ulangan MoySklad Hisobi:")}</span>
                                     <div className="font-mono font-semibold text-sm text-foreground">
-                                        {moySklad.login || "MoySklad API Token orqali ulangan"}
+                                        {moySklad.login || t("integrations.connectedViaToken", "MoySklad API Token orqali ulangan")}
                                     </div>
                                 </div>
 
@@ -321,23 +321,23 @@ function IntegrationsContent({
                                         onClick={disconnectMoy}
                                         className="gap-1.5 h-8 text-xs"
                                     >
-                                        <Unlink className="h-3.5 w-3.5" /> Integratsiyani uzish
+                                        <Unlink className="h-3.5 w-3.5" /> {t("integrations.disconnectIntegration", "Integratsiyani uzish")}
                                     </Button>
                                 </div>
                             </div>
                         ) : (
                             <form onSubmit={submitMoy} className="space-y-4">
                                 <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Login yoki Email:</label>
+                                    <label className="text-xs font-semibold">{t("integrations.moyLoginLabel", "Login yoki Email:")}</label>
                                     <Input
-                                        placeholder="admin@company"
+                                        placeholder={t("integrations.moyLoginPlaceholder", "admin@company")}
                                         value={moyForm.data.login}
                                         onChange={(e) => moyForm.setData("login", e.target.value)}
                                     />
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Parol:</label>
+                                    <label className="text-xs font-semibold">{t("integrations.moyPasswordLabel", "Parol:")}</label>
                                     <Input
                                         type="password"
                                         placeholder="••••••••••••••••"
@@ -348,21 +348,21 @@ function IntegrationsContent({
 
                                 <div className="relative flex py-1 items-center">
                                     <div className="flex-grow border-t border-border"></div>
-                                    <span className="flex-shrink mx-2 text-[10px] text-muted-foreground uppercase">Yoki API Token</span>
+                                    <span className="flex-shrink mx-2 text-[10px] text-muted-foreground uppercase">{t("integrations.orApiToken", "YOKI API TOKEN")}</span>
                                     <div className="flex-grow border-t border-border"></div>
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-xs font-semibold">MoySklad Access Token:</label>
+                                    <label className="text-xs font-semibold">{t("integrations.moyTokenLabel", "MoySklad Access Token:")}</label>
                                     <Input
-                                        placeholder="Token orqali ulanish..."
+                                        placeholder={t("integrations.moyTokenPlaceholder", "Token orqali ulanish...")}
                                         value={moyForm.data.token}
                                         onChange={(e) => moyForm.setData("token", e.target.value)}
                                     />
                                 </div>
 
                                 <Button type="submit" className="w-full" disabled={moyForm.processing}>
-                                    {moyForm.processing ? "Tekshirilmoqda..." : "MoySklad bilan sinab ko'rish"}
+                                    {moyForm.processing ? t("billing.loading", "Yuklanmoqda...") : t("integrations.moyConnectBtn", "MoySklad bilan sinab ko'rish")}
                                 </Button>
                             </form>
                         )}
@@ -375,52 +375,52 @@ function IntegrationsContent({
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border pb-4">
                     <div>
                         <h3 className="font-semibold text-base flex items-center gap-2">
-                            <Users className="h-4 w-4 text-primary" /> Operatorlar va CRM foydalanuvchilarini moslashtirish (Mapping)
+                            <Users className="h-4 w-4 text-primary" /> {t("integrations.userMappingsTitle", "Operatorlar va CRM foydalanuvchilarini moslashtirish (Mapping)")}
                         </h3>
                         <p className="text-xs text-muted-foreground">
-                            1Call operatorlarini amoCRM va MoySklad xodimlariga biriktiring, shunda qo'ng'iroqlar to'g'ri mas'ul xodimga birikadi.
+                            {t("integrations.userMappingsDesc", "1Call operatorlarini amoCRM va MoySklad xodimlariga biriktiring, shunda qo'ng'iroqlar to'g'ri mas'ul xodimga birikadi.")}
                         </p>
                     </div>
                 </div>
 
-                <form onSubmit={submitMapping} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end bg-secondary/30 p-4 rounded-xl">
+                <form onSubmit={submitMapping} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end pt-2">
                     <div className="space-y-1">
-                        <label className="text-xs font-semibold">Tizim:</label>
+                        <label className="text-xs font-semibold">{t("integrations.crmTypeLabel", "CRM Tizimi:")}</label>
                         <select
                             value={mappingForm.data.tenant_integration_id}
                             onChange={(e) => mappingForm.setData("tenant_integration_id", e.target.value)}
                             className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs"
                             required
                         >
-                            <option value="">Tanlang...</option>
+                            <option value="">{t("integrations.selectPlaceholder", "Tanlang...")}</option>
                             {amoCrm?.is_active && amoCrm.id && <option value={String(amoCrm.id)}>amoCRM</option>}
                             {moySklad?.is_active && moySklad.id && <option value={String(moySklad.id)}>MoySklad</option>}
                             {!amoCrm?.is_active && !moySklad?.is_active && (
-                                <option value="" disabled>Avval CRM tizimini ulang</option>
+                                <option value="" disabled>{t("integrations.firstConnectCrm", "Avval CRM tizimini ulang")}</option>
                             )}
                         </select>
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-xs font-semibold">1Call Operatori:</label>
+                        <label className="text-xs font-semibold">{t("integrations.operatorLabel", "1Call Operatori:")}</label>
                         <select
                             value={mappingForm.data.user_id}
                             onChange={(e) => mappingForm.setData("user_id", e.target.value)}
                             className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs"
                             required
                         >
-                            <option value="">Tanlang...</option>
+                            <option value="">{t("integrations.selectPlaceholder", "Tanlang...")}</option>
                             {safeOperators.map((op) => (
                                 <option key={op.id} value={String(op.id)}>
                                     {op.name} {op.phone_number ? `(${op.phone_number})` : ""}
                                 </option>
                             ))}
-                            {safeOperators.length === 0 && <option value="" disabled>Operatorlar mavjud emas</option>}
+                            {safeOperators.length === 0 && <option value="" disabled>{t("integrations.noOperators", "Operatorlar mavjud emas")}</option>}
                         </select>
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-xs font-semibold">CRM Foydalanuvchi ID:</label>
+                        <label className="text-xs font-semibold">{t("integrations.crmUserIdLabel", "CRM Foydalanuvchi ID:")}</label>
                         <Input
                             placeholder="1234567"
                             value={mappingForm.data.external_user_id}
@@ -430,9 +430,9 @@ function IntegrationsContent({
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-xs font-semibold">CRM Xodim Ismi (ixtiyoriy):</label>
+                        <label className="text-xs font-semibold">{t("integrations.crmUserNameLabel", "CRM Xodim Ismi (ixtiyoriy):")}</label>
                         <Input
-                            placeholder="Ali Valiyev"
+                            placeholder={t("integrations.crmUserNamePlaceholder", "Ali Valiyev")}
                             value={mappingForm.data.external_user_name}
                             onChange={(e) => mappingForm.setData("external_user_name", e.target.value)}
                         />
@@ -440,7 +440,7 @@ function IntegrationsContent({
 
                     <div>
                         <Button type="submit" className="w-full h-9 gap-1.5" disabled={mappingForm.processing || (!amoCrm?.is_active && !moySklad?.is_active)}>
-                            <Plus className="h-4 w-4" /> Biriktirish
+                            <Plus className="h-4 w-4" /> {t("integrations.assignBtn", "Biriktirish")}
                         </Button>
                     </div>
                 </form>
@@ -450,10 +450,10 @@ function IntegrationsContent({
                         <table className="w-full text-left text-xs">
                             <thead className="bg-muted/50 border-b border-border text-muted-foreground uppercase font-medium">
                                 <tr>
-                                    <th className="py-2.5 px-4">1Call Operatori</th>
-                                    <th className="py-2.5 px-4">CRM Tizim</th>
-                                    <th className="py-2.5 px-4">CRM Foydalanuvchi ID</th>
-                                    <th className="py-2.5 px-4">CRM Xodim Ismi</th>
+                                    <th className="py-2.5 px-4">{t("integrations.assignedOperatorHeader", "1Call Operatori")}</th>
+                                    <th className="py-2.5 px-4">{t("integrations.assignedCrmSystemHeader", "CRM Tizim")}</th>
+                                    <th className="py-2.5 px-4">{t("integrations.assignedCrmUserIdHeader", "CRM Foydalanuvchi ID")}</th>
+                                    <th className="py-2.5 px-4">{t("integrations.assignedCrmUserNameHeader", "CRM Xodim Ismi")}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
@@ -472,7 +472,7 @@ function IntegrationsContent({
                     </div>
                 ) : (
                     <p className="text-xs text-muted-foreground py-2 text-center">
-                        Hozircha biriktirilgan operatorlar mavjud emas.
+                        {t("integrations.noMappings", "Hozircha biriktirilgan operatorlar mavjud emas.")}
                     </p>
                 )}
             </div>
@@ -481,25 +481,25 @@ function IntegrationsContent({
             <div className="bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
                 <div className="p-5 border-b border-border flex items-center justify-between">
                     <h3 className="font-semibold text-base flex items-center gap-2">
-                        <Activity className="h-4 w-4 text-primary" /> So'nggi sinxronizatsiya loglari
+                        <Activity className="h-4 w-4 text-primary" /> {t("integrations.syncLogsTitle", "So'nggi sinxronizatsiya loglari")}
                     </h3>
                 </div>
 
                 <table className="w-full text-left text-sm">
                     <thead className="bg-muted/50 border-b border-border text-muted-foreground text-xs uppercase font-medium">
                         <tr>
-                            <th className="py-3 px-4">Tizim</th>
-                            <th className="py-3 px-4">Qo'ng'iroq ID</th>
-                            <th className="py-3 px-4">Holati</th>
-                            <th className="py-3 px-4">Xabar / Xatolik</th>
-                            <th className="py-3 px-4 text-right">Vaqt</th>
+                            <th className="py-3 px-4">{t("integrations.systemHeader", "Tizim")}</th>
+                            <th className="py-3 px-4">{t("integrations.callIdHeader", "Qo'ng'iroq ID")}</th>
+                            <th className="py-3 px-4">{t("integrations.statusHeader", "Holati")}</th>
+                            <th className="py-3 px-4">{t("integrations.messageHeader", "Xabar / Xatolik")}</th>
+                            <th className="py-3 px-4 text-right">{t("integrations.timeHeader", "Vaqt")}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border text-xs">
                         {safeLogs.length === 0 ? (
                             <tr>
                                 <td colSpan={5} className="py-6 text-center text-muted-foreground">
-                                    Hozircha hech qanday sinxronizatsiya logi mavjud emas.
+                                    {t("integrations.noLogs", "Hozircha hech qanday sinxronizatsiya logi mavjud emas.")}
                                 </td>
                             </tr>
                         ) : (

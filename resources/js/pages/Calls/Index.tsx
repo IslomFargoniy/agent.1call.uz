@@ -245,7 +245,7 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                                                 />
                                             ) : (
                                                 <span className="text-xs text-muted-foreground italic">
-                                                    {call.duration_seconds === 0 ? 'Yozuv yo\'q (0s)' : 'Audio kutilmoqda'}
+                                                    {call.duration_seconds === 0 ? t("calls.noRecording", "Yozuv yo'q (0s)") : t("calls.audioPending", "Audio kutilmoqda")}
                                                 </span>
                                             )}
                                         </td>
@@ -253,7 +253,7 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                                             <td className="py-3.5 px-4 text-right">
                                                 {call.duration_seconds > 0 && call.recording_status === 'uploaded' && (
                                                     <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                                                        <a href={`/calls/${call.id}/download`} title="Yuklab olish">
+                                                        <a href={`/calls/${call.id}/download`} title={t("calls.download", "Yuklab olish")}>
                                                             <Download className="h-4 w-4" />
                                                         </a>
                                                     </Button>
@@ -270,7 +270,7 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                 {/* Pagination */}
                 {calls.last_page > 1 && (
                     <div className="p-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Sahifa {calls.current_page} / {calls.last_page}</span>
+                        <span>{t("calls.pageOf", "Sahifa {{current}} / {{last}}", { current: calls.current_page, last: calls.last_page })}</span>
                         <div className="flex gap-1">
                             {calls.links.map((link, idx) => (
                                 <Button
