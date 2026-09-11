@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Billing\SubscriptionService;
 use App\Services\Telegram\TelegramNotificationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -288,5 +289,58 @@ class SuperadminController extends Controller
         SystemSetting::set('telegram_webhook_status', 'connected', 'telegram');
 
         return back()->with('success', "Telegram bot (@{$botUsername}) muvaffaqiyatli saqlandi va Webhook avtomatik ulandi!");
+    }
+
+    /**
+     * Return list of all tenants for Superadmin switcher dialog.
+     */
+    public function getTenantsList(Request $request): JsonResponse
+    {
+        if (! $request->user()?->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $tenants = Tenant::with('users:id,tenant_id,email,name')
+            ->select(['id', 'name', 'slug', 'is_active'])
+            ->orderBy('name')
+            ->get()
+            ->map(function ($t) {
+                $primaryUser = $t->users->first();
+
+                return [
+                    'id' => $t->id,
+                    'name' => $t->name,
+                    'slug' => $t->slug,
+                    'email' => $primaryUser?->email ?? $t->slug,
+                    'is_active' => (bool) $t->is_active,
+                ];
+            });
+
+        return response()->json($tenants);
+    }
+
+    /**
+     * Switch active tenant for Superadmin.
+     */
+    public function selectTenant(Request $request): RedirectResponse
+    {
+        if (! $request->user()?->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $tenantId = $request->input('tenant_id');
+
+        if ($tenantId) {
+            $tenant = Tenant::find($tenantId);
+            if ($tenant) {
+                session(['superadmin_tenant_id' => (int) $tenant->id]);
+
+                return back()->with('success', "Faol kompaniya '{$tenant->name}'ga almashtirildi.");
+            }
+        }
+
+        session()->forget('superadmin_tenant_id');
+
+        return back()->with('success', 'Barcha kompaniyalar (asosiy tizim) rejimiga qaytildi.');
     }
 }

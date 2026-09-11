@@ -1,4 +1,5 @@
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { TenantSwitcher } from '@/components/tenant-switcher';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Link, usePage } from '@inertiajs/react';
 import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-react';
@@ -179,6 +180,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                     </div>
 
                     <div className="ml-auto flex items-center space-x-2">
+                        <TenantSwitcher />
                         <LanguageSwitcher />
                         <ThemeSwitcher />
                         <div className="relative flex items-center space-x-1">

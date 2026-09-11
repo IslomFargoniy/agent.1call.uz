@@ -103,6 +103,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/telegram-bot', [SuperadminController::class, 'telegramBot'])->name('telegram-bot.index');
         Route::post('/telegram-bot', [SuperadminController::class, 'saveTelegramBot'])->name('telegram-bot.save');
     });
+
+    // 5. Superadmin Tenant Switcher API
+    Route::middleware(['role:superadmin'])->group(function () {
+        Route::get('/api/superadmin/tenants', [SuperadminController::class, 'getTenantsList'])->name('superadmin.tenants.list');
+        Route::post('/api/superadmin/select-tenant', [SuperadminController::class, 'selectTenant'])->name('superadmin.select-tenant');
+    });
 });
 
 require __DIR__.'/settings.php';

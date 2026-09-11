@@ -26,25 +26,34 @@ class SetTenantContext
         if ($user = $request->user()) {
             if ($user instanceof Device) {
                 $tenant = $user->tenant;
+            } elseif ($user->isSuperAdmin()) {
+                // If superadmin has selected a specific tenant from tenant switcher:
+                $selectedTenantId = session('superadmin_tenant_id');
+                if ($selectedTenantId) {
+                    $tenant = Tenant::find($selectedTenantId);
+                }
+
+                // If not switched or tenant not found, fallback to superadmin's default platform tenant
+                if (! $tenant) {
+                    $tenant = $user->tenant_id ? Tenant::find($user->tenant_id) : null;
+                    if (! $tenant) {
+                        $tenant = Tenant::firstOrCreate(
+                            ['slug' => '1call-main'],
+                            [
+                                'name' => '1Call Asosiy Kompaniya',
+                                'allowed_devices_count' => 100,
+                                'audio_retention_days' => 365,
+                                'is_active' => true,
+                                'trial_ends_at' => null,
+                                'subscription_expires_at' => now()->addYears(50),
+                            ]
+                        );
+
+                        $user->update(['tenant_id' => $tenant->id]);
+                    }
+                }
             } elseif ($user->tenant_id) {
                 $tenant = $user->tenant ?? Tenant::find($user->tenant_id);
-            } elseif ($user->isSuperAdmin()) {
-                // For superadmin, link to dedicated 1Call platform tenant (never to client tenants)
-                $tenant = Tenant::firstOrCreate(
-                    ['slug' => '1call-main'],
-                    [
-                        'name' => '1Call Asosiy Kompaniya',
-                        'allowed_devices_count' => 100,
-                        'audio_retention_days' => 365,
-                        'is_active' => true,
-                        'trial_ends_at' => null,
-                        'subscription_expires_at' => now()->addYears(50),
-                    ]
-                );
-
-                if (! $user->tenant_id) {
-                    $user->update(['tenant_id' => $tenant->id]);
-                }
             }
         }
 

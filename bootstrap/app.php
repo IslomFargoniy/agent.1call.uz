@@ -32,9 +32,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SetLocale::class,
             HandleAppearance::class,
+            SetTenantContext::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
-            SetTenantContext::class,
         ]);
 
         $middleware->alias([

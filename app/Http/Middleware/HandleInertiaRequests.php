@@ -38,8 +38,27 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
         $tenant = $user ? (app(TenantContext::class)->getTenant() ?? $user->tenant) : null;
+        $isSuperAdmin = $user && $user->role === 'superadmin';
+        $selectedTenant = null;
+
+        if ($isSuperAdmin) {
+            $selectedTenantId = session('superadmin_tenant_id');
+            if ($selectedTenantId) {
+                $tenantModel = \App\Models\Tenant::find($selectedTenantId);
+                if ($tenantModel) {
+                    $selectedTenant = [
+                        'id' => $tenantModel->id,
+                        'name' => $tenantModel->name,
+                        'slug' => $tenantModel->slug,
+                    ];
+                }
+            }
+        }
 
         return [
+            'superadmin' => [
+                'selected_tenant' => $selectedTenant,
+            ],
             ...parent::share($request),
             'name' => config('app.name'),
             'locale' => app()->getLocale(),

@@ -1,5 +1,6 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { TenantSwitcher } from '@/components/tenant-switcher';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import type { BreadcrumbItem as BreadcrumbItemType } from '@/types';
@@ -16,8 +17,9 @@ export function AppSidebarHeader({
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
 
-            {/* Top-Right Settings (Language Switcher & Appearance Toggle) */}
+            {/* Top-Right Settings (Tenant Switcher, Language Switcher & Appearance Toggle) */}
             <div className="flex items-center gap-3">
+                <TenantSwitcher />
                 <LanguageSwitcher />
                 <ThemeSwitcher />
             </div>
