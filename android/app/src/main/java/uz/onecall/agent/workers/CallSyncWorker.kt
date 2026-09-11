@@ -59,7 +59,7 @@ class CallSyncWorker(
 
                 val phoneBody = call.phoneNumber.toRequestBody("text/plain".toMediaTypeOrNull())
                 val dirBody = call.direction.toRequestBody("text/plain".toMediaTypeOrNull())
-                val simBody = call.simSlot.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+                val simBody = (if (call.simSlot >= 1) call.simSlot else 1).toString().toRequestBody("text/plain".toMediaTypeOrNull())
                 val durBody = call.durationSeconds.toString().toRequestBody("text/plain".toMediaTypeOrNull())
                 val startIso = isoFormat.format(Date(call.startedAt * 1000))
                 val endIso = isoFormat.format(Date(call.endedAt * 1000))

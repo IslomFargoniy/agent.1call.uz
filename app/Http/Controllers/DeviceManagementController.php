@@ -112,12 +112,34 @@ class DeviceManagementController extends Controller
             'name' => ['required', 'string', 'max:150'],
             'user_id' => ['nullable', 'exists:users,id'],
             'selected_sim_slot' => ['nullable', 'in:1,2'],
+            'sim1_number' => ['nullable', 'string', 'max:32'],
+            'sim1_carrier' => ['nullable', 'string', 'max:50'],
+            'sim2_number' => ['nullable', 'string', 'max:32'],
+            'sim2_carrier' => ['nullable', 'string', 'max:50'],
         ]);
+
+        $simSlotsInfo = $device->sim_slots_info ?? [];
+        if (! is_array($simSlotsInfo)) {
+            $simSlotsInfo = [];
+        }
+
+        $simSlotsInfo['sim1'] = [
+            'slot' => 1,
+            'phone_number' => $request->input('sim1_number', $simSlotsInfo['sim1']['phone_number'] ?? null),
+            'carrier' => $request->input('sim1_carrier', $simSlotsInfo['sim1']['carrier'] ?? null),
+        ];
+
+        $simSlotsInfo['sim2'] = [
+            'slot' => 2,
+            'phone_number' => $request->input('sim2_number', $simSlotsInfo['sim2']['phone_number'] ?? null),
+            'carrier' => $request->input('sim2_carrier', $simSlotsInfo['sim2']['carrier'] ?? null),
+        ];
 
         $device->update([
             'name' => $validated['name'],
             'user_id' => $validated['user_id'] ?? null,
             'selected_sim_slot' => $validated['selected_sim_slot'] ?? null,
+            'sim_slots_info' => $simSlotsInfo,
         ]);
 
         return back()->with('success', 'Qurilma sozlamalari yangilandi.');

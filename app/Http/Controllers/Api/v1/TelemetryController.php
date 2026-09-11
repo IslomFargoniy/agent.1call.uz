@@ -29,12 +29,28 @@ class TelemetryController extends Controller
             $accessibility = $device->accessibility_service_enabled ?? true;
         }
 
-        $device->update([
+        $updateData = [
             'battery_level' => $request->input('battery_level', $device->battery_level),
             'accessibility_service_enabled' => (bool) $accessibility,
             'selected_sim_slot' => $request->input('selected_sim_slot', $device->selected_sim_slot),
             'last_seen_at' => Carbon::now(),
-        ]);
+        ];
+
+        if ($request->has('sim_slots_info')) {
+            $incomingSlots = $request->input('sim_slots_info');
+            if (is_array($incomingSlots)) {
+                $currentSlots = $device->sim_slots_info ?? [];
+                // Merge without wiping user-entered phone numbers
+                foreach ($incomingSlots as $key => $val) {
+                    if (is_array($val)) {
+                        $currentSlots[$key] = array_merge($currentSlots[$key] ?? [], array_filter($val));
+                    }
+                }
+                $updateData['sim_slots_info'] = $currentSlots;
+            }
+        }
+
+        $device->update($updateData);
 
         $tenant = $device->tenant;
 
@@ -62,11 +78,14 @@ class TelemetryController extends Controller
         $phoneNumber = trim((string) $request->input('phone_number', ''));
         $rawDirection = strtoupper((string) $request->input('direction', 'INBOUND'));
         $direction = in_array($rawDirection, ['OUTBOUND', 'OUTGOING']) ? 'outbound' : 'inbound';
-        $simSlot = $request->input('sim_slot');
-        if ($simSlot !== null) {
-            $simSlot = (int) $simSlot;
-            if ($simSlot < 1 || $simSlot > 2) {
-                $simSlot = null;
+        $rawSimSlot = $request->input('sim_slot');
+        $simSlot = null;
+        if ($rawSimSlot !== null && $rawSimSlot !== '') {
+            $val = (int) $rawSimSlot;
+            if ($val === 0) {
+                $simSlot = 1;
+            } elseif ($val === 1 || $val === 2) {
+                $simSlot = $val;
             }
         }
 
@@ -143,11 +162,14 @@ class TelemetryController extends Controller
         $direction = in_array($rawDirection, ['OUTBOUND', 'OUTGOING']) ? 'outbound' : 'inbound';
         $durationSeconds = (int) $request->input('duration_seconds', 0);
         
-        $simSlot = $request->input('sim_slot');
-        if ($simSlot !== null) {
-            $simSlot = (int) $simSlot;
-            if ($simSlot < 1 || $simSlot > 2) {
-                $simSlot = null;
+        $rawSimSlot = $request->input('sim_slot');
+        $simSlot = null;
+        if ($rawSimSlot !== null && $rawSimSlot !== '') {
+            $val = (int) $rawSimSlot;
+            if ($val === 0) {
+                $simSlot = 1;
+            } elseif ($val === 1 || $val === 2) {
+                $simSlot = $val;
             }
         }
 

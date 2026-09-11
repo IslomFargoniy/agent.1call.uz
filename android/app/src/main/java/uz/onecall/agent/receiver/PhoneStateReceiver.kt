@@ -13,7 +13,21 @@ class PhoneStateReceiver : BroadcastReceiver() {
         private const val TAG = "PhoneStateReceiver"
         private var lastState = TelephonyManager.EXTRA_STATE_IDLE
         private var savedIncomingNumber: String? = null
-        private var savedSimSlot = 0
+        private var savedSimSlot = 1
+
+        fun extractSimSlot(intent: Intent?): Int {
+            if (intent == null) return 1
+            val extras = intent.extras ?: return 1
+            val slotKeys = listOf("simSlot", "sim_slot", "slot", "phone", "com.android.phone.extra.slot")
+            for (k in slotKeys) {
+                if (extras.containsKey(k)) {
+                    val v = extras.getInt(k, -1)
+                    if (v == 0) return 1
+                    if (v >= 1) return v
+                }
+            }
+            return 1
+        }
     }
 
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -21,7 +35,7 @@ class PhoneStateReceiver : BroadcastReceiver() {
 
         val state = intent.getStringExtra(TelephonyManager.EXTRA_STATE) ?: return
         val incomingNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER) ?: ""
-        val simSlot = intent.getIntExtra("simSlot", intent.getIntExtra("subscription", 0))
+        val simSlot = extractSimSlot(intent)
 
         val service = CallAccessibilityService.instance
 

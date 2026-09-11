@@ -1,8 +1,8 @@
 {
-  "version": "1.0.4",
-  "version_code": 5,
+  "version": "1.0.5",
+  "version_code": 6,
   "file_size": 24461732,
   "download_url": "/downloads/1call-agent.apk",
-  "changelog": "1Call Agent v1.0.4:\n- Qo'ng'iroq ovozini tiniq yozib olish (Samsung va barcha Android 11-15 larda ovoz muammosi to'liq yechildi)\n- Ilova yangilanishlari (APK o'rnatish) ruxsati boshlang'ich sozlamalar ro'yxatiga qo'shildi\n- Ruxsatlar sahifasiga \"Yangilash\" tugmasi qo'shildi va avtomatik aniqlash yaxshilandi",
-  "updated_at": "2026-09-11T14:06:00.000Z"
+  "changelog": "1Call Agent v1.0.5:\n- Qo'ng'iroq paytida SIM karta (Dual-SIM) operatori va raqamini avtomatik aniqlash\n- QURILMA / SIM da operator telefon raqami ko'rsatilishi qo'llab-quvvatlandi\n- Telemetriya orqali SIM ma'lumotlarini serverga uzatish qo'shildi",
+  "updated_at": "2026-09-11T14:15:00.000Z"
 }

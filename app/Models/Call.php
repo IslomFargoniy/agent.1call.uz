@@ -27,6 +27,11 @@ class Call extends Model
         'call_timestamp',
     ];
 
+    protected $appends = [
+        'sim_phone_number',
+        'sim_operator_name',
+    ];
+
     protected function casts(): array
     {
         return [
@@ -48,6 +53,64 @@ class Call extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function getSimPhoneNumberAttribute(): ?string
+    {
+        $device = $this->device;
+        if (! $device || empty($device->sim_slots_info)) {
+            return null;
+        }
+
+        $slots = $device->sim_slots_info;
+        $targetSlot = $this->sim_slot ?? 1;
+
+        // Format 1: ['sim1' => ['phone_number' => ...]]
+        if (isset($slots["sim{$targetSlot}"]['phone_number']) && ! empty($slots["sim{$targetSlot}"]['phone_number'])) {
+            return $slots["sim{$targetSlot}"]['phone_number'];
+        }
+
+        // Format 2: [[ 'slot' => 1, 'phone_number' => ... ]]
+        if (is_array($slots)) {
+            foreach ($slots as $slot) {
+                if (is_array($slot) && isset($slot['slot']) && (int) $slot['slot'] === (int) $targetSlot) {
+                    if (! empty($slot['phone_number'])) {
+                        return $slot['phone_number'];
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public function getSimOperatorNameAttribute(): ?string
+    {
+        $device = $this->device;
+        if (! $device || empty($device->sim_slots_info)) {
+            return null;
+        }
+
+        $slots = $device->sim_slots_info;
+        $targetSlot = $this->sim_slot ?? 1;
+
+        // Format 1: ['sim1' => ['carrier' => ...]]
+        if (isset($slots["sim{$targetSlot}"]['carrier']) && ! empty($slots["sim{$targetSlot}"]['carrier'])) {
+            return $slots["sim{$targetSlot}"]['carrier'];
+        }
+
+        // Format 2: [[ 'slot' => 1, 'carrier' => ... ]]
+        if (is_array($slots)) {
+            foreach ($slots as $slot) {
+                if (is_array($slot) && isset($slot['slot']) && (int) $slot['slot'] === (int) $targetSlot) {
+                    if (! empty($slot['carrier'])) {
+                        return $slot['carrier'];
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     public function isAnswered(): bool

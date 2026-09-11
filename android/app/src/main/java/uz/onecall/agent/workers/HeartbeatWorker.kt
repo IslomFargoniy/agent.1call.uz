@@ -50,6 +50,8 @@ class HeartbeatWorker(
             }
         }
 
+        val simMap = uz.onecall.agent.core.SimHelper.getSimCardsMap(app)
+
         // 3. Send Heartbeat to server
         try {
             val response = ApiClient.getService().sendHeartbeat(
@@ -57,7 +59,8 @@ class HeartbeatWorker(
                     batteryLevel = batteryPct,
                     isCharging = isCharging,
                     accessibilityEnabled = accessibilityEnabled,
-                    isActive = true
+                    isActive = true,
+                    simSlotsInfo = if (simMap.isNotEmpty()) simMap else null
                 )
             )
 

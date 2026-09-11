@@ -32,6 +32,7 @@ interface DeviceItem {
     model?: string;
     device_uid: string;
     selected_sim_slot?: number;
+    sim_slots_info?: any;
     accessibility_service_enabled: boolean;
     battery_level?: number;
     pairing_code?: string;
@@ -64,6 +65,10 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
         name: "",
         user_id: "",
         selected_sim_slot: "",
+        sim1_number: "",
+        sim1_carrier: "",
+        sim2_number: "",
+        sim2_carrier: "",
     });
 
     const activePairingDevice =
@@ -103,10 +108,15 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
 
     const openEdit = (device: DeviceItem) => {
         setEditingDevice(device);
+        const slots = device.sim_slots_info || {};
         setData({
             name: device.name,
             user_id: device.user_id ? String(device.user_id) : "",
             selected_sim_slot: device.selected_sim_slot ? String(device.selected_sim_slot) : "",
+            sim1_number: slots?.sim1?.phone_number || (Array.isArray(slots) ? slots.find((s: any) => s.slot === 1)?.phone_number : "") || "",
+            sim1_carrier: slots?.sim1?.carrier || (Array.isArray(slots) ? slots.find((s: any) => s.slot === 1)?.carrier : "") || "",
+            sim2_number: slots?.sim2?.phone_number || (Array.isArray(slots) ? slots.find((s: any) => s.slot === 2)?.phone_number : "") || "",
+            sim2_carrier: slots?.sim2?.carrier || (Array.isArray(slots) ? slots.find((s: any) => s.slot === 2)?.carrier : "") || "",
         });
     };
 
@@ -404,11 +414,23 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                                         {device.user?.name || <span className="text-muted-foreground italic">{t("devices.unassigned", "Biriktirilmagan")}</span>}
                                     </td>
                                     <td className="py-3.5 px-4 text-xs">
-                                        <span className="bg-secondary px-2 py-0.5 rounded text-secondary-foreground font-medium">
-                                            {device.selected_sim_slot
-                                                ? t("devices.onlySim", "Faqat SIM {{slot}}", { slot: device.selected_sim_slot })
-                                                : t("devices.bothSims", "Ikkala SIM")}
-                                        </span>
+                                        <div className="flex flex-col gap-1">
+                                            <span className="bg-secondary px-2 py-0.5 rounded text-secondary-foreground font-medium inline-block w-fit">
+                                                {device.selected_sim_slot
+                                                    ? t("devices.onlySim", "Faqat SIM {{slot}}", { slot: device.selected_sim_slot })
+                                                    : t("devices.bothSims", "Ikkala SIM")}
+                                            </span>
+                                            {device.sim_slots_info && (
+                                                <div className="text-[11px] text-muted-foreground flex flex-col gap-0.5 font-mono">
+                                                    {device.sim_slots_info?.sim1?.phone_number && (
+                                                        <span>SIM 1: {device.sim_slots_info.sim1.phone_number} {device.sim_slots_info.sim1.carrier ? `(${device.sim_slots_info.sim1.carrier})` : ''}</span>
+                                                    )}
+                                                    {device.sim_slots_info?.sim2?.phone_number && (
+                                                        <span>SIM 2: {device.sim_slots_info.sim2.phone_number} {device.sim_slots_info.sim2.carrier ? `(${device.sim_slots_info.sim2.carrier})` : ''}</span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="py-3.5 px-4">
                                         {device.accessibility_service_enabled ? (
@@ -637,6 +659,55 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                             </select>
                             <p className="text-[11px] text-muted-foreground">
                                 {t("devices.dualSimDesc", "Shaxsiy SIM orqali amalga oshirilgan suhbatlar serverga yuklanmaydi va yozilmaydi.")}
+                            </p>
+                        </div>
+
+                        <div className="border-t border-border pt-3 space-y-3">
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                {t("devices.simNumbersTitle", "SIM Kartalar va Operator Raqamlari")}
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-medium text-foreground/80">SIM 1 Raqami</label>
+                                    <Input
+                                        placeholder="+998 90 123 45 67"
+                                        value={data.sim1_number}
+                                        onChange={(e) => setData("sim1_number", e.target.value)}
+                                        className="text-xs font-mono"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-medium text-foreground/80">SIM 1 Operator (Nomi)</label>
+                                    <Input
+                                        placeholder="Beeline / Asosiy"
+                                        value={data.sim1_carrier}
+                                        onChange={(e) => setData("sim1_carrier", e.target.value)}
+                                        className="text-xs"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-medium text-foreground/80">SIM 2 Raqami</label>
+                                    <Input
+                                        placeholder="+998 93 987 65 43"
+                                        value={data.sim2_number}
+                                        onChange={(e) => setData("sim2_number", e.target.value)}
+                                        className="text-xs font-mono"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-medium text-foreground/80">SIM 2 Operator (Nomi)</label>
+                                    <Input
+                                        placeholder="Ucell / Qo'shimcha"
+                                        value={data.sim2_carrier}
+                                        onChange={(e) => setData("sim2_carrier", e.target.value)}
+                                        className="text-xs"
+                                    />
+                                </div>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">
+                                Ushbu raqamlar qo'ng'iroqlar jurnalida qaysi SIM va operator raqami orqali gaplashilganini ko'rsatish uchun xizmat qiladi.
                             </p>
                         </div>
 

@@ -34,7 +34,7 @@ class CallAccessibilityService : AccessibilityService() {
     var activePhoneNumber: String? = null
         private set
     private var activeDirection: String = "INCOMING"
-    private var activeSimSlot: Int = 0
+    private var activeSimSlot: Int = 1
     private var isCallInProgress = false
     private var callStartTime: Long = 0
 
@@ -87,11 +87,11 @@ class CallAccessibilityService : AccessibilityService() {
         }
     }
 
-    fun handleRinging(phoneNumber: String, simSlot: Int = 0) {
+    fun handleRinging(phoneNumber: String, simSlot: Int = 1) {
         try {
             activePhoneNumber = phoneNumber
             activeDirection = "INCOMING"
-            activeSimSlot = simSlot
+            activeSimSlot = if (simSlot >= 1) simSlot else 1
 
             val prefs = OneCallApplication.instance.preferences
             if (!prefs.isPaired) return
@@ -116,13 +116,13 @@ class CallAccessibilityService : AccessibilityService() {
         }
     }
 
-    fun handleCallStarted(phoneNumber: String, direction: String, simSlot: Int = 0) {
+    fun handleCallStarted(phoneNumber: String, direction: String, simSlot: Int = 1) {
         try {
             if (isCallInProgress) return
 
             activePhoneNumber = phoneNumber
             activeDirection = direction
-            activeSimSlot = simSlot
+            activeSimSlot = if (simSlot >= 1) simSlot else 1
 
             val prefs = OneCallApplication.instance.preferences
             if (!prefs.isPaired) return
@@ -206,7 +206,7 @@ class CallAccessibilityService : AccessibilityService() {
                     val record = LocalCallRecord(
                         phoneNumber = phone,
                         direction = direction,
-                        simSlot = sim,
+                        simSlot = if (sim >= 1) sim else 1,
                         durationSeconds = duration,
                         audioFilePath = audioPath,
                         fileSizeBytes = fileSize,

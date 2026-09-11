@@ -31,7 +31,8 @@ data class HeartbeatRequest(
     @SerializedName("battery_level") val batteryLevel: Int,
     @SerializedName("is_charging") val isCharging: Boolean,
     @SerializedName("accessibility_service_enabled") val accessibilityEnabled: Boolean,
-    @SerializedName("is_active") val isActive: Boolean = true
+    @SerializedName("is_active") val isActive: Boolean = true,
+    @SerializedName("sim_slots_info") val simSlotsInfo: Map<String, Any>? = null
 )
 
 data class CommonResponse(

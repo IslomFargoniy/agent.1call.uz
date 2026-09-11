@@ -20,10 +20,12 @@ interface CallRecord {
     direction: 'inbound' | 'outbound';
     duration_seconds: number;
     sim_slot?: number;
+    sim_phone_number?: string;
+    sim_operator_name?: string;
     recording_status: string;
     recording_path?: string;
     call_timestamp: string;
-    device?: { id: number; name: string; model?: string };
+    device?: { id: number; name: string; model?: string; sim_slots_info?: any };
     user?: { id: number; name: string };
 }
 
@@ -216,12 +218,34 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                                             </div>
                                         </td>
                                         <td className="py-3.5 px-4 text-xs">
-                                            <span className="font-medium">{call.device?.name || t('calls.device', 'Telefon')}</span>
-                                            {call.sim_slot && (
-                                                <span className="ml-1.5 text-[10px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground">
-                                                    SIM {call.sim_slot}
-                                                </span>
-                                            )}
+                                            <div className="flex flex-col gap-0.5">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <span className="font-medium text-foreground">{call.device?.name || t('calls.device', 'Telefon')}</span>
+                                                    {call.sim_slot && (
+                                                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                                                            call.sim_slot === 1 
+                                                                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' 
+                                                                : 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                                                        }`}>
+                                                            SIM {call.sim_slot}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {(call.sim_phone_number || call.sim_operator_name) ? (
+                                                    <div className="text-[11px] font-mono text-muted-foreground flex items-center gap-1">
+                                                        {call.sim_operator_name && (
+                                                            <span className="font-sans font-medium text-foreground/80">{call.sim_operator_name}:</span>
+                                                        )}
+                                                        {call.sim_phone_number && (
+                                                            <span>{call.sim_phone_number}</span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    call.device?.model && call.device.model !== call.device.name ? (
+                                                        <span className="text-[11px] text-muted-foreground">{call.device.model}</span>
+                                                    ) : null
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="py-3.5 px-4 text-xs">
                                             {call.user?.name || '—'}
