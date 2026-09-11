@@ -47,32 +47,14 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // 2. Tariffs
+        // 2. Tariffs (Bitta yagona tarif)
         $tariffs = [
             [
-                'name' => 'Start',
-                'code' => 'start',
-                'base_price_monthly' => 49000,
-                'price_usd_monthly' => 4.00,
+                'name' => '1Call Standart',
+                'code' => 'standard',
+                'base_price_monthly' => 50000,
+                'price_usd_monthly' => 3.89,
                 'min_devices' => 1,
-                'default_retention_days' => 30,
-                'is_active' => true,
-            ],
-            [
-                'name' => 'Pro',
-                'code' => 'pro',
-                'base_price_monthly' => 39000,
-                'price_usd_monthly' => 3.20,
-                'min_devices' => 4,
-                'default_retention_days' => 30,
-                'is_active' => true,
-            ],
-            [
-                'name' => 'Enterprise',
-                'code' => 'enterprise',
-                'base_price_monthly' => 29000,
-                'price_usd_monthly' => 2.50,
-                'min_devices' => 11,
                 'default_retention_days' => 30,
                 'is_active' => true,
             ],
@@ -81,12 +63,12 @@ class DatabaseSeeder extends Seeder
         foreach ($tariffs as $tariffData) {
             $tariff = Tariff::updateOrCreate(['code' => $tariffData['code']], $tariffData);
 
-            // Seed retention options for each tariff
+            // Seed retention options for tariff
             $retentionOptions = [
-                ['retention_days' => 60, 'additional_price_monthly' => 10000, 'additional_price_usd_monthly' => 0.80],
-                ['retention_days' => 90, 'additional_price_monthly' => 18000, 'additional_price_usd_monthly' => 1.50],
-                ['retention_days' => 180, 'additional_price_monthly' => 30000, 'additional_price_usd_monthly' => 2.50],
-                ['retention_days' => 365, 'additional_price_monthly' => 50000, 'additional_price_usd_monthly' => 4.00],
+                ['retention_days' => 60, 'additional_price_monthly' => 10000, 'additional_price_usd_monthly' => 0.78],
+                ['retention_days' => 90, 'additional_price_monthly' => 20000, 'additional_price_usd_monthly' => 1.56],
+                ['retention_days' => 180, 'additional_price_monthly' => 35000, 'additional_price_usd_monthly' => 2.72],
+                ['retention_days' => 365, 'additional_price_monthly' => 50000, 'additional_price_usd_monthly' => 3.89],
             ];
 
             foreach ($retentionOptions as $option) {

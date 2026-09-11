@@ -7,6 +7,8 @@ use App\Models\Invoice;
 use App\Models\PaymentMethod;
 use App\Models\SystemSetting;
 use App\Models\Tariff;
+use App\Models\TariffDiscount;
+use App\Models\TariffRetentionOption;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Billing\SubscriptionService;
@@ -125,19 +127,32 @@ class SuperadminController extends Controller
      */
     public function tariffs(): Response
     {
-        $tariffs = Tariff::with(['discounts', 'retentionOptions'])->get();
+        $tariff = Tariff::with(['discounts', 'retentionOptions'])->first();
+        if (! $tariff) {
+            $tariff = Tariff::create([
+                'name' => '1Call Standart',
+                'code' => 'standard',
+                'base_price_monthly' => 50000,
+                'price_usd_monthly' => 3.89,
+                'min_devices' => 1,
+                'default_retention_days' => 30,
+                'is_active' => true,
+            ]);
+        }
+
         $usdRate = (float) SystemSetting::get('usd_exchange_rate', 12850);
         $rateUpdatedAt = SystemSetting::where('key', 'usd_exchange_rate')->value('updated_at')?->toDateTimeString();
 
         return Inertia::render('Admin/Tariffs', [
-            'tariffs' => $tariffs,
+            'tariff' => $tariff,
+            'tariffs' => [$tariff],
             'usdRate' => $usdRate,
             'rateUpdatedAt' => $rateUpdatedAt,
         ]);
     }
 
     /**
-     * Save USD exchange rate and optionally re-calculate all tariffs.
+     * Save USD exchange rate and optionally re-calculate tariff USD prices.
      */
     public function saveExchangeRate(Request $request): RedirectResponse
     {
@@ -150,8 +165,8 @@ class SuperadminController extends Controller
         SystemSetting::set('usd_exchange_rate', $rate, 'billing');
 
         if (! empty($validated['recalculate_tariffs'])) {
-            $tariffs = Tariff::with('retentionOptions')->get();
-            foreach ($tariffs as $tariff) {
+            $tariff = Tariff::with('retentionOptions')->first();
+            if ($tariff) {
                 $tariff->update([
                     'price_usd_monthly' => round($tariff->base_price_monthly / $rate, 2),
                 ]);
@@ -163,7 +178,7 @@ class SuperadminController extends Controller
                 }
             }
 
-            return back()->with('success', "Valyuta kursi (1 USD = {$rate} UZS) saqlandi va barcha tariflar dollar narxlari avtomatik qayta hisoblandi!");
+            return back()->with('success', "Valyuta kursi (1 USD = {$rate} UZS) saqlandi va barcha dollar narxlari qayta hisoblandi!");
         }
 
         return back()->with('success', "Valyuta kursi (1 USD = {$rate} UZS) saqlandi!");
@@ -198,7 +213,7 @@ class SuperadminController extends Controller
     }
 
     /**
-     * Update or Create Tariff.
+     * Update Tariff Base Price and settings.
      */
     public function saveTariff(Request $request): RedirectResponse
     {
@@ -214,7 +229,49 @@ class SuperadminController extends Controller
 
         Tariff::updateOrCreate(['id' => $validated['id'] ?? null], $validated);
 
-        return back()->with('success', 'Tarif muvaffaqiyatli saqlandi.');
+        return back()->with('success', 'Baza tarif narxi muvaffaqiyatli saqlandi.');
+    }
+
+    /**
+     * Save Audio Retention Addon Options.
+     */
+    public function saveRetentionOptions(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'options' => ['required', 'array'],
+            'options.*.id' => ['required', 'exists:tariff_retention_options,id'],
+            'options.*.additional_price_monthly' => ['required', 'integer', 'min:0'],
+            'options.*.additional_price_usd_monthly' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        foreach ($validated['options'] as $item) {
+            TariffRetentionOption::where('id', $item['id'])->update([
+                'additional_price_monthly' => $item['additional_price_monthly'],
+                'additional_price_usd_monthly' => $item['additional_price_usd_monthly'],
+            ]);
+        }
+
+        return back()->with('success', 'Audio arxiv saqlash narxlari muvaffaqiyatli saqlandi!');
+    }
+
+    /**
+     * Save Volume and Period Discounts.
+     */
+    public function saveDiscounts(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'discounts' => ['required', 'array'],
+            'discounts.*.id' => ['required', 'exists:tariff_discounts,id'],
+            'discounts.*.discount_percent' => ['required', 'numeric', 'min:0', 'max:100'],
+        ]);
+
+        foreach ($validated['discounts'] as $item) {
+            TariffDiscount::where('id', $item['id'])->update([
+                'discount_percent' => $item['discount_percent'],
+            ]);
+        }
+
+        return back()->with('success', 'Chegirmalar foizlari muvaffaqiyatli saqlandi!');
     }
 
     /**

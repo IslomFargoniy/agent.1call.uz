@@ -82,16 +82,56 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
     const subtotalUzs = deviceRateUzs * devicesCount * months;
     const subtotalUsd = deviceRateUsd * devicesCount * months;
 
-    // Discounts
+    // Dynamic Discounts
     let periodDiscount = 0;
-    if (months === 12) periodDiscount = 20;
-    else if (months === 6) periodDiscount = 10;
-    else if (months === 3) periodDiscount = 5;
+    const dbPeriod = selectedTariff?.discounts
+        ?.filter((d) => d.type === 'period' && months >= d.min_value && (!d.max_value || months <= d.max_value))
+        .sort((a, b) => Number(b.discount_percent) - Number(a.discount_percent))[0];
+
+    if (dbPeriod) {
+        periodDiscount = Number(dbPeriod.discount_percent);
+    } else {
+        if (months === 12) periodDiscount = 20;
+        else if (months === 6) periodDiscount = 10;
+        else if (months === 3) periodDiscount = 5;
+    }
 
     let volumeDiscount = 0;
-    if (devicesCount >= 20) volumeDiscount = 15;
-    else if (devicesCount >= 10) volumeDiscount = 10;
-    else if (devicesCount >= 5) volumeDiscount = 5;
+    const dbVolume = selectedTariff?.discounts
+        ?.filter((d) => d.type === 'device_volume' && devicesCount >= d.min_value && (!d.max_value || devicesCount <= d.max_value))
+        .sort((a, b) => Number(b.discount_percent) - Number(a.discount_percent))[0];
+
+    if (dbVolume) {
+        volumeDiscount = Number(dbVolume.discount_percent);
+    } else {
+        if (devicesCount >= 20) volumeDiscount = 15;
+        else if (devicesCount >= 10) volumeDiscount = 10;
+        else if (devicesCount >= 5) volumeDiscount = 5;
+    }
+
+    // Dynamic Retention items list
+    const retentionItems = [
+        { days: 30, label: t("billing.days30", "30 kun"), extra: t("billing.standardPrice", "Standart (0 so'm)") },
+        ...([60, 90, 180, 365].map((d) => {
+            const opt = selectedTariff?.retention_options?.find((o) => o.retention_days === d);
+            const extraText = opt
+                ? selectedPaymentMethod === "lemonsqueezy"
+                    ? `+$${Number(opt.additional_price_usd_monthly).toFixed(2)}`
+                    : `+${Number(opt.additional_price_monthly).toLocaleString("uz-UZ")} so'm`
+                : d === 60
+                    ? "+10 000 so'm"
+                    : d === 90
+                        ? "+20 000 so'm"
+                        : d === 180
+                            ? "+35 000 so'm"
+                            : "+50 000 so'm";
+            return {
+                days: d,
+                label: d === 365 ? t("billing.year1", "1 yil (365k)") : `${d} kun`,
+                extra: extraText,
+            };
+        })),
+    ];
 
     const totalDiscount = Math.min(40, periodDiscount + volumeDiscount);
     const discountFactor = (100 - totalDiscount) / 100;
@@ -270,13 +310,7 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5">
-                            {[
-                                { days: 30, label: t("billing.days30", "30 kun"), extra: t("billing.standardPrice", "Standart (0 so'm)") },
-                                { days: 60, label: t("billing.days60", "60 kun"), extra: t("billing.extra10k", "+10 000 so'm") },
-                                { days: 90, label: t("billing.days90", "90 kun"), extra: t("billing.extra20k", "+20 000 so'm") },
-                                { days: 180, label: t("billing.days180", "180 kun"), extra: t("billing.extra35k", "+35 000 so'm") },
-                                { days: 365, label: t("billing.year1", "1 yil (365k)"), extra: t("billing.extra50k", "+50 000 so'm") },
-                            ].map((item) => (
+                            {retentionItems.map((item) => (
                                 <div
                                     key={item.days}
                                     onClick={() => setRetentionDays(item.days)}
