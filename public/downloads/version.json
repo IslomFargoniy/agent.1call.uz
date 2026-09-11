@@ -1,8 +1,8 @@
 {
-  "version": "1.0.1",
-  "version_code": 2,
+  "version": "1.0.2",
+  "version_code": 3,
   "file_size": 24461732,
   "download_url": "/downloads/1call-agent.apk",
-  "changelog": "1Call Agent v1.0.1:\n- V1/V2/V3 imzo muvofiqligi yaxshilandi\n- O\u02bbrnatish xatoliklari tuzatildi",
-  "updated_at": "2026-09-11 11:07:00"
+  "changelog": "1Call Agent v1.0.2:\n- Kiruvchi va chiquvchi qo'ng'iroqlarni aniqlash va fon yozuv xizmati to'liq yaxshilandi\n- CallLog orqali aniq raqam va davomiylikni qayd etish qo'shildi\n- Real-vaqt sinxronizatsiya va CRM integratsiyasi optimallashtirildi",
+  "updated_at": "2026-09-11T06:36:47.642Z"
 }

@@ -9,31 +9,66 @@ import uz.onecall.agent.service.CallAccessibilityService
 
 class PhoneStateReceiver : BroadcastReceiver() {
 
+    companion object {
+        private const val TAG = "PhoneStateReceiver"
+        private var lastState = TelephonyManager.EXTRA_STATE_IDLE
+        private var savedIncomingNumber: String? = null
+        private var savedSimSlot = 0
+    }
+
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent?.action != TelephonyManager.ACTION_PHONE_STATE_CHANGED) return
 
-        val state = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
+        val state = intent.getStringExtra(TelephonyManager.EXTRA_STATE) ?: return
         val incomingNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER) ?: ""
         val simSlot = intent.getIntExtra("simSlot", intent.getIntExtra("subscription", 0))
 
         val service = CallAccessibilityService.instance
 
+        Log.d(TAG, "PhoneStateChanged: state=$state, lastState=$lastState, incomingNumber=$incomingNumber, simSlot=$simSlot")
+
         when (state) {
             TelephonyManager.EXTRA_STATE_RINGING -> {
-                Log.d("PhoneStateReceiver", "Incoming call ringing: $incomingNumber on SIM $simSlot")
+                lastState = TelephonyManager.EXTRA_STATE_RINGING
                 if (incomingNumber.isNotBlank()) {
-                    service?.handleRinging(incomingNumber, simSlot)
+                    savedIncomingNumber = incomingNumber
+                }
+                savedSimSlot = simSlot
+                val num = savedIncomingNumber ?: service?.activePhoneNumber ?: incomingNumber
+                Log.d(TAG, "Incoming call ringing: $num on SIM $simSlot")
+                if (num.isNotBlank()) {
+                    service?.handleRinging(num, simSlot)
                 }
             }
+
             TelephonyManager.EXTRA_STATE_OFFHOOK -> {
-                Log.d("PhoneStateReceiver", "Call connected (OFFHOOK): $incomingNumber")
-                if (incomingNumber.isNotBlank()) {
-                    service?.handleCallStarted(incomingNumber, "INCOMING", simSlot)
+                if (lastState == TelephonyManager.EXTRA_STATE_RINGING) {
+                    // Incoming call answered
+                    val num = incomingNumber.ifBlank { savedIncomingNumber ?: service?.activePhoneNumber ?: "Noma'lum" }
+                    Log.d(TAG, "Incoming call connected (OFFHOOK): $num")
+                    service?.handleCallStarted(num, "INCOMING", savedSimSlot)
+                } else {
+                    // Outgoing call started (transitions from IDLE to OFFHOOK)
+                    val num = incomingNumber.ifBlank { service?.activePhoneNumber ?: "Noma'lum" }
+                    Log.d(TAG, "Outgoing call connected (OFFHOOK): $num")
+                    service?.handleCallStarted(num, "OUTGOING", simSlot)
                 }
+                lastState = TelephonyManager.EXTRA_STATE_OFFHOOK
             }
+
             TelephonyManager.EXTRA_STATE_IDLE -> {
-                Log.d("PhoneStateReceiver", "Call terminated (IDLE)")
-                service?.handleCallEnded()
+                if (lastState == TelephonyManager.EXTRA_STATE_OFFHOOK) {
+                    // Call connected and now ended
+                    Log.d(TAG, "Call ended (OFFHOOK -> IDLE)")
+                    service?.handleCallEnded(context)
+                } else if (lastState == TelephonyManager.EXTRA_STATE_RINGING) {
+                    // Missed call (caller hung up or rejected without answering)
+                    Log.d(TAG, "Missed call (RINGING -> IDLE): $savedIncomingNumber")
+                    val missedNum = savedIncomingNumber ?: service?.activePhoneNumber ?: "Noma'lum"
+                    service?.handleMissedCall(missedNum, savedSimSlot)
+                }
+                lastState = TelephonyManager.EXTRA_STATE_IDLE
+                savedIncomingNumber = null
             }
         }
     }
