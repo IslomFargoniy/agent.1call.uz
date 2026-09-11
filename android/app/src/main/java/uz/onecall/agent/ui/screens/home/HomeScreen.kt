@@ -1,5 +1,12 @@
 package uz.onecall.agent.ui.screens.home
 
+import android.widget.Toast
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import uz.onecall.agent.core.SimHelper
+import uz.onecall.agent.workers.HeartbeatWorker
+
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import uz.onecall.agent.R
@@ -105,6 +112,12 @@ fun HomeScreen(
     val todayCount by dao.getTodayCallsCountFlow(startOfDay).collectAsState(initial = 0)
     val pendingCount by dao.getPendingCallsCountFlow().collectAsState(initial = 0)
     val recentCalls by dao.getRecentCallsFlow().collectAsState(initial = emptyList())
+
+    val activeSims = remember { SimHelper.getActiveSimCards(context) }
+    val isDualSim = activeSims.size > 1
+
+    var showEditPhoneDialog by remember { mutableStateOf(false) }
+    var inputPhoneNumber by remember { mutableStateOf(prefs.sim1PhoneNumber ?: "") }
 
         var updateAvailableInfo by remember { mutableStateOf<AppVersionResponse?>(null) }
     LaunchedEffect(Unit) {
@@ -319,58 +332,113 @@ fun HomeScreen(
                 }
             }
 
-            // Corporate SIM Slot Filter
+            // SIM Information / Corporate Dual-SIM Selection
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.SimCard, contentDescription = null, tint = PrimaryBlue)
-                            Spacer(modifier = Modifier.width(8.dp))
+                if (isDualSim) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.SimCard, contentDescription = null, tint = PrimaryBlue)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Korporativ SIM Slot Tanlovi",
+                                    fontWeight = FontWeight.SemiBold,
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Korporativ SIM Slot Tanlovi",
-                                fontWeight = FontWeight.SemiBold,
-                                style = MaterialTheme.typography.titleSmall
+                                text = "Faqat tanlangan SIM dagi qo'ng'iroqlar yoziladi. Shaxsiy SIM qo'ng'iroqlari chetlab o'tiladi.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                FilterChip(
+                                    selected = selectedSimSlot == 0,
+                                    onClick = {
+                                        selectedSimSlot = 0
+                                        prefs.selectedSimSlot = 0
+                                    },
+                                    label = { Text("Har ikkisi") }
+                                )
+                                FilterChip(
+                                    selected = selectedSimSlot == 1,
+                                    onClick = {
+                                        selectedSimSlot = 1
+                                        prefs.selectedSimSlot = 1
+                                    },
+                                    label = { Text("SIM 1") }
+                                )
+                                FilterChip(
+                                    selected = selectedSimSlot == 2,
+                                    onClick = {
+                                        selectedSimSlot = 2
+                                        prefs.selectedSimSlot = 2
+                                    },
+                                    label = { Text("SIM 2") }
+                                )
+                            }
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Faqat tanlangan SIM dagi qo'ng'iroqlar yoziladi. Shaxsiy SIM qo'ng'iroqlari chetlab o'tiladi.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            FilterChip(
-                                selected = selectedSimSlot == 0,
-                                onClick = {
-                                    selectedSimSlot = 0
-                                    prefs.selectedSimSlot = 0
-                                },
-                                label = { Text("Har ikkisi") }
+                    }
+                } else {
+                    // Single SIM Card Info with Quick Operator Phone Number Configuration
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.SimCard, contentDescription = null, tint = PrimaryBlue)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "SIM Karta (Yagona slot)",
+                                        fontWeight = FontWeight.SemiBold,
+                                        style = MaterialTheme.typography.titleSmall
+                                    )
+                                }
+                                val sim1Num = prefs.sim1PhoneNumber ?: activeSims.firstOrNull()?.phoneNumber?.ifBlank { null }
+                                TextButton(
+                                    onClick = {
+                                        inputPhoneNumber = sim1Num ?: ""
+                                        showEditPhoneDialog = true
+                                    }
+                                ) {
+                                    Text(
+                                        text = if (sim1Num.isNullOrBlank()) "Raqam kiritish" else "O'zgartirish",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = PrimaryBlue
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            val carrierName = activeSims.firstOrNull()?.carrier ?: "SIM 1"
+                            Text(
+                                text = "Aloqa operatori: $carrierName",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
-                            FilterChip(
-                                selected = selectedSimSlot == 1,
-                                onClick = {
-                                    selectedSimSlot = 1
-                                    prefs.selectedSimSlot = 1
-                                },
-                                label = { Text("SIM 1") }
-                            )
-                            FilterChip(
-                                selected = selectedSimSlot == 2,
-                                onClick = {
-                                    selectedSimSlot = 2
-                                    prefs.selectedSimSlot = 2
-                                },
-                                label = { Text("SIM 2") }
+                            val sim1Num = prefs.sim1PhoneNumber ?: activeSims.firstOrNull()?.phoneNumber?.ifBlank { null }
+                            Text(
+                                text = if (!sim1Num.isNullOrBlank()) "Operator raqami: $sim1Num" else "Operator raqami: Kiritilmagan",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = if (!sim1Num.isNullOrBlank()) FontWeight.Medium else FontWeight.Normal,
+                                color = if (!sim1Num.isNullOrBlank()) MaterialTheme.colorScheme.onSurface else Color(0xFFF59E0B)
                             )
                         }
                     }
@@ -427,15 +495,58 @@ fun HomeScreen(
                 }
             } else {
                 items(recentCalls) { call ->
-                    CallRecordItem(call)
+                    CallRecordItem(call, isDualSim)
                 }
             }
+        }
+
+        if (showEditPhoneDialog) {
+            AlertDialog(
+                onDismissRequest = { showEditPhoneDialog = false },
+                title = { Text("Operator Telefon Raqami") },
+                text = {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Qo'ng'iroqlar jurnalida qaysi operator raqamidan gaplashilganini ko'rsatish uchun telefon raqamingizni kiriting:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = inputPhoneNumber,
+                            onValueChange = { inputPhoneNumber = it },
+                            label = { Text("Telefon raqam") },
+                            placeholder = { Text("+998901234567") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val cleaned = inputPhoneNumber.trim()
+                            prefs.sim1PhoneNumber = cleaned
+                            showEditPhoneDialog = false
+                            HeartbeatWorker.enqueueImmediate(context)
+                            Toast.makeText(context, "Operator raqami saqlandi va serverga yuborildi", Toast.LENGTH_SHORT).show()
+                        }
+                    ) {
+                        Text("Saqlash")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showEditPhoneDialog = false }) {
+                        Text("Bekor qilish")
+                    }
+                }
+            )
         }
     }
 }
 
 @Composable
-fun CallRecordItem(call: LocalCallRecord) {
+fun CallRecordItem(call: LocalCallRecord, isDualSim: Boolean = false) {
     val isIncoming = call.direction.equals("INCOMING", ignoreCase = true)
     val timeFormat = SimpleDateFormat("HH:mm, dd MMM", Locale.getDefault())
     val formattedTime = timeFormat.format(Date(call.startedAt * 1000))
@@ -468,8 +579,9 @@ fun CallRecordItem(call: LocalCallRecord) {
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 15.sp
                 )
+                val simLabel = if (isDualSim) " • SIM ${if (call.simSlot == 2) 2 else 1}" else ""
                 Text(
-                    text = "$formattedTime • $formattedDuration • SIM ${call.simSlot + 1}",
+                    text = "$formattedTime • $formattedDuration$simLabel",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )

@@ -71,6 +71,14 @@ class PreferenceManager(context: Context) {
         get() = sharedPreferences.getString(KEY_PRIVACY_BLACKLIST, null)
         set(value) = sharedPreferences.edit().putString(KEY_PRIVACY_BLACKLIST, value).apply()
 
+    var sim1PhoneNumber: String?
+        get() = sharedPreferences.getString(KEY_SIM1_PHONE_NUMBER, null)
+        set(value) = sharedPreferences.edit().putString(KEY_SIM1_PHONE_NUMBER, value).apply()
+
+    var sim2PhoneNumber: String?
+        get() = sharedPreferences.getString(KEY_SIM2_PHONE_NUMBER, null)
+        set(value) = sharedPreferences.edit().putString(KEY_SIM2_PHONE_NUMBER, value).apply()
+
     fun clearAuth() {
         sharedPreferences.edit()
             .remove(KEY_DEVICE_TOKEN)
@@ -91,5 +99,7 @@ class PreferenceManager(context: Context) {
         private const val KEY_SELECTED_SIM_SLOT = "selected_sim_slot"
         private const val KEY_WORK_SCHEDULE = "work_schedule"
         private const val KEY_PRIVACY_BLACKLIST = "privacy_blacklist"
+        private const val KEY_SIM1_PHONE_NUMBER = "sim1_phone_number"
+        private const val KEY_SIM2_PHONE_NUMBER = "sim2_phone_number"
     }
 }

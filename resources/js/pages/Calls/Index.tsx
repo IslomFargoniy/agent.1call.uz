@@ -241,14 +241,18 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    call.device?.model && call.device.model !== call.device.name ? (
-                                                        <span className="text-[11px] text-muted-foreground">{call.device.model}</span>
-                                                    ) : null
+                                                    <a
+                                                        href="/devices"
+                                                        className="text-[10px] text-amber-500 hover:text-amber-600 hover:underline inline-flex items-center gap-0.5"
+                                                        title="Telefonlar sahifasida ushbu qurilmaga SIM raqam kiritishingiz mumkin"
+                                                    >
+                                                        <span>Raqam kiritilmagan</span>
+                                                    </a>
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="py-3.5 px-4 text-xs">
-                                            {call.user?.name || '—'}
+                                        <td className="py-3.5 px-4 text-xs font-medium">
+                                            {call.user?.name || call.device?.user?.name || '—'}
                                         </td>
                                         <td className="py-3.5 px-4 text-xs text-muted-foreground font-mono">
                                             {new Date(call.call_timestamp).toLocaleString('uz-UZ', {

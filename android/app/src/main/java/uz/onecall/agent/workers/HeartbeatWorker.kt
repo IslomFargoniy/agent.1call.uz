@@ -78,5 +78,14 @@ class HeartbeatWorker(
 
     companion object {
         private const val TAG = "HeartbeatWorker"
+
+        fun enqueueImmediate(context: Context) {
+            try {
+                val work = androidx.work.OneTimeWorkRequestBuilder<HeartbeatWorker>().build()
+                androidx.work.WorkManager.getInstance(context).enqueue(work)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to enqueue immediate heartbeat", e)
+            }
+        }
     }
 }

@@ -22,7 +22,7 @@ class CallController extends Controller
     {
         $user = $request->user();
 
-        $query = Call::query()->with(['device:id,name,model,sim_slots_info,selected_sim_slot', 'user:id,name']);
+        $query = Call::query()->with(['device:id,name,model,sim_slots_info,selected_sim_slot,user_id', 'device.user:id,name', 'user:id,name']);
 
         // Operator only sees their own calls
         if ($user->isOperator()) {

@@ -81,6 +81,11 @@ class Call extends Model
             }
         }
 
+        // Fallback: if sim1 has phone_number, return it for single-SIM or default
+        if (isset($slots['sim1']['phone_number']) && ! empty($slots['sim1']['phone_number'])) {
+            return $slots['sim1']['phone_number'];
+        }
+
         return null;
     }
 
@@ -108,6 +113,10 @@ class Call extends Model
                     }
                 }
             }
+        }
+
+        if (isset($slots['sim1']['carrier']) && ! empty($slots['sim1']['carrier'])) {
+            return $slots['sim1']['carrier'];
         }
 
         return null;

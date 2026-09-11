@@ -8,6 +8,7 @@ import android.telephony.SubscriptionInfo
 import android.telephony.SubscriptionManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+import uz.onecall.agent.OneCallApplication
 
 data class SimCardInfo(
     val slot: Int, // 1 for SIM 1, 2 for SIM 2
@@ -27,22 +28,28 @@ object SimHelper {
         try {
             val sm = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as? SubscriptionManager
             val subList: List<SubscriptionInfo>? = sm?.activeSubscriptionInfoList
-            if (subList != null) {
+            val prefs = OneCallApplication.instance.preferences
+            if (subList != null && subList.isNotEmpty()) {
                 for (info in subList) {
-                    val slot = info.simSlotIndex + 1 // 1-indexed (1 or 2)
+                    val slot = if (info.simSlotIndex >= 0) info.simSlotIndex + 1 else 1 // 1-indexed (1 or 2)
                     val carrier = info.carrierName?.toString() ?: info.displayName?.toString() ?: "SIM $slot"
-                    var num = ""
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        try {
-                            num = sm.getPhoneNumber(info.subscriptionId)
-                        } catch (_: Throwable) {}
-                    }
+                    var num = if (slot == 1) (prefs.sim1PhoneNumber ?: "") else (prefs.sim2PhoneNumber ?: "")
                     if (num.isBlank()) {
-                        @Suppress("DEPRECATION")
-                        num = info.number ?: ""
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            try {
+                                num = sm.getPhoneNumber(info.subscriptionId) ?: ""
+                            } catch (_: Throwable) {}
+                        }
+                        if (num.isBlank()) {
+                            @Suppress("DEPRECATION")
+                            num = info.number ?: ""
+                        }
                     }
                     result.add(SimCardInfo(slot, carrier, num))
                 }
+            } else {
+                val p1 = prefs.sim1PhoneNumber ?: ""
+                result.add(SimCardInfo(1, "Asosiy SIM", p1))
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to read active SIM cards", e)
@@ -53,11 +60,25 @@ object SimHelper {
     fun getSimCardsMap(context: Context): Map<String, Any> {
         val map = mutableMapOf<String, Any>()
         val list = getActiveSimCards(context)
+        val prefs = OneCallApplication.instance.preferences
+
+        if (list.isEmpty()) {
+            val p1 = prefs.sim1PhoneNumber ?: ""
+            map["sim1"] = mapOf(
+                "slot" to 1,
+                "carrier" to "Asosiy SIM",
+                "phone_number" to p1
+            )
+            return map
+        }
+
         for (sim in list) {
+            val userPhone = if (sim.slot == 1) prefs.sim1PhoneNumber else prefs.sim2PhoneNumber
+            val phone = if (!userPhone.isNullOrBlank()) userPhone else sim.phoneNumber
             map["sim${sim.slot}"] = mapOf(
                 "slot" to sim.slot,
                 "carrier" to sim.carrier,
-                "phone_number" to sim.phoneNumber
+                "phone_number" to phone
             )
         }
         return map

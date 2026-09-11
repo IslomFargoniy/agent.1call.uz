@@ -1,8 +1,8 @@
 {
-  "version": "1.0.6",
-  "version_code": 7,
-  "file_size": 24461732,
+  "version": "1.0.7",
+  "version_code": 8,
+  "file_size": 24478116,
   "download_url": "/downloads/1call-agent.apk",
-  "changelog": "1Call Agent v1.0.6:\n- 2 tomonlama (mijoz va operator) qo'ng'iroq audio yozuvlarini olish yaxshilandi\n- Samsung telefonlardagi ichki (apparat darajasidagi) qo'ng'iroq yozuvlarini avtomatik integratsiya qilish qo'shildi\n- Yangi audio fayllarga kirish ruxsatlari qo'shildi",
-  "updated_at": "2026-09-11T14:25:00.000Z"
+  "changelog": "1Call Agent v1.0.7:\n- Yagona SIM kartali telefonlar uchun interfeys to'liq moslashtirildi (SIM 2 xatoligi bartaraf etildi)\n- Ilovaning bosh ekranida operator telefon raqamini kiritish va serverga sinxronlash imkoniyati qo'shildi\n- Qo'ng'iroqlar jurnalida SIM va operator ko'rinishi yaxshilandi",
+  "updated_at": "2026-09-11T14:45:00.000Z"
 }
