@@ -48,6 +48,14 @@ class DatabaseSeeder extends Seeder
         );
 
         // 2. Tariffs (Bitta yagona tarif)
+        TariffDiscount::whereNotIn('tariff_id', function ($q) {
+            $q->select('id')->from('tariffs')->where('code', 'standard');
+        })->delete();
+        TariffRetentionOption::whereNotIn('tariff_id', function ($q) {
+            $q->select('id')->from('tariffs')->where('code', 'standard');
+        })->delete();
+        Tariff::where('code', '!=', 'standard')->delete();
+
         $tariffs = [
             [
                 'name' => '1Call Standart',
