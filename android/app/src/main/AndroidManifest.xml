@@ -26,7 +26,6 @@
     <!-- Foreground Services -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
 
     <!-- In-App Auto Updates -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
@@ -68,7 +67,7 @@
         <!-- Foreground Service for ongoing recording -->
         <service
             android:name=".service.CallRecordingForegroundService"
-            android:foregroundServiceType="microphone|phoneCall"
+            android:foregroundServiceType="microphone"
             android:exported="false" />
 
         <!-- Receivers -->

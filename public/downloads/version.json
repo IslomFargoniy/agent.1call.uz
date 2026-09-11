@@ -1,8 +1,8 @@
 {
-  "version": "1.0.2",
-  "version_code": 3,
+  "version": "1.0.3",
+  "version_code": 4,
   "file_size": 24461732,
   "download_url": "/downloads/1call-agent.apk",
-  "changelog": "1Call Agent v1.0.2:\n- Kiruvchi va chiquvchi qo'ng'iroqlarni aniqlash va fon yozuv xizmati to'liq yaxshilandi\n- CallLog orqali aniq raqam va davomiylikni qayd etish qo'shildi\n- Real-vaqt sinxronizatsiya va CRM integratsiyasi optimallashtirildi",
-  "updated_at": "2026-09-11T06:36:47.642Z"
+  "changelog": "1Call Agent v1.0.3:\n- Android 14/15 da xizmat to'xtab qolishi (crash) to'liq bartaraf etildi\n- Qo'ng'iroqlarni aniqlash va fon audiosini yozish xavfsiz holatga keltirildi\n- Real-vaqt sinxronlash va statistika hisoblagichi yangilandi",
+  "updated_at": "2026-09-11T06:47:35.468Z"
 }
