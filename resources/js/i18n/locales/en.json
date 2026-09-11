@@ -2097,6 +2097,7 @@
         "telegramDesc": "Telegram Chat ID to receive missed call notifications",
         "telegramChatIdLabel": "Telegram Chat ID (-100... or private ID):",
         "saveAllSettings": "Save All Settings",
-        "saving": "Saving..."
+        "saving": "Saving...",
+        "telegramHint": "To find Chat ID, send /start to the bot or add it to your group:"
     }
 }

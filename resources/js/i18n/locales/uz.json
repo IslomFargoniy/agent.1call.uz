@@ -2103,6 +2103,7 @@
         "telegramDesc": "Qoldirilgan qo'ng'iroqlar kelib tushadigan Telegram Chat ID",
         "telegramChatIdLabel": "Telegram Chat ID (-100... yoki shaxsiy ID):",
         "saveAllSettings": "Barcha sozlamalarni saqlash",
-        "saving": "Saqlanmoqda..."
+        "saving": "Saqlanmoqda...",
+        "telegramHint": "Chat ID ni bilish uchun botga /start yuboring yoki guruhga qo'shing:"
     }
 }

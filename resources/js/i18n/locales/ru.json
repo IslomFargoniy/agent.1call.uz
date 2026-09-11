@@ -2103,6 +2103,7 @@
         "telegramDesc": "Telegram Chat ID, куда будут отправляться уведомления о пропущенных звонках",
         "telegramChatIdLabel": "Telegram Chat ID (-100... или личный ID):",
         "saveAllSettings": "Сохранить все настройки",
-        "saving": "Сохранение..."
+        "saving": "Сохранение...",
+        "telegramHint": "Чтобы узнать Chat ID, отправьте /start боту или добавьте его в группу:"
     }
 }
