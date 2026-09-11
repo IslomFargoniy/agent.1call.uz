@@ -24,18 +24,15 @@ class TelemetryController extends Controller
         /** @var Device $device */
         $device = $request->user();
 
-        $validated = $request->validate([
-            'battery_level' => ['nullable', 'integer', 'min:0', 'max:100'],
-            'accessibility_service_enabled' => ['required', 'boolean'],
-            'selected_sim_slot' => ['nullable', 'integer', 'in:1,2'],
-        ]);
+        $accessibility = $request->input('accessibility_service_enabled');
+        if ($accessibility === null) {
+            $accessibility = $device->accessibility_service_enabled ?? true;
+        }
 
         $device->update([
-            'battery_level' => $validated['battery_level'] ?? $device->battery_level,
-            'accessibility_service_enabled' => $validated['accessibility_service_enabled'],
-            'selected_sim_slot' => array_key_exists('selected_sim_slot', $validated)
-                ? $validated['selected_sim_slot']
-                : $device->selected_sim_slot,
+            'battery_level' => $request->input('battery_level', $device->battery_level),
+            'accessibility_service_enabled' => (bool) $accessibility,
+            'selected_sim_slot' => $request->input('selected_sim_slot', $device->selected_sim_slot),
             'last_seen_at' => Carbon::now(),
         ]);
 
@@ -43,6 +40,8 @@ class TelemetryController extends Controller
 
         return response()->json([
             'success' => true,
+            'status' => 'ok',
+            'message' => 'Heartbeat received.',
             'settings' => [
                 'work_schedule' => $tenant?->work_schedule,
                 'privacy_blacklist' => $tenant?->privacy_blacklist ?? [],
@@ -60,17 +59,35 @@ class TelemetryController extends Controller
         $device = $request->user();
         $tenant = $device->tenant;
 
-        $validated = $request->validate([
-            'phone_number' => ['required', 'string', 'max:32'],
-            'direction' => ['required', 'string', 'in:inbound,outbound'],
-            'sim_slot' => ['nullable', 'integer', 'in:1,2'],
-            'timestamp' => ['nullable', 'date'],
-        ]);
+        $phoneNumber = trim((string) $request->input('phone_number', ''));
+        $rawDirection = strtoupper((string) $request->input('direction', 'INBOUND'));
+        $direction = in_array($rawDirection, ['OUTBOUND', 'OUTGOING']) ? 'outbound' : 'inbound';
+        $simSlot = $request->input('sim_slot');
+        if ($simSlot !== null) {
+            $simSlot = (int) $simSlot;
+            if ($simSlot < 1 || $simSlot > 2) {
+                $simSlot = null;
+            }
+        }
+
+        $rawTimestamp = $request->input('timestamp');
+        if (is_numeric($rawTimestamp)) {
+            $callTime = Carbon::createFromTimestamp((int) $rawTimestamp);
+        } elseif (! empty($rawTimestamp)) {
+            try {
+                $callTime = Carbon::parse($rawTimestamp);
+            } catch (\Exception $e) {
+                $callTime = Carbon::now();
+            }
+        } else {
+            $callTime = Carbon::now();
+        }
 
         // Dual-SIM check: if device has a selected SIM slot and call is on other SIM, ignore
-        if ($device->selected_sim_slot && ! empty($validated['sim_slot']) && $device->selected_sim_slot !== (int) $validated['sim_slot']) {
+        if ($device->selected_sim_slot && ! empty($simSlot) && $device->selected_sim_slot !== $simSlot) {
             return response()->json([
                 'success' => true,
+                'status' => 'ok',
                 'filtered' => true,
                 'reason' => 'non_corporate_sim',
             ]);
@@ -78,12 +95,13 @@ class TelemetryController extends Controller
 
         // Privacy Blacklist check
         if ($tenant && ! empty($tenant->privacy_blacklist)) {
-            $cleanPhone = preg_replace('/[^\d]/', '', $validated['phone_number']);
+            $cleanPhone = preg_replace('/[^\d]/', '', $phoneNumber);
             foreach ($tenant->privacy_blacklist as $blocked) {
                 $cleanBlocked = preg_replace('/[^\d]/', '', (string) $blocked);
                 if ($cleanPhone === $cleanBlocked || str_ends_with($cleanPhone, $cleanBlocked)) {
                     return response()->json([
                         'success' => true,
+                        'status' => 'ok',
                         'filtered' => true,
                         'reason' => 'privacy_blacklist',
                     ]);
@@ -97,15 +115,16 @@ class TelemetryController extends Controller
                 'device_id' => $device->id,
                 'device_name' => $device->name,
                 'user_id' => $device->user_id,
-                'phone_number' => $validated['phone_number'],
-                'direction' => $validated['direction'],
-                'sim_slot' => $validated['sim_slot'] ?? null,
-                'timestamp' => $validated['timestamp'] ?? Carbon::now()->toIso8601String(),
+                'phone_number' => $phoneNumber,
+                'direction' => $direction,
+                'sim_slot' => $simSlot,
+                'timestamp' => $callTime->toIso8601String(),
             ]));
         }
 
         return response()->json([
             'success' => true,
+            'status' => 'ok',
             'message' => 'Ringing notification broadcasted.',
         ]);
     }
@@ -119,19 +138,38 @@ class TelemetryController extends Controller
         $device = $request->user();
         $tenant = $device->tenant;
 
-        $validated = $request->validate([
-            'phone_number' => ['required', 'string', 'max:32'],
-            'direction' => ['required', 'string', 'in:inbound,outbound'],
-            'duration_seconds' => ['required', 'integer', 'min:0'],
-            'call_timestamp' => ['required'],
-            'sim_slot' => ['nullable', 'integer', 'in:1,2'],
-            'audio_file' => ['nullable', 'file', 'max:30720'], // Max 30MB
-        ]);
+        $phoneNumber = trim((string) $request->input('phone_number', ''));
+        $rawDirection = strtoupper((string) $request->input('direction', 'INBOUND'));
+        $direction = in_array($rawDirection, ['OUTBOUND', 'OUTGOING']) ? 'outbound' : 'inbound';
+        $durationSeconds = (int) $request->input('duration_seconds', 0);
+        
+        $simSlot = $request->input('sim_slot');
+        if ($simSlot !== null) {
+            $simSlot = (int) $simSlot;
+            if ($simSlot < 1 || $simSlot > 2) {
+                $simSlot = null;
+            }
+        }
+
+        // Timestamp can come as call_timestamp, started_at or ended_at
+        $timestampInput = $request->input('call_timestamp') ?? $request->input('started_at');
+        if (is_numeric($timestampInput)) {
+            $callTimestamp = Carbon::createFromTimestamp((int) $timestampInput);
+        } elseif (! empty($timestampInput)) {
+            try {
+                $callTimestamp = Carbon::parse($timestampInput);
+            } catch (\Exception $e) {
+                $callTimestamp = Carbon::now();
+            }
+        } else {
+            $callTimestamp = Carbon::now();
+        }
 
         // Dual-SIM corporate slot check
-        if ($device->selected_sim_slot && ! empty($validated['sim_slot']) && $device->selected_sim_slot !== (int) $validated['sim_slot']) {
+        if ($device->selected_sim_slot && ! empty($simSlot) && $device->selected_sim_slot !== $simSlot) {
             return response()->json([
                 'success' => true,
+                'status' => 'ok',
                 'filtered' => true,
                 'reason' => 'non_corporate_sim',
             ]);
@@ -139,12 +177,13 @@ class TelemetryController extends Controller
 
         // Privacy Blacklist check
         if ($tenant && ! empty($tenant->privacy_blacklist)) {
-            $cleanPhone = preg_replace('/[^\d]/', '', $validated['phone_number']);
+            $cleanPhone = preg_replace('/[^\d]/', '', $phoneNumber);
             foreach ($tenant->privacy_blacklist as $blocked) {
                 $cleanBlocked = preg_replace('/[^\d]/', '', (string) $blocked);
                 if ($cleanPhone === $cleanBlocked || str_ends_with($cleanPhone, $cleanBlocked)) {
                     return response()->json([
                         'success' => true,
+                        'status' => 'ok',
                         'filtered' => true,
                         'reason' => 'privacy_blacklist',
                     ]);
@@ -152,33 +191,31 @@ class TelemetryController extends Controller
             }
         }
 
-        $callTimestamp = Carbon::parse($validated['call_timestamp']);
-
         /** @var Call $call */
         $call = Call::create([
             'tenant_id' => $tenant->id,
             'device_id' => $device->id,
             'user_id' => $device->user_id,
-            'direction' => $validated['direction'],
-            'phone_number' => $validated['phone_number'],
-            'duration_seconds' => $validated['duration_seconds'],
-            'sim_slot' => $validated['sim_slot'] ?? null,
+            'direction' => $direction,
+            'phone_number' => $phoneNumber,
+            'duration_seconds' => $durationSeconds,
+            'sim_slot' => $simSlot,
             'recording_status' => 'missing',
             'call_timestamp' => $callTimestamp,
         ]);
 
-        // Handle Audio Upload
-        if ($request->hasFile('audio_file')) {
-            $file = $request->file('audio_file');
+        // Handle Audio Upload (field can be 'audio' or 'audio_file')
+        $audioFile = $request->file('audio') ?? $request->file('audio_file');
+        if ($audioFile) {
             $disk = config('filesystems.default', 'local');
-            $ext = $file->getClientOriginalExtension() ?: 'm4a';
+            $ext = $audioFile->getClientOriginalExtension() ?: 'm4a';
             $year = $callTimestamp->format('Y');
             $month = $callTimestamp->format('m');
             $path = "recordings/{$tenant->id}/{$year}/{$month}/call_{$call->id}_{$callTimestamp->timestamp}.{$ext}";
 
             Storage::disk($disk)->putFileAs(
                 dirname($path),
-                $file,
+                $audioFile,
                 basename($path)
             );
 
@@ -186,7 +223,7 @@ class TelemetryController extends Controller
                 'recording_disk' => $disk,
                 'recording_path' => $path,
                 'recording_format' => $ext,
-                'recording_size_bytes' => $file->getSize(),
+                'recording_size_bytes' => $audioFile->getSize(),
                 'recording_status' => 'uploaded',
             ]);
         }
@@ -204,8 +241,9 @@ class TelemetryController extends Controller
 
         return response()->json([
             'success' => true,
+            'status' => 'ok',
             'message' => 'Qo\'ng\'iroq muvaffaqiyatli qabul qilindi.',
-            'call_id' => $call->id,
+            'call_id' => (string) $call->id,
             'recording_status' => $call->recording_status,
         ]);
     }
