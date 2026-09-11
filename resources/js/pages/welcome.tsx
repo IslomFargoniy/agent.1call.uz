@@ -78,9 +78,11 @@ export default function Welcome() {
             <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-white/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 transition-colors">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-3 group">
-                        <div className="h-11 w-11 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
-                            <PhoneCall className="h-6 w-6" />
-                        </div>
+                        <img
+                            src="/images/1call_logo.png"
+                            alt="1Call Logo"
+                            className="h-11 w-11 rounded-xl object-contain shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform"
+                        />
                         <div className="flex flex-col">
                             <span className="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white">
                                 1Call <span className="text-blue-600">Agent</span>
@@ -604,9 +606,11 @@ export default function Welcome() {
             <footer className="py-12 bg-slate-900 text-slate-400 border-t border-slate-800 text-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-black text-sm">
-                            1C
-                        </div>
+                        <img
+                            src="/images/1call_logo.png"
+                            alt="1Call Logo"
+                            className="h-8 w-8 rounded-lg object-contain"
+                        />
                         <span className="font-bold text-white text-base">1Call Agent</span>
                         <span className="text-xs">© {new Date().getFullYear()} Barcha huquqlar himoyalangan.</span>
                     </div>

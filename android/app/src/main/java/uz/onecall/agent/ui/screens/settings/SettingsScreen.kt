@@ -1,5 +1,10 @@
 package uz.onecall.agent.ui.screens.settings
 
+import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import uz.onecall.agent.R
+
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -248,8 +253,14 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.PhoneAndroid, contentDescription = null, tint = PrimaryBlue)
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_1call_logo),
+                            contentDescription = "1Call Logo",
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(text = "Qurilma Ma'lumotlari", fontWeight = FontWeight.SemiBold)
                     }
                     Spacer(modifier = Modifier.height(12.dp))

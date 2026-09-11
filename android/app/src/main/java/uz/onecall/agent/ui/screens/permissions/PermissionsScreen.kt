@@ -1,5 +1,10 @@
 package uz.onecall.agent.ui.screens.permissions
 
+import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import uz.onecall.agent.R
+
 import android.Manifest
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
@@ -114,6 +119,14 @@ fun PermissionsScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_1call_logo),
+                contentDescription = "1Call Logo",
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(14.dp))
+            )
+            Spacer(modifier = Modifier.height(14.dp))
             Text(
                 text = "Tizim Ruxsatnomalari",
                 style = MaterialTheme.typography.titleLarge,

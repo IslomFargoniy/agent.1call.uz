@@ -1,5 +1,9 @@
 package uz.onecall.agent.ui.screens.pairing
 
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import uz.onecall.agent.R
+
 import android.content.Context
 import android.util.Log
 import androidx.camera.core.CameraSelector
@@ -129,6 +133,14 @@ fun PairingScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_1call_logo),
+                contentDescription = "1Call Logo",
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(RoundedCornerShape(16.dp))
+            )
+            Spacer(modifier = Modifier.height(14.dp))
             Text(
                 text = "Qurilmani Ulash",
                 style = MaterialTheme.typography.titleLarge,
