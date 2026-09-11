@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Head, useForm, router } from "@inertiajs/react";
 import {
     Smartphone,
@@ -44,6 +45,7 @@ interface DevicesProps {
 }
 
 export default function DevicesIndex({ devices, operators, quota, tenant_uuid }: DevicesProps) {
+    const { t } = useTranslation();
     const [editingDevice, setEditingDevice] = useState<DeviceItem | null>(null);
     const [selectedPairingDevice, setSelectedPairingDevice] = useState<DeviceItem | null>(null);
     const [showPairModal, setShowPairModal] = useState(false);
@@ -137,11 +139,11 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
 
     return (
         <div className="p-6 space-y-6 max-w-7xl mx-auto">
-            <Head title="Telefonlar va Qurilmalar" />
+            <Head title={t("devices.title", "Android Telefonlar Boshqaruvi")} />
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Ulangan Telefonlar</h2>
+                    <h2 className="text-2xl font-bold tracking-tight">{t("devices.title", "Ulangan Telefonlar")}</h2>
                     <p className="text-sm text-muted-foreground">
                         Kompaniya xodimlarining mobil telefonlari va monitoring agentlari
                     </p>
@@ -153,10 +155,10 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                         download="1call-agent.apk"
                         className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 gap-1.5"
                     >
-                        <Download className="h-4 w-4 text-primary" /> Android APK yuklab olish
+                        <Download className="h-4 w-4 text-primary" /> {t("devices.downloadApk", "1Call Agent APK")}
                     </a>
                     <Button onClick={generateCode} size="sm" className="h-9 gap-1.5">
-                        <Plus className="h-4 w-4" /> Yangi telefon ulash
+                        <Plus className="h-4 w-4" /> {t("devices.addDevice", "Yangi telefon ulash")}
                     </Button>
                 </div>
             </div>
@@ -191,12 +193,12 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                 <table className="w-full text-left text-sm">
                     <thead className="bg-muted/50 border-b border-border text-muted-foreground text-xs uppercase font-medium">
                         <tr>
-                            <th className="py-3 px-4">Qurilma nomi</th>
+                            <th className="py-3 px-4">{t("devices.name", "Qurilma nomi")}</th>
                             <th className="py-3 px-4">Mas\x27ul Operator</th>
-                            <th className="py-3 px-4">SIM Slot</th>
+                            <th className="py-3 px-4">{t("devices.simSlot", "SIM Slot")}</th>
                             <th className="py-3 px-4">Accessibility</th>
                             <th className="py-3 px-4">Batareya</th>
-                            <th className="py-3 px-4">Holat / Oxirgi faollik</th>
+                            <th className="py-3 px-4">{t("devices.lastSeen", "Holat / Oxirgi faollik")}</th>
                             <th className="py-3 px-4 text-right">Amallar</th>
                         </tr>
                     </thead>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Head, useForm } from '@inertiajs/react';
 import {
     CreditCard,
@@ -27,6 +28,7 @@ interface PaymentMethodsProps {
 }
 
 export default function AdminPaymentMethods({ methods }: PaymentMethodsProps) {
+    const { t } = useTranslation();
     const [editingMethod, setEditingMethod] = useState<PaymentMethodItem | null>(null);
 
     const { data, setData, put, processing } = useForm({
@@ -54,10 +56,10 @@ export default function AdminPaymentMethods({ methods }: PaymentMethodsProps) {
 
     return (
         <div className="p-6 space-y-6 max-w-6xl mx-auto">
-            <Head title="Superadmin — To'lov Tizimlari" />
+            <Head title={t('admin.paymentMethods.title', "Superadmin — To'lov Tizimlari")} />
 
             <div>
-                <h2 className="text-2xl font-bold tracking-tight">To'lov Tizimlari Sozlamalari</h2>
+                <h2 className="text-2xl font-bold tracking-tight">{t('admin.paymentMethods.title', "To'lov Tizimlari Sozlamalari")}</h2>
                 <p className="text-sm text-muted-foreground">
                     Click, Payme, P2P Karta rekvizitlari va Lemon Squeezy integratsiya kalitlari
                 </p>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Head, router } from '@inertiajs/react';
 import {
     PhoneCall,
@@ -49,6 +50,7 @@ interface CallsProps {
 }
 
 export default function CallsIndex({ calls, filters, devices, operators, canDownload }: CallsProps) {
+    const { t } = useTranslation();
     const [search, setSearch] = useState(filters.search || '');
     const [direction, setDirection] = useState(filters.direction || '');
     const [status, setStatus] = useState(filters.status || '');
@@ -89,13 +91,13 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
 
     return (
         <div className="p-6 space-y-6 max-w-7xl mx-auto">
-            <Head title="Qo'ng'iroqlar jurnali" />
+            <Head title={t('calls.title', "Qo'ng'iroqlar jurnali")} />
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Qo'ng'iroqlar jurnali</h2>
+                    <h2 className="text-2xl font-bold tracking-tight">{t('calls.title', "Qo'ng'iroqlar jurnali")}</h2>
                     <p className="text-sm text-muted-foreground">
-                        Jami qayd etilgan: {calls.total} ta qo'ng'iroq
+                        {t('calls.totalCalls', 'Jami qayd etilgan: {{count}} ta qo\'ng\'iroq', { count: calls.total })}
                     </p>
                 </div>
             </div>
@@ -105,7 +107,7 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                 <div className="lg:col-span-2 relative">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Telefon raqam..."
+                        placeholder={t('calls.searchPlaceholder', 'Telefon raqam...')}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="pl-9 h-9 text-xs"
@@ -118,9 +120,9 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                         onChange={(e) => setDirection(e.target.value)}
                         className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                        <option value="">Barcha yo'nalishlar</option>
-                        <option value="inbound">Kiruvchi</option>
-                        <option value="outbound">Chiquvchi</option>
+                        <option value="">{t('calls.allDirections', "Barcha yo'nalishlar")}</option>
+                        <option value="inbound">{t('calls.inbound', 'Kiruvchi')}</option>
+                        <option value="outbound">{t('calls.outbound', 'Chiquvchi')}</option>
                     </select>
                 </div>
 
@@ -130,9 +132,9 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                         onChange={(e) => setStatus(e.target.value)}
                         className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                        <option value="">Barcha holatlar</option>
-                        <option value="answered">Suhbat qurildi</option>
-                        <option value="missed">Javobsiz</option>
+                        <option value="">{t('calls.allStatuses', 'Barcha holatlar')}</option>
+                        <option value="answered">{t('calls.answered', 'Suhbat qurildi')}</option>
+                        <option value="missed">{t('calls.missed', 'Javobsiz')}</option>
                     </select>
                 </div>
 
@@ -142,7 +144,7 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                         onChange={(e) => setDeviceId(e.target.value)}
                         className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                        <option value="">Barcha telefonlar</option>
+                        <option value="">{t('calls.allDevices', 'Barcha telefonlar')}</option>
                         {devices.map((d) => (
                             <option key={d.id} value={d.id}>{d.name}</option>
                         ))}
@@ -160,10 +162,10 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
 
                 <div className="flex gap-2">
                     <Button type="submit" size="sm" className="h-9 flex-1 text-xs">
-                        <Filter className="h-3.5 w-3.5 mr-1" /> Izlash
+                        <Filter className="h-3.5 w-3.5 mr-1" /> {t('calls.search', 'Izlash')}
                     </Button>
                     <Button type="button" variant="outline" size="sm" onClick={resetFilters} className="h-9 text-xs">
-                        Tozalash
+                        {t('calls.reset', 'Tozalash')}
                     </Button>
                 </div>
             </form>
@@ -174,19 +176,19 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                     <table className="w-full text-left text-sm">
                         <thead className="bg-muted/50 border-b border-border text-muted-foreground text-xs uppercase font-medium">
                             <tr>
-                                <th className="py-3 px-4">Yo'nalish / Raqam</th>
-                                <th className="py-3 px-4">Qurilma / SIM</th>
-                                <th className="py-3 px-4">Operator</th>
-                                <th className="py-3 px-4">Vaqti</th>
-                                <th className="py-3 px-4">Audio yozuv</th>
-                                {canDownload && <th className="py-3 px-4 text-right">Yuklab olish</th>}
+                                <th className="py-3 px-4">{t('calls.directionNumber', "Yo'nalish / Raqam")}</th>
+                                <th className="py-3 px-4">{t('calls.deviceSim', 'Qurilma / SIM')}</th>
+                                <th className="py-3 px-4">{t('calls.operator', 'Operator')}</th>
+                                <th className="py-3 px-4">{t('calls.time', 'Vaqti')}</th>
+                                <th className="py-3 px-4">{t('calls.audioRecording', 'Audio yozuv')}</th>
+                                {canDownload && <th className="py-3 px-4 text-right">{t('calls.download', 'Yuklab olish')}</th>}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
                             {calls.data.length === 0 ? (
                                 <tr>
                                     <td colSpan={canDownload ? 6 : 5} className="py-8 text-center text-muted-foreground text-sm">
-                                        Ko'rsatilgan filtrlar bo'yicha hech qanday qo'ng'iroq topilmadi.
+                                        {t('calls.noCallsFound', "Ko'rsatilgan filtrlar bo'yicha hech qanday qo'ng'iroq topilmadi.")}
                                     </td>
                                 </tr>
                             ) : (
@@ -208,13 +210,13 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                                                 <div>
                                                     <span className="font-semibold font-mono text-sm">{call.phone_number}</span>
                                                     <div className="text-[11px] text-muted-foreground">
-                                                        {call.duration_seconds > 0 ? formatDuration(call.duration_seconds) : 'Javobsiz'}
+                                                        {call.duration_seconds > 0 ? formatDuration(call.duration_seconds) : t('calls.missed', 'Javobsiz')}
                                                     </div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="py-3.5 px-4 text-xs">
-                                            <span className="font-medium">{call.device?.name || 'Telefon'}</span>
+                                            <span className="font-medium">{call.device?.name || t('calls.device', 'Telefon')}</span>
                                             {call.sim_slot && (
                                                 <span className="ml-1.5 text-[10px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground">
                                                     SIM {call.sim_slot}

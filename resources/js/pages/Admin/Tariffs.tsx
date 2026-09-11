@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Head, useForm } from '@inertiajs/react';
 import {
     Coins,
@@ -26,6 +27,7 @@ interface TariffsProps {
 }
 
 export default function AdminTariffs({ tariffs }: TariffsProps) {
+    const { t } = useTranslation();
     const [editingTariff, setEditingTariff] = useState<Tariff | null>(null);
     const [showModal, setShowModal] = useState(false);
 
@@ -75,7 +77,7 @@ export default function AdminTariffs({ tariffs }: TariffsProps) {
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Tariflar Boshqaruvi</h2>
+                    <h2 className="text-2xl font-bold tracking-tight">{t('admin.tariffs.title', "Tariflar Boshqaruvi")}</h2>
                     <p className="text-sm text-muted-foreground">
                         Baza narxlari (UZS va USD) hamda muddat/hajm parametrlarini belgilash
                     </p>

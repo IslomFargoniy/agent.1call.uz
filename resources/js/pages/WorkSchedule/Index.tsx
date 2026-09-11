@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Head, useForm } from '@inertiajs/react';
 import {
     Clock,
@@ -22,6 +23,7 @@ interface WorkScheduleProps {
 }
 
 export default function WorkScheduleSettings({ workSchedule, privacyBlacklist, telegramChatId }: WorkScheduleProps) {
+    const { t } = useTranslation();
     const [blacklist, setBlacklist] = useState<string[]>(privacyBlacklist || []);
     const [newPhone, setNewPhone] = useState('');
 
@@ -79,10 +81,10 @@ export default function WorkScheduleSettings({ workSchedule, privacyBlacklist, t
 
     return (
         <div className="p-6 space-y-8 max-w-4xl mx-auto">
-            <Head title="Ish grafigi va Maxfiylik" />
+            <Head title={t('workSchedule.title', "Ish grafigi va Maxfiylik")} />
 
             <div>
-                <h2 className="text-2xl font-bold tracking-tight">Ish Grafigi va Maxfiylik</h2>
+                <h2 className="text-2xl font-bold tracking-tight">{t('workSchedule.title', "Ish Grafigi va Maxfiylik")}</h2>
                 <p className="text-sm text-muted-foreground">
                     Ish vaqtini sozlash va shaxsiy qo'ng'iroqlarni yozib olishdan himoyalash
                 </p>

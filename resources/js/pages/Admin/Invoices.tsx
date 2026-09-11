@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Head, useForm, router } from '@inertiajs/react';
 import {
     Receipt,
@@ -34,6 +35,7 @@ interface InvoicesProps {
 }
 
 export default function AdminInvoices({ invoices }: InvoicesProps) {
+    const { t } = useTranslation();
     const [viewingReceipt, setViewingReceipt] = useState<AdminInvoiceItem | null>(null);
     const [rejectingInvoice, setRejectingInvoice] = useState<AdminInvoiceItem | null>(null);
     const [rejectReason, setRejectReason] = useState('');

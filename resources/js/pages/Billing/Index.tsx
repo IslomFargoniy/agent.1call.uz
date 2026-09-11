@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Head, useForm, Link } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
+import { Head, router, Link } from '@inertiajs/react';
 import {
     CreditCard,
     Check,
@@ -51,6 +52,7 @@ interface BillingProps {
 }
 
 export default function BillingIndex({ tenant, tariffs, paymentMethods }: BillingProps) {
+    const { t } = useTranslation();
     const defaultTariff = tariffs[0] || null;
 
     const [selectedTariff, setSelectedTariff] = useState<Tariff | null>(defaultTariff);
@@ -59,7 +61,7 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
     const [months, setMonths] = useState(1);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(paymentMethods[0]?.code || 'payme');
 
-    const { post, processing } = useForm();
+    const [processing, setProcessing] = useState(false);
 
     // Price calculation
     const baseUzs = selectedTariff ? Number(selectedTariff.base_price_monthly) : 0;
@@ -102,14 +104,15 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
         e.preventDefault();
         if (!selectedTariff) return;
 
-        post('/billing/checkout', {
-            data: {
-                tariff_id: selectedTariff.id,
-                devices_count: devicesCount,
-                retention_days: retentionDays,
-                months: months,
-                payment_method: selectedPaymentMethod,
-            },
+        setProcessing(true);
+        router.post('/billing/checkout', {
+            tariff_id: selectedTariff.id,
+            devices_count: devicesCount,
+            retention_days: retentionDays,
+            months: months,
+            payment_method: selectedPaymentMethod,
+        }, {
+            onFinish: () => setProcessing(false),
         });
     };
 
@@ -295,7 +298,7 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                     {/* 4. Payment Method Selection */}
                     <div className="bg-card p-6 rounded-2xl border border-border space-y-4 shadow-xs">
                         <h3 className="font-semibold text-base flex items-center gap-2">
-                            <CreditCard className="h-5 w-5 text-primary" /> To'lov tizimini tanlang
+                            <CreditCard className="h-5 w-5 text-primary" /> {t('billing.step4Payment', "To'lov tizimini tanlang")}
                         </h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -314,7 +317,7 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                                         <div>
                                             <span className="font-bold text-sm block">{method.name}</span>
                                             <span className="text-xs text-muted-foreground">
-                                                {method.code === 'lemonsqueezy' ? 'USD (Visa, Mastercard)' : 'UZS (Humo / Uzcard)'}
+                                                {method.code === 'lemonsqueezy' ? t('billing.usdCards', 'USD (Visa, Mastercard)') : t('billing.uzsCards', 'UZS (Humo / Uzcard)')}
                                             </span>
                                         </div>
                                     </div>
@@ -332,7 +335,7 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                 {/* Order Summary & Checkout Card */}
                 <div className="lg:col-span-1">
                     <div className="bg-card p-6 rounded-2xl border border-border shadow-md space-y-6 sticky top-6">
-                        <h3 className="font-bold text-lg border-b border-border pb-3">Buyurtma tafsilotlari</h3>
+                        <h3 className="font-bold text-lg border-b border-border pb-3">{t('billing.orderSummary', "Buyurtma tafsilotlari")}</h3>
 
                         <div className="space-y-3 text-xs">
                             <div className="flex justify-between">

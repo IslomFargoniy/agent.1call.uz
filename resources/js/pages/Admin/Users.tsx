@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Head, useForm, router } from '@inertiajs/react';
 import {
     Users,
@@ -35,6 +36,7 @@ interface UsersProps {
 }
 
 export default function AdminUsers({ users, tenants, filters }: UsersProps) {
+    const { t } = useTranslation();
     const [search, setSearch] = useState(filters.search || '');
     const [roleFilter, setRoleFilter] = useState(filters.role || '');
     const [editingUser, setEditingUser] = useState<UserItem | null>(null);

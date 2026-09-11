@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Head, useForm, router } from '@inertiajs/react';
 import {
     Building2,
@@ -39,6 +40,7 @@ interface TenantsProps {
 }
 
 export default function AdminTenants({ tenants, filters }: TenantsProps) {
+    const { t } = useTranslation();
     const [search, setSearch] = useState(filters.search || '');
     const [editingTenant, setEditingTenant] = useState<TenantItem | null>(null);
 

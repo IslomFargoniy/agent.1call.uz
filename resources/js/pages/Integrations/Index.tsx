@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Head, useForm, router } from "@inertiajs/react";
 import {
     Share2,
@@ -89,6 +90,7 @@ function IntegrationsContent({
     mappings = [],
     recentLogs = [],
 }: IntegrationsProps) {
+    const { t } = useTranslation();
     const safeOperators = Array.isArray(operators) ? operators : [];
     const safeMappings = Array.isArray(mappings) ? mappings : [];
     const safeLogs = Array.isArray(recentLogs) ? recentLogs : [];
@@ -165,11 +167,11 @@ function IntegrationsContent({
 
     return (
         <div className="p-6 space-y-8 max-w-6xl mx-auto">
-            <Head title="CRM Integratsiyalari (amoCRM & MoySklad)" />
+            <Head title={t("integrations.title", "CRM Integratsiyalari (amoCRM & MoySklad)")} />
 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">CRM & ERP Integratsiyalari</h2>
+                    <h2 className="text-2xl font-bold tracking-tight">{t("integrations.title", "CRM & ERP Integratsiyalari")}</h2>
                     <p className="text-sm text-muted-foreground">
                         Telefoniya qo'ng'iroqlari va audio yozuvlarini amoCRM va MoySklad tizimlari bilan avtomatik sinxronlash
                     </p>

@@ -197,9 +197,9 @@ export function PaymentMethodLogo({ code, className = "h-6" }: { code: string; c
             return <LemonSqueezyLogo className={className} />;
         case 'card_transfer':
             return (
-                <div className={`flex items-center gap-1.5 ${className}`}>
-                    <UzcardLogo />
-                    <HumoLogo />
+                <div className="flex flex-col gap-1 items-start shrink-0">
+                    <UzcardLogo className="!h-5 !py-0.5 !px-2 !text-[10px]" />
+                    <HumoLogo className="!h-5 !py-0.5 !px-2 !text-[10px]" />
                 </div>
             );
         default:

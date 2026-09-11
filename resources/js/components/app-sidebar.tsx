@@ -23,8 +23,6 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-    SidebarGroup,
-    SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import type { NavItem } from '@/types';
 
@@ -114,20 +112,14 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={mainNavItems} label={t('sidebar.platform', 'Platforma')} />
 
                 {isAdmin && (
-                    <SidebarGroup>
-                        <SidebarGroupLabel>{t('sidebar.companyManagement', 'Kompaniya Boshqaruvi')}</SidebarGroupLabel>
-                        <NavMain items={adminNavItems} />
-                    </SidebarGroup>
+                    <NavMain items={adminNavItems} label={t('sidebar.companyManagement', 'Kompaniya Boshqaruvi')} />
                 )}
 
                 {isSuperAdmin && (
-                    <SidebarGroup>
-                        <SidebarGroupLabel>{t('sidebar.superadminPanel', 'Superadmin Paneli')}</SidebarGroupLabel>
-                        <NavMain items={superadminNavItems} />
-                    </SidebarGroup>
+                    <NavMain items={superadminNavItems} label={t('sidebar.superadminPanel', 'Superadmin Paneli')} />
                 )}
             </SidebarContent>
 
