@@ -51,7 +51,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Integrations
             Route::get('/integrations', [IntegrationController::class, 'index'])->name('integrations.index');
             Route::post('/integrations/amocrm', [IntegrationController::class, 'saveAmoCrm'])->name('integrations.amocrm.save');
+            Route::delete('/integrations/amocrm', [IntegrationController::class, 'disconnectAmoCrm'])->name('integrations.amocrm.disconnect');
             Route::post('/integrations/moysklad', [IntegrationController::class, 'saveMoySklad'])->name('integrations.moysklad.save');
+            Route::delete('/integrations/moysklad', [IntegrationController::class, 'disconnectMoySklad'])->name('integrations.moysklad.disconnect');
             Route::post('/integrations/user-mapping', [IntegrationController::class, 'saveUserMapping'])->name('integrations.user-mapping.save');
 
             // Work Schedule & Privacy

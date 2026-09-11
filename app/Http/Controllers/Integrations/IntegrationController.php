@@ -81,8 +81,6 @@ class IntegrationController extends Controller
             'operators' => $operators,
             'mappings' => $mappings,
             'recentLogs' => $recentLogs,
-            'widgetDownloadUrl' => url('/downloads/amocrm-widget.zip'),
-            'moySkladDescriptorUrl' => url('/downloads/moysklad-app.xml'),
         ]);
     }
 
@@ -166,10 +164,18 @@ class IntegrationController extends Controller
             return back()->with('error', 'Kompaniya topilmadi.');
         }
 
-        $validated = $request->validate([
-            'login' => ['nullable', 'string'],
-            'password' => ['nullable', 'string'],
-            'token' => ['nullable', 'string'],
+        $login = trim($request->input('login') ?? '');
+        $password = trim($request->input('password') ?? '');
+        $token = trim($request->input('token') ?? '');
+
+        if (empty($token) && (empty($login) || empty($password))) {
+            return back()->with('error', 'Iltimos, MoySklad API tokenini yoki Login va Parolni kiriting.');
+        }
+
+        $credentials = array_filter([
+            'login' => $login ?: null,
+            'password' => $password ?: null,
+            'token' => $token ?: null,
         ]);
 
         $integration = TenantIntegration::firstOrNew([
@@ -177,16 +183,55 @@ class IntegrationController extends Controller
             'crm_type' => 'moysklad',
         ]);
 
-        $integration->credentials = $validated;
+        $integration->credentials = $credentials;
+        $integration->is_active = false;
         $integration->save();
 
-        $res = $this->moySkladService->authorize($integration, $validated);
+        $res = $this->moySkladService->authorize($integration, $credentials);
 
         if ($res['success']) {
+            $integration->update(['is_active' => true]);
             return back()->with('success', 'MoySklad muvaffaqiyatli ulandi va faollashtirildi.');
         }
 
+        $integration->update(['is_active' => false]);
         return back()->with('error', $res['error'] ?? 'MoySklad ulanishda xatolik.');
+    }
+
+    /**
+     * Disconnect amoCRM integration.
+     */
+    public function disconnectAmoCrm(Request $request, TenantContext $tenantContext): RedirectResponse
+    {
+        $tenant = $this->resolveTenant($request, $tenantContext);
+
+        if ($tenant) {
+            $integration = TenantIntegration::where('tenant_id', $tenant->id)->where('crm_type', 'amocrm')->first();
+            if ($integration) {
+                IntegrationUserMapping::where('tenant_integration_id', $integration->id)->delete();
+                $integration->delete();
+            }
+        }
+
+        return back()->with('success', 'amoCRM integratsiyasi muvaffaqiyatli uzildi.');
+    }
+
+    /**
+     * Disconnect MoySklad integration.
+     */
+    public function disconnectMoySklad(Request $request, TenantContext $tenantContext): RedirectResponse
+    {
+        $tenant = $this->resolveTenant($request, $tenantContext);
+
+        if ($tenant) {
+            $integration = TenantIntegration::where('tenant_id', $tenant->id)->where('crm_type', 'moysklad')->first();
+            if ($integration) {
+                IntegrationUserMapping::where('tenant_integration_id', $integration->id)->delete();
+                $integration->delete();
+            }
+        }
+
+        return back()->with('success', 'MoySklad integratsiyasi muvaffaqiyatli uzildi.');
     }
 
     /**

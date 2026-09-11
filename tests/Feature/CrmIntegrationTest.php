@@ -122,3 +122,46 @@ test('SyncCallToIntegrationsJob dispatches and records sync logs', function () {
     expect(IntegrationSyncLog::where('call_id', $this->call->id)->count())->toBe(1);
     expect(IntegrationSyncLog::where('call_id', $this->call->id)->first()->status)->toBe('success');
 });
+
+test('saveMoySklad rejects empty credentials without activating integration', function () {
+    $user = \App\Models\User::create([
+        'tenant_id' => $this->tenant->id,
+        'name' => 'Tenant Admin',
+        'email' => 'crm-admin@test.uz',
+        'password' => bcrypt('password'),
+        'role' => 'admin',
+        'is_active' => true,
+    ]);
+
+    $response = $this->actingAs($user)->post('/integrations/moysklad', [
+        'login' => '',
+        'password' => '',
+        'token' => '',
+    ]);
+
+    $response->assertSessionHas('error');
+    expect(TenantIntegration::where('tenant_id', $this->tenant->id)->where('crm_type', 'moysklad')->where('is_active', true)->count())->toBe(0);
+});
+
+test('disconnect endpoints properly remove integrations', function () {
+    $user = \App\Models\User::create([
+        'tenant_id' => $this->tenant->id,
+        'name' => 'Tenant Admin 2',
+        'email' => 'crm-admin2@test.uz',
+        'password' => bcrypt('password'),
+        'role' => 'admin',
+        'is_active' => true,
+    ]);
+
+    TenantIntegration::create([
+        'tenant_id' => $this->tenant->id,
+        'crm_type' => 'moysklad',
+        'is_active' => true,
+        'credentials' => ['token' => 'dummy'],
+    ]);
+
+    $response = $this->actingAs($user)->delete('/integrations/moysklad');
+    $response->assertSessionHas('success');
+
+    expect(TenantIntegration::where('tenant_id', $this->tenant->id)->where('crm_type', 'moysklad')->count())->toBe(0);
+});
