@@ -214,6 +214,9 @@ fun PermissionsScreen(
                         Manifest.permission.READ_PHONE_STATE,
                         Manifest.permission.READ_CALL_LOG
                     )
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        permissions.add(Manifest.permission.READ_PHONE_NUMBERS)
+                    }
                     requestPermissionsLauncher.launch(permissions.toTypedArray())
                 }
             )

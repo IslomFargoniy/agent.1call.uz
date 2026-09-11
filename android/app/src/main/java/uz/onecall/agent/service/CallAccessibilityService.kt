@@ -209,12 +209,23 @@ class CallAccessibilityService : AccessibilityService() {
                     var finalFileSize = fileSize
 
                     try {
-                        val nativeFile = SamsungRecordingFinder.findLatestNativeCallRecording(
+                        var nativeFile = SamsungRecordingFinder.findLatestNativeCallRecording(
                             context = appContext,
                             phoneNumber = phone,
                             callStartTime = callStartTime,
                             callEndedTime = endedAt
                         )
+
+                        // Retry if Samsung dialer is still finishing encoding / indexing
+                        if (nativeFile == null || !nativeFile.exists() || nativeFile.length() == 0L) {
+                            delay(1000)
+                            nativeFile = SamsungRecordingFinder.findLatestNativeCallRecording(
+                                context = appContext,
+                                phoneNumber = phone,
+                                callStartTime = callStartTime,
+                                callEndedTime = System.currentTimeMillis()
+                            )
+                        }
 
                         if (nativeFile != null && nativeFile.exists() && nativeFile.length() > 0) {
                             Log.i(TAG, "Found native Samsung two-way call recording: ${nativeFile.absolutePath} (${nativeFile.length()} bytes)")

@@ -1,5 +1,7 @@
 package uz.onecall.agent.ui.screens.home
 
+import android.content.Intent
+import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
@@ -121,6 +123,7 @@ fun HomeScreen(
 
         var updateAvailableInfo by remember { mutableStateOf<AppVersionResponse?>(null) }
     LaunchedEffect(Unit) {
+        SimHelper.autoDetectPhoneNumber(context)
         when (val res = AppUpdateManager.checkForUpdate()) {
             is UpdateCheckResult.UpdateAvailable -> {
                 updateAvailableInfo = res.versionInfo
@@ -440,6 +443,55 @@ fun HomeScreen(
                                 fontWeight = if (!sim1Num.isNullOrBlank()) FontWeight.Medium else FontWeight.Normal,
                                 color = if (!sim1Num.isNullOrBlank()) MaterialTheme.colorScheme.onSurface else Color(0xFFF59E0B)
                             )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = CardDefaults.cardColors(containerColor = PrimaryBlue.copy(alpha = 0.08f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "Mijoz ovozini yozib olish:",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = PrimaryBlue
+                                        )
+                                        Text(
+                                            text = "Samsung Telefon > Sozlamalar > 'Qo'ng'iroqlarni avtomatik yozish' yoqilishi shart.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    OutlinedButton(
+                                        onClick = {
+                                            try {
+                                                val intent = Intent("com.samsung.android.app.telephonyui.action.OPEN_AUTO_RECORD_SETTINGS")
+                                                context.startActivity(intent)
+                                            } catch (_: Throwable) {
+                                                try {
+                                                    val intent = Intent(android.telecom.TelecomManager.ACTION_SHOW_CALL_SETTINGS)
+                                                    context.startActivity(intent)
+                                                } catch (_: Throwable) {
+                                                    val intent = Intent(Settings.ACTION_SETTINGS)
+                                                    context.startActivity(intent)
+                                                }
+                                            }
+                                        },
+                                        shape = RoundedCornerShape(8.dp),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                        modifier = Modifier.height(34.dp)
+                                    ) {
+                                        Text("Sozlash", fontSize = 11.sp)
+                                    }
+                                }
+                            }
                         }
                     }
                 }

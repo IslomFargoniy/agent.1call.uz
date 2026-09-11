@@ -35,6 +35,7 @@ class AudioRecorderManager(private val context: Context) {
             // On modern Android (10-15), VOICE_RECOGNITION avoids telephony AEC hardware mute
             // conflicts on Samsung/Pixel and captures clear speech during calls. MIC is the standard fallback.
             val sourcesToTry = listOf(
+                MediaRecorder.AudioSource.VOICE_COMMUNICATION,
                 MediaRecorder.AudioSource.VOICE_RECOGNITION,
                 MediaRecorder.AudioSource.MIC,
                 MediaRecorder.AudioSource.DEFAULT
