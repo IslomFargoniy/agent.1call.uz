@@ -1,4 +1,5 @@
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Link } from '@inertiajs/react';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { home } from '@/routes';
@@ -11,8 +12,9 @@ export default function AuthSimpleLayout({
 }: AuthLayoutProps) {
     return (
         <div className="bg-background relative flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-            <div className="absolute top-4 right-4 z-10">
+            <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
                 <LanguageSwitcher />
+                <ThemeSwitcher />
             </div>
             <div className="w-full max-w-sm">
                 <div className="flex flex-col gap-8">

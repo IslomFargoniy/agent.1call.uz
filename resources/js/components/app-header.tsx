@@ -1,4 +1,5 @@
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Link, usePage } from '@inertiajs/react';
 import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -179,6 +180,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
 
                     <div className="ml-auto flex items-center space-x-2">
                         <LanguageSwitcher />
+                        <ThemeSwitcher />
                         <div className="relative flex items-center space-x-1">
                             <Button
                                 variant="ghost"

@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 import React, { useState } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
@@ -35,6 +36,7 @@ import {
 import { Button } from '@/components/ui/button';
 
 export default function Welcome() {
+    const { t } = useTranslation();
     const { auth } = usePage<{ auth: { user: { name: string; role: string } | null } }>().props;
 
     const [currency, setCurrency] = useState<'UZS' | 'USD'>('UZS');
@@ -105,6 +107,7 @@ export default function Welcome() {
 
                     <div className="flex items-center gap-3">
                         <LanguageSwitcher />
+                        <ThemeSwitcher />
                         {auth.user ? (
                             <Link href="/dashboard">
                                 <Button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-xs">

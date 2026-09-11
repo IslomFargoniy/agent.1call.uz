@@ -16,10 +16,9 @@ const languages = [
 
 interface LanguageSwitcherProps {
     className?: string;
-    variant?: 'ghost' | 'outline';
 }
 
-export function LanguageSwitcher({ className, variant = 'ghost' }: LanguageSwitcherProps) {
+export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
     const { i18n } = useTranslation();
 
     const langCode = (i18n.language?.split('-')[0] || 'uz') as 'uz' | 'ru' | 'en';
@@ -34,12 +33,12 @@ export function LanguageSwitcher({ className, variant = 'ghost' }: LanguageSwitc
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button
-                    variant={variant}
+                    variant="ghost"
                     size="sm"
-                    className={`flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-foreground shadow-2xs hover:bg-accent hover:text-accent-foreground ${className || ''}`}
+                    className={`flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 text-gray-700 shadow-sm hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 ${className || ''}`}
                     title={currentLang.label}
                 >
-                    <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <Globe className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
                     <span className="text-xs font-semibold">
                         {currentLang.flag} {currentLang.displayCode}
                     </span>
