@@ -1,10 +1,5 @@
 package uz.onecall.agent.ui.screens.permissions
 
-import androidx.compose.foundation.Image
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
-import uz.onecall.agent.R
-
 import android.Manifest
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
@@ -14,8 +9,10 @@ import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
 import android.view.accessibility.AccessibilityManager
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,19 +30,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SettingsAccessibility
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,9 +53,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import uz.onecall.agent.R
 import uz.onecall.agent.ui.theme.AccentGreen
 import uz.onecall.agent.ui.theme.PrimaryBlue
 
@@ -64,11 +70,14 @@ fun PermissionsScreen(
     onAllGranted: () -> Unit
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     var isPhoneGranted by remember { mutableStateOf(false) }
     var isAudioGranted by remember { mutableStateOf(false) }
     var isNotificationGranted by remember { mutableStateOf(false) }
     var isAccessibilityEnabled by remember { mutableStateOf(false) }
     var isBatteryOptimized by remember { mutableStateOf(false) }
+    var isInstallUnknownAppsGranted by remember { mutableStateOf(false) }
 
     fun checkStatus() {
         isPhoneGranted = androidx.core.content.ContextCompat.checkSelfPermission(
@@ -96,10 +105,29 @@ fun PermissionsScreen(
 
         val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
         isBatteryOptimized = pm.isIgnoringBatteryOptimizations(context.packageName)
+
+        isInstallUnknownAppsGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.packageManager.canRequestPackageInstalls()
+        } else {
+            true
+        }
     }
 
     LaunchedEffect(Unit) {
         checkStatus()
+    }
+
+    // Auto-refresh when returning from Settings (Lifecycle ON_RESUME)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                checkStatus()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     val requestPermissionsLauncher = rememberLauncherForActivityResult(
@@ -108,7 +136,7 @@ fun PermissionsScreen(
         checkStatus()
     }
 
-    val allDone = isPhoneGranted && isAudioGranted && isNotificationGranted && isAccessibilityEnabled
+    val allDone = isPhoneGranted && isAudioGranted && isNotificationGranted && isAccessibilityEnabled && isInstallUnknownAppsGranted
 
     Scaffold { padding ->
         Column(
@@ -127,19 +155,39 @@ fun PermissionsScreen(
                     .clip(RoundedCornerShape(14.dp))
             )
             Spacer(modifier = Modifier.height(14.dp))
-            Text(
-                text = "Tizim Ruxsatnomalari",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Tizim Ruxsatnomalari",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                IconButton(
+                    onClick = {
+                        checkStatus()
+                        Toast.makeText(context, "Ruxsatlar holati yangilandi", Toast.LENGTH_SHORT).show()
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Yangilash",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "1Call Agent qo'ng'iroqlarni aniqlashi va barqaror yozib olishi uchun quyidagi ruxsatlar zarur:",
+                text = "1Call Agent qo'ng'iroqlarni aniqlashi, audio yozishi va yangilanishlarni qabul qilishi uchun quyidagi ruxsatlar zarur:",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // 1. Phone state
             PermissionCard(
@@ -203,7 +251,51 @@ fun PermissionsScreen(
                 }
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 5. In-App APK Install / Update
+            PermissionCard(
+                title = "Ilovalarni yangilash (APK o'rnatish)",
+                description = "Ilovaning yangi versiyalari chiqqanda avtomatik o'rnatish uchun",
+                icon = Icons.Default.SystemUpdate,
+                isGranted = isInstallUnknownAppsGranted,
+                onGrant = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        try {
+                            val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                                data = Uri.parse("package:${context.packageName}")
+                            }
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            val intent = Intent(Settings.ACTION_SECURITY_SETTINGS)
+                            context.startActivity(intent)
+                        }
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedButton(
+                onClick = {
+                    checkStatus()
+                    Toast.makeText(context, "Ruxsatlar holati yangilandi", Toast.LENGTH_SHORT).show()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(46.dp),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Ruxsatlar holatini yangilash")
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             Button(
                 onClick = onAllGranted,
