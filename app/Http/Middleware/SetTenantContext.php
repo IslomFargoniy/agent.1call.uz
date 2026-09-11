@@ -29,16 +29,22 @@ class SetTenantContext
             } elseif ($user->tenant_id) {
                 $tenant = $user->tenant ?? Tenant::find($user->tenant_id);
             } elseif ($user->isSuperAdmin()) {
-                // For superadmin, fallback to first tenant or ensure default tenant exists
-                $tenant = Tenant::first() ?? Tenant::create([
-                    'name' => '1Call Asosiy Kompaniya',
-                    'slug' => '1call-main',
-                    'allowed_devices_count' => 10,
-                    'audio_retention_days' => 90,
-                    'is_active' => true,
-                    'trial_ends_at' => now()->addYears(10),
-                    'subscription_expires_at' => now()->addYears(10),
-                ]);
+                // For superadmin, link to dedicated 1Call platform tenant (never to client tenants)
+                $tenant = Tenant::firstOrCreate(
+                    ['slug' => '1call-main'],
+                    [
+                        'name' => '1Call Asosiy Kompaniya',
+                        'allowed_devices_count' => 100,
+                        'audio_retention_days' => 365,
+                        'is_active' => true,
+                        'trial_ends_at' => null,
+                        'subscription_expires_at' => now()->addYears(50),
+                    ]
+                );
+
+                if (! $user->tenant_id) {
+                    $user->update(['tenant_id' => $tenant->id]);
+                }
             }
         }
 

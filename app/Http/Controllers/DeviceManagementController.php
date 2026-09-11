@@ -21,15 +21,21 @@ class DeviceManagementController extends Controller
         $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
 
         if (! $tenant && $request->user()?->isSuperAdmin()) {
-            $tenant = Tenant::first() ?? Tenant::create([
-                'name' => '1Call Asosiy Kompaniya',
-                'slug' => '1call-main',
-                'allowed_devices_count' => 10,
-                'audio_retention_days' => 90,
-                'is_active' => true,
-                'trial_ends_at' => now()->addYears(10),
-                'subscription_expires_at' => now()->addYears(10),
-            ]);
+            $tenant = Tenant::firstOrCreate(
+                ['slug' => '1call-main'],
+                [
+                    'name' => '1Call Asosiy Kompaniya',
+                    'allowed_devices_count' => 100,
+                    'audio_retention_days' => 365,
+                    'is_active' => true,
+                    'trial_ends_at' => null,
+                    'subscription_expires_at' => now()->addYears(50),
+                ]
+            );
+
+            if ($request->user() && ! $request->user()->tenant_id) {
+                $request->user()->update(['tenant_id' => $tenant->id]);
+            }
 
             $tenantContext->setTenant($tenant);
         }

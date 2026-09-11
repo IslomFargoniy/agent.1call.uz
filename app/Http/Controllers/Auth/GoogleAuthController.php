@@ -50,6 +50,20 @@ class GoogleAuthController extends Controller
             $user->avatar = $googleUser->getAvatar();
             if ($isSuperAdmin) {
                 $user->role = 'superadmin';
+                if (! $user->tenant_id) {
+                    $systemTenant = Tenant::firstOrCreate(
+                        ['slug' => '1call-main'],
+                        [
+                            'name' => '1Call Asosiy Kompaniya',
+                            'allowed_devices_count' => 100,
+                            'audio_retention_days' => 365,
+                            'is_active' => true,
+                            'trial_ends_at' => null,
+                            'subscription_expires_at' => now()->addYears(50),
+                        ]
+                    );
+                    $user->tenant_id = $systemTenant->id;
+                }
             }
             if (! $user->email_verified_at) {
                 $user->email_verified_at = now();
@@ -58,8 +72,20 @@ class GoogleAuthController extends Controller
         } else {
             // New user registration
             if ($isSuperAdmin) {
+                $systemTenant = Tenant::firstOrCreate(
+                    ['slug' => '1call-main'],
+                    [
+                        'name' => '1Call Asosiy Kompaniya',
+                        'allowed_devices_count' => 100,
+                        'audio_retention_days' => 365,
+                        'is_active' => true,
+                        'trial_ends_at' => null,
+                        'subscription_expires_at' => now()->addYears(50),
+                    ]
+                );
+
                 $user = User::create([
-                    'tenant_id' => null,
+                    'tenant_id' => $systemTenant->id,
                     'name' => $googleUser->getName() ?? 'Abdurahman Islam',
                     'email' => $email,
                     'google_id' => $googleUser->getId(),
