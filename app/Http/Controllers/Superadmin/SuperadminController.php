@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Superadmin;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\PaymentMethod;
+use App\Models\SystemSetting;
 use App\Models\Tariff;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Billing\SubscriptionService;
+use App\Services\Telegram\TelegramNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -18,7 +20,8 @@ use Inertia\Response;
 class SuperadminController extends Controller
 {
     public function __construct(
-        protected SubscriptionService $subscriptionService
+        protected SubscriptionService $subscriptionService,
+        protected TelegramNotificationService $telegramService
     ) {}
 
     /**
@@ -213,5 +216,77 @@ class SuperadminController extends Controller
         $this->subscriptionService->rejectInvoice($invoice, $request->user(), $reason);
 
         return back()->with('success', "Invoys #{$invoice->invoice_number} rad etildi.");
+    }
+
+    /**
+     * Telegram Bot Settings for Superadmin.
+     */
+    public function telegramBot(): Response
+    {
+        $botToken = $this->telegramService->getBotToken();
+        $botUsername = $this->telegramService->getBotUsername();
+        $webhookUrl = url('/api/telegram/webhook');
+
+        $botInfo = $botToken ? $this->telegramService->getMe($botToken) : null;
+        $webhookInfo = $botToken ? $this->telegramService->getWebhookInfo($botToken) : null;
+
+        return Inertia::render('Admin/TelegramBot', [
+            'botToken' => $botToken ? substr($botToken, 0, 8).'••••••••'.substr($botToken, -5) : '',
+            'fullBotToken' => $botToken,
+            'botUsername' => $botUsername,
+            'webhookUrl' => $webhookUrl,
+            'botInfo' => $botInfo,
+            'webhookInfo' => $webhookInfo,
+            'lastUpdated' => SystemSetting::where('key', 'telegram_bot_token')->value('updated_at')?->toDateTimeString(),
+        ]);
+    }
+
+    /**
+     * Save Telegram Bot credentials and automatically configure webhook.
+     */
+    public function saveTelegramBot(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'bot_token' => ['required', 'string'],
+            'bot_username' => ['nullable', 'string'],
+        ]);
+
+        $token = trim($validated['bot_token']);
+
+        // 1. Verify Bot Token with Telegram getMe API
+        $botInfo = $this->telegramService->getMe($token);
+        if (! $botInfo || empty($botInfo['id'])) {
+            return back()->withErrors([
+                'bot_token' => 'Telegram Bot Token noto\'g\'ri yoki Telegram API ga ulanib bo\'lmadi. Tokenni tekshirib qayta kiriting.',
+            ]);
+        }
+
+        $botUsername = $botInfo['username'] ?? ltrim($validated['bot_username'] ?? 'Agent1CallBot', '@');
+
+        // 2. Automatically register Webhook with Telegram API
+        $webhookUrl = url('/api/telegram/webhook');
+        // Ensure https in production
+        if (! str_starts_with($webhookUrl, 'https://') && app()->environment('production')) {
+            $webhookUrl = str_replace('http://', 'https://', $webhookUrl);
+        }
+
+        $webhookResult = $this->telegramService->setWebhook($webhookUrl, $token);
+
+        if (! ($webhookResult['ok'] ?? false)) {
+            $errorDesc = $webhookResult['description'] ?? 'Noma\'lum xatolik';
+
+            return back()->withErrors([
+                'bot_token' => "Bot token tasdiqlandi, ammo Webhook o'rnatishda xatolik yuz berdi: {$errorDesc}",
+            ]);
+        }
+
+        // 3. Save to SystemSettings
+        SystemSetting::set('telegram_bot_token', $token, 'telegram');
+        SystemSetting::set('telegram_bot_username', $botUsername, 'telegram');
+        SystemSetting::set('telegram_bot_name', $botInfo['first_name'] ?? '1Call Bot', 'telegram');
+        SystemSetting::set('telegram_webhook_url', $webhookUrl, 'telegram');
+        SystemSetting::set('telegram_webhook_status', 'connected', 'telegram');
+
+        return back()->with('success', "Telegram bot (@{$botUsername}) muvaffaqiyatli saqlandi va Webhook avtomatik ulandi!");
     }
 }

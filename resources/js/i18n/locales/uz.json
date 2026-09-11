@@ -86,7 +86,8 @@
         "allUsers": "Barcha xodimlar",
         "tariffs": "Tariflar boshqaruvi",
         "paymentMethods": "To'lov tizimlari",
-        "invoices": "Karta cheklari"
+        "invoices": "Karta cheklari",
+        "telegramBot": "Telegram Bot"
     },
     "trunks": {
         "title": "Tashqi Raqamlar (SIP Trunks)",
@@ -1801,7 +1802,29 @@
         "customerInstructionsLabel": "Mijoz uchun ko'rsatma (Instructions):",
         "notSpecified": "Kiritilmagan",
         "card": "Karta:",
-        "holder": "Egasi:"
+        "holder": "Egasi:",
+        "telegramBotTitle": "Telegram Bildirishnomalar Boti Sozlamalari",
+        "telegramBotDesc": "Yagona rasmiy Telegram bot (@Agent1CallBot) orqali barcha kompaniyalarga qoldirilgan qo'ng'iroqlar xabarnomalarini yuborish",
+        "botStatusConnected": "Bot Faol & Ulanadi",
+        "botStatusNotSet": "Bot Ulanmagan",
+        "webhookActive": "Webhook Faol",
+        "botTokenLabel": "Telegram Bot Token (HTTP API):",
+        "botTokenPlaceholder": "123456789:ABCdefGHIjklMNOpqrSTUvwxYZ...",
+        "botUsernameLabel": "Bot Username (ixtiyoriy):",
+        "saveAndConnectWebhook": "Saqlash va Webhook'ni ulash",
+        "connectingWebhook": "Tekshirilmoqda va ulanmoqda...",
+        "webhookUrlLabel": "Tizim Webhook URL manzili:",
+        "howItWorksTitle": "Telegram Bot Qanday Ishlaydi?",
+        "step1Title": "1. Avtomatik Webhook",
+        "step1Desc": "Token kiritilishi bilan tizim avtomatik ravishda Telegram serverlariga Webhook o'rnatadi.",
+        "step2Title": "2. Guruhga qo'shish",
+        "step2Desc": "Mijozlar ushbu botni o'zlarining sotuv yoki xodimlar Telegram guruhiga qo'shadilar.",
+        "step3Title": "3. Chat ID avtomatik beriladi",
+        "step3Desc": "Bot guruhga qo'shilishi bilanoq, o'sha guruhga uning Chat ID sini yozib beradi.",
+        "step4Title": "4. Jonli bildirishnomalar",
+        "step4Desc": "Har bir javobsiz qo'ng'iroq bo'yicha zudlik bilan guruhga xabar yuboriladi.",
+        "openInTelegram": "Telegram'da ochish",
+        "pendingUpdates": "Kutilayotgan xabarlar"
     },
     "navUser": {
         "profile": "Profil sozlamalari",

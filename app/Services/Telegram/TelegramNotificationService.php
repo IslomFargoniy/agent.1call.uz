@@ -4,30 +4,51 @@ namespace App\Services\Telegram;
 
 use App\Models\Call;
 use App\Models\Invoice;
+use App\Models\SystemSetting;
 use App\Models\Tenant;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class TelegramNotificationService
 {
-    protected string $botToken;
-
-    public function __construct()
+    /**
+     * Get active Telegram Bot Token from database or env.
+     */
+    public function getBotToken(): string
     {
-        $this->botToken = config('services.telegram.bot_token', env('TELEGRAM_BOT_TOKEN', ''));
+        $dbToken = SystemSetting::get('telegram_bot_token');
+        if (! empty($dbToken)) {
+            return (string) $dbToken;
+        }
+
+        return (string) config('services.telegram.bot_token', env('TELEGRAM_BOT_TOKEN', ''));
     }
 
     /**
-     * Send Markdown message via Telegram Bot.
+     * Get active Telegram Bot Username.
+     */
+    public function getBotUsername(): string
+    {
+        $dbUsername = SystemSetting::get('telegram_bot_username');
+        if (! empty($dbUsername)) {
+            return ltrim((string) $dbUsername, '@');
+        }
+
+        return ltrim((string) config('services.telegram.bot_username', env('TELEGRAM_BOT_USERNAME', 'Agent1CallBot')), '@');
+    }
+
+    /**
+     * Send HTML message via Telegram Bot.
      */
     public function sendMessage(string $chatId, string $text): bool
     {
-        if (empty($this->botToken) || empty($chatId)) {
+        $token = $this->getBotToken();
+        if (empty($token) || empty($chatId)) {
             return false;
         }
 
         try {
-            $response = Http::asJson()->post("https://api.telegram.org/bot{$this->botToken}/sendMessage", [
+            $response = Http::asJson()->post("https://api.telegram.org/bot{$token}/sendMessage", [
                 'chat_id' => $chatId,
                 'text' => $text,
                 'parse_mode' => 'HTML',
@@ -40,6 +61,74 @@ class TelegramNotificationService
 
             return false;
         }
+    }
+
+    /**
+     * Verify Bot Token and retrieve bot identity from Telegram.
+     */
+    public function getMe(?string $customToken = null): ?array
+    {
+        $token = $customToken ?: $this->getBotToken();
+        if (empty($token)) {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(10)->get("https://api.telegram.org/bot{$token}/getMe");
+            if ($response->successful() && $response->json('ok')) {
+                return $response->json('result');
+            }
+        } catch (\Throwable $e) {
+            Log::error('Telegram getMe failed: '.$e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Register or update Webhook URL with Telegram API.
+     */
+    public function setWebhook(string $webhookUrl, ?string $customToken = null): array
+    {
+        $token = $customToken ?: $this->getBotToken();
+        if (empty($token)) {
+            return ['ok' => false, 'description' => 'Bot tokeni mavjud emas.'];
+        }
+
+        try {
+            $response = Http::timeout(15)->post("https://api.telegram.org/bot{$token}/setWebhook", [
+                'url' => $webhookUrl,
+                'drop_pending_updates' => true,
+                'allowed_updates' => ['message', 'my_chat_member'],
+            ]);
+
+            return $response->json() ?: ['ok' => false, 'description' => 'Javob qabul qilinmadi.'];
+        } catch (\Throwable $e) {
+            Log::error('Telegram setWebhook failed: '.$e->getMessage());
+            return ['ok' => false, 'description' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Get Webhook Info from Telegram API.
+     */
+    public function getWebhookInfo(?string $customToken = null): ?array
+    {
+        $token = $customToken ?: $this->getBotToken();
+        if (empty($token)) {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(10)->get("https://api.telegram.org/bot{$token}/getWebhookInfo");
+            if ($response->successful() && $response->json('ok')) {
+                return $response->json('result');
+            }
+        } catch (\Throwable $e) {
+            Log::error('Telegram getWebhookInfo failed: '.$e->getMessage());
+        }
+
+        return null;
     }
 
     /**

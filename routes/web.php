@@ -99,6 +99,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/invoices', [SuperadminController::class, 'invoices'])->name('invoices.index');
         Route::post('/invoices/{invoice}/approve', [SuperadminController::class, 'approveInvoice'])->name('invoices.approve');
         Route::post('/invoices/{invoice}/reject', [SuperadminController::class, 'rejectInvoice'])->name('invoices.reject');
+
+        Route::get('/telegram-bot', [SuperadminController::class, 'telegramBot'])->name('telegram-bot.index');
+        Route::post('/telegram-bot', [SuperadminController::class, 'saveTelegramBot'])->name('telegram-bot.save');
     });
 });
 

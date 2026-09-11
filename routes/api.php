@@ -1,8 +1,12 @@
 <?php
 
 use App\Http\Controllers\Api\v1\DeviceController;
+use App\Http\Controllers\Api\v1\TelegramBotController;
 use App\Http\Controllers\Api\v1\TelemetryController;
 use Illuminate\Support\Facades\Route;
+
+// Telegram Bot Webhook Endpoint (Public, CSRF-exempt)
+Route::post('/telegram/webhook', [TelegramBotController::class, 'handleWebhook'])->name('api.telegram.webhook');
 
 Route::prefix('v1')->group(function () {
     // Public Device Pairing Endpoint

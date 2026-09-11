@@ -86,7 +86,8 @@
         "allUsers": "Все сотрудники",
         "tariffs": "Управление тарифами",
         "paymentMethods": "Платежные системы",
-        "invoices": "Чеки оплаты"
+        "invoices": "Чеки оплаты",
+        "telegramBot": "Telegram Бот"
     },
     "trunks": {
         "title": "Внешние Номера (SIP Trunks)",
@@ -1801,7 +1802,29 @@
         "customerInstructionsLabel": "Инструкция для клиента (Instructions):",
         "notSpecified": "Не указано",
         "card": "Карта:",
-        "holder": "Держатель:"
+        "holder": "Держатель:",
+        "telegramBotTitle": "Настройки Telegram Бота",
+        "telegramBotDesc": "Отправка уведомлений о пропущенных звонках через единого официального бота (@Agent1CallBot)",
+        "botStatusConnected": "Бот активен и подключен",
+        "botStatusNotSet": "Бот не настроен",
+        "webhookActive": "Webhook активен",
+        "botTokenLabel": "Токен Telegram Бота (HTTP API):",
+        "botTokenPlaceholder": "123456789:ABCdefGHIjklMNOpqrSTUvwxYZ...",
+        "botUsernameLabel": "Username Бота (необязательно):",
+        "saveAndConnectWebhook": "Сохранить и подключить Webhook",
+        "connectingWebhook": "Проверка и подключение...",
+        "webhookUrlLabel": "URL адрес Webhook системы:",
+        "howItWorksTitle": "Как работает Telegram Бот?",
+        "step1Title": "1. Автоматический Webhook",
+        "step1Desc": "После ввода токена система автоматически регистрирует Webhook на серверах Telegram.",
+        "step2Title": "2. Добавление в группу",
+        "step2Desc": "Клиенты добавляют этого бота в свою рабочую группу в Telegram.",
+        "step3Title": "3. Автоматический Chat ID",
+        "step3Desc": "Как только бот попадает в группу, он сразу отправляет Chat ID группы.",
+        "step4Title": "4. Мгновенные уведомления",
+        "step4Desc": "По каждому пропущенному звонку мгновенно отправляется карточка звонка.",
+        "openInTelegram": "Открыть в Telegram",
+        "pendingUpdates": "Ожидающие обновления"
     },
     "navUser": {
         "profile": "Настройки профиля",

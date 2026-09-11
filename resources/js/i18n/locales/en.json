@@ -86,7 +86,8 @@
         "allUsers": "All Employees",
         "tariffs": "Tariffs Management",
         "paymentMethods": "Payment Methods",
-        "invoices": "Payment Receipts"
+        "invoices": "Payment Receipts",
+        "telegramBot": "Telegram Bot"
     },
     "trunks": {
         "title": "External Numbers (SIP Trunks)",
@@ -1795,7 +1796,29 @@
         "customerInstructionsLabel": "Instructions for Customer:",
         "notSpecified": "Not specified",
         "card": "Card:",
-        "holder": "Holder:"
+        "holder": "Holder:",
+        "telegramBotTitle": "Telegram Notification Bot Settings",
+        "telegramBotDesc": "Send missed call notifications to all companies via the official Telegram bot (@Agent1CallBot)",
+        "botStatusConnected": "Bot Active & Connected",
+        "botStatusNotSet": "Bot Not Configured",
+        "webhookActive": "Webhook Active",
+        "botTokenLabel": "Telegram Bot Token (HTTP API):",
+        "botTokenPlaceholder": "123456789:ABCdefGHIjklMNOpqrSTUvwxYZ...",
+        "botUsernameLabel": "Bot Username (optional):",
+        "saveAndConnectWebhook": "Save and Connect Webhook",
+        "connectingWebhook": "Verifying and connecting...",
+        "webhookUrlLabel": "System Webhook URL:",
+        "howItWorksTitle": "How Telegram Bot Works",
+        "step1Title": "1. Automatic Webhook",
+        "step1Desc": "Upon entering the token, the system automatically registers the Webhook with Telegram.",
+        "step2Title": "2. Add to Group",
+        "step2Desc": "Clients add this bot to their sales or team Telegram group.",
+        "step3Title": "3. Automatic Chat ID",
+        "step3Desc": "As soon as the bot is added to a group, it immediately sends the group Chat ID.",
+        "step4Title": "4. Real-time Alerts",
+        "step4Desc": "Instant notification is sent for every missed call.",
+        "openInTelegram": "Open in Telegram",
+        "pendingUpdates": "Pending updates"
     },
     "navUser": {
         "profile": "Profile Settings",

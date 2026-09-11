@@ -11,6 +11,7 @@ import {
     Share2,
     Smartphone,
     Users,
+    Send,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -94,6 +95,11 @@ export function AppSidebar() {
             title: t('sidebar.invoices', 'Karta cheklari'),
             href: '/admin/invoices',
             icon: Receipt,
+        },
+        {
+            title: t('sidebar.telegramBot', 'Telegram Bot'),
+            href: '/admin/telegram-bot',
+            icon: Send,
         },
     ];
 
