@@ -20,6 +20,7 @@ import uz.onecall.agent.OneCallApplication
 import uz.onecall.agent.core.AudioRecorderManager
 import uz.onecall.agent.core.CallLogHelper
 import uz.onecall.agent.core.DualSimFilter
+import uz.onecall.agent.core.SamsungRecordingFinder
 import uz.onecall.agent.core.WorkHoursFilter
 import uz.onecall.agent.data.local.LocalCallRecord
 import uz.onecall.agent.data.remote.ApiClient
@@ -183,7 +184,7 @@ class CallAccessibilityService : AccessibilityService() {
             serviceScope.launch {
                 try {
                     // Delay 800ms for OS to write CallLog.Calls
-                    delay(800)
+                    delay(1200)
 
                     val latestLog = CallLogHelper.getLatestCall(appContext)
                     if (latestLog != null) {
@@ -203,13 +204,36 @@ class CallAccessibilityService : AccessibilityService() {
                         }
                     }
 
+                    // Prioritize native Samsung two-way hardware recording
+                    var finalAudioPath = audioPath
+                    var finalFileSize = fileSize
+
+                    try {
+                        val nativeFile = SamsungRecordingFinder.findLatestNativeCallRecording(
+                            context = appContext,
+                            phoneNumber = phone,
+                            callStartTime = callStartTime,
+                            callEndedTime = endedAt
+                        )
+
+                        if (nativeFile != null && nativeFile.exists() && nativeFile.length() > 0) {
+                            Log.i(TAG, "Found native Samsung two-way call recording: ${nativeFile.absolutePath} (${nativeFile.length()} bytes)")
+                            finalAudioPath = nativeFile.absolutePath
+                            finalFileSize = nativeFile.length()
+                        } else {
+                            Log.i(TAG, "Native recording not found, using in-app mic recording: $audioPath ($fileSize bytes)")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error checking Samsung native recording", e)
+                    }
+
                     val record = LocalCallRecord(
                         phoneNumber = phone,
                         direction = direction,
                         simSlot = if (sim >= 1) sim else 1,
                         durationSeconds = duration,
-                        audioFilePath = audioPath,
-                        fileSizeBytes = fileSize,
+                        audioFilePath = finalAudioPath,
+                        fileSizeBytes = finalFileSize,
                         startedAt = callStartTime / 1000,
                         endedAt = endedAt / 1000,
                         syncStatus = LocalCallRecord.STATUS_PENDING

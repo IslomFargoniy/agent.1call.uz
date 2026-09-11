@@ -85,10 +85,24 @@ fun PermissionsScreen(
             Manifest.permission.READ_PHONE_STATE
         ) == android.content.pm.PackageManager.PERMISSION_GRANTED
 
-        isAudioGranted = androidx.core.content.ContextCompat.checkSelfPermission(
+        val audioRecordGranted = androidx.core.content.ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.RECORD_AUDIO
         ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        val audioStorageGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.READ_MEDIA_AUDIO
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        } else {
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+
+        isAudioGranted = audioRecordGranted && audioStorageGranted
 
         isNotificationGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             androidx.core.content.ContextCompat.checkSelfPermission(
@@ -208,12 +222,18 @@ fun PermissionsScreen(
 
             // 2. Audio Record
             PermissionCard(
-                title = "Mikrofon / Ovoz yozish",
-                description = "Suhbat audio yozuvini yaratish (AAC siqish bilan)",
+                title = "Mikrofon va Audio Fayllar",
+                description = "2 tomonlama suhbat audio yozuvlarini yaratish va sinxronlash",
                 icon = Icons.Default.Mic,
                 isGranted = isAudioGranted,
                 onGrant = {
-                    requestPermissionsLauncher.launch(arrayOf(Manifest.permission.RECORD_AUDIO))
+                    val perms = mutableListOf(Manifest.permission.RECORD_AUDIO)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        perms.add(Manifest.permission.READ_MEDIA_AUDIO)
+                    } else {
+                        perms.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    }
+                    requestPermissionsLauncher.launch(perms.toTypedArray())
                 }
             )
 
