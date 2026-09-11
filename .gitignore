@@ -67,3 +67,4 @@ android/.cxx/
 *.keystore
 android/release-keystore.properties
 google-services.json
+*.idsig
