@@ -19,7 +19,7 @@ beforeEach(function () {
     $this->tariff = Tariff::firstOrCreate(
         ['code' => 'standard'],
         [
-            'name' => '1Call Standart',
+            'name' => 'Agent1Call Standart',
             'base_price_monthly' => 20000,
             'price_usd_monthly' => 3.89,
             'default_retention_days' => 30,

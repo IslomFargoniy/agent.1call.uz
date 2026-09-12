@@ -24,7 +24,7 @@ class DeviceManagementController extends Controller
             $tenant = Tenant::firstOrCreate(
                 ['slug' => '1call-main'],
                 [
-                    'name' => '1Call Asosiy Kompaniya',
+                    'name' => 'Agent1Call Asosiy Kompaniya',
                     'allowed_devices_count' => 100,
                     'audio_retention_days' => 365,
                     'is_active' => true,

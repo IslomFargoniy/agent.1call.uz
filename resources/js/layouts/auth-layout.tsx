@@ -36,7 +36,7 @@ export default function AuthLayout({
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2">
                                 <span className="text-base sm:text-lg font-bold tracking-tight text-foreground leading-tight">
-                                    1Call Agent
+                                    Agent1Call
                                 </span>
                                 <span className="hidden sm:inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
                                     v1.0
@@ -63,7 +63,7 @@ export default function AuthLayout({
 
                 {/* Footer */}
                 <footer className="relative z-20 py-4 text-center text-xs text-muted-foreground border-t border-border/30">
-                    © {new Date().getFullYear()} 1Call.uz — Barcha huquqlar himoyalangan.
+                    © {new Date().getFullYear()} Agent1Call.uz — Barcha huquqlar himoyalangan.
                 </footer>
             </div>
         );

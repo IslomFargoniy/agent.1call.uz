@@ -39,7 +39,7 @@ Route::prefix('v1')->group(function () {
             'version_code' => (int) $versionCode,
             'download_url' => url('/downloads/1call-agent.apk'),
             'file_size' => $fileSize,
-            'changelog' => "1Call Agent korporativ telefoniya ilovasi relizi:\n- Kiruvchi va chiquvchi qo'ng'iroqlarni avtomatik qayd etish\n- CRM tizimlariga (AmoCRM, MoySklad) audio yuklash\n- Barqaror fon xizmati va avtomatik yangilanish",
+            'changelog' => "Agent1Call korporativ telefoniya ilovasi relizi:\n- Kiruvchi va chiquvchi qo'ng'iroqlarni avtomatik qayd etish\n- CRM tizimlariga (AmoCRM, MoySklad) audio yuklash\n- Barqaror fon xizmati va avtomatik yangilanish",
             'force_update' => false,
         ]);
     })->name('api.v1.app.latest');

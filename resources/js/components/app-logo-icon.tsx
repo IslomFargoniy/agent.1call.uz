@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 export default function AppLogoIcon({
     className,
-    alt = '1Call Logo',
+    alt = 'Agent1Call Logo',
     ...props
 }: ImgHTMLAttributes<HTMLImageElement>) {
     return (

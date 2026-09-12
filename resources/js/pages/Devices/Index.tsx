@@ -217,7 +217,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                         download="1call-agent.apk"
                         className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 gap-1.5"
                     >
-                        <Download className="h-4 w-4 text-primary" /> {t("devices.downloadApk", "1Call Agent APK")}
+                        <Download className="h-4 w-4 text-primary" /> {t("devices.downloadApk", "Agent1Call APK")}
                     </a>
 
                     <Button onClick={generateCode} size="sm" className="h-9 gap-1.5">
@@ -427,7 +427,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                                 </div>
                                 <div>
                                     <h3 className="text-base sm:text-lg font-bold text-foreground">
-                                        {t("devices.guideTitle", "1Call Agent ilovasini o'rnatish va sozlash yo'riqnomasi")}
+                                        {t("devices.guideTitle", "Agent1Call ilovasini o'rnatish va sozlash yo'riqnomasi")}
                                     </h3>
                                     <p className="text-xs text-muted-foreground">
                                         {t("devices.guideSubtitle", "Qo'ng'iroqlarni aniqlash, audio yozish va CRM bilan sinxronlashni 4 ta qadamda sozlang")}
@@ -459,7 +459,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                                         {t("devices.step1Title", "1-Qadam: APK ni yuklab olish")}
                                     </h4>
                                     <p className="text-xs text-muted-foreground">
-                                        {t("devices.step1Desc", "1Call Agent APK faylini yuklab oling va telefonda o'rnating.")}
+                                        {t("devices.step1Desc", "Agent1Call APK faylini yuklab oling va telefonda o'rnating.")}
                                     </p>
                                 </div>
 
@@ -469,7 +469,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                                         download="1call-agent.apk"
                                         className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 transition-colors shadow-xs"
                                     >
-                                        <Download className="h-3.5 w-3.5" /> 1Call Agent v1.0.1 (.apk)
+                                        <Download className="h-3.5 w-3.5" /> Agent1Call v1.0.1 (.apk)
                                     </a>
                                     <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-300 leading-snug">
                                         <strong>Play Protect:</strong> Agar bloklasa, <em>"Batafsil / Подробнее"</em> &rarr; <em>"Har holda o'rnatish / Все равно установить"</em> ni bosing.
@@ -534,7 +534,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                                     <ol className="list-decimal list-inside space-y-0.5 text-muted-foreground">
                                         <li>Ilova ustiga 2 soniya bosib <strong>ⓘ (Ilova haqida)</strong> ni bosing.</li>
                                         <li>Yuqori o'ngdagi <strong>3 nuqta (⋮)</strong> &rarr; <em>\"Разрешить ограниченные настройки\"</em>.</li>
-                                        <li>Accessibility bo'limida 1Call Agent ni <strong>Yoqing (ON)</strong>.</li>
+                                        <li>Accessibility bo'limida Agent1Call ni <strong>Yoqing (ON)</strong>.</li>
                                     </ol>
                                     <p className="text-[10px] text-muted-foreground italic pt-0.5">
                                         * \"Shortcut\"ni yoqish shart emas, o'chiq qolsin.
@@ -580,7 +580,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                         {/* Modal Footer */}
                         <div className="flex items-center justify-between pt-2 border-t border-border/60">
                             <span className="text-xs text-muted-foreground">
-                                1Call Agent v1.0.1
+                                Agent1Call v1.0.1
                             </span>
                             <Button
                                 variant="default"
@@ -667,7 +667,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                             </p>
                             <ol className="list-decimal list-inside space-y-1 text-muted-foreground text-[11px]">
                                 <li>
-                                    {t("devices.qrStep1", "Telefonda 1Call Agent ilovasini oching.")} ({t("devices.qrStep1NotInstalled", "Hali o\x27rnatilmagan bo\x27lsa:")}{" "}
+                                    {t("devices.qrStep1", "Telefonda Agent1Call ilovasini oching.")} ({t("devices.qrStep1NotInstalled", "Hali o\x27rnatilmagan bo\x27lsa:")}{" "}
                                     <a
                                         href="/downloads/app"
                                         download="1call-agent.apk"

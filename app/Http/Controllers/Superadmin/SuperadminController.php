@@ -135,7 +135,7 @@ class SuperadminController extends Controller
         $tariff = Tariff::with(['discounts', 'retentionOptions'])->first();
         if (! $tariff) {
             $tariff = Tariff::create([
-                'name' => '1Call Standart',
+                'name' => 'Agent1Call Standart',
                 'code' => 'standard',
                 'base_price_monthly' => 50000,
                 'price_usd_monthly' => 3.89,
@@ -472,7 +472,7 @@ class SuperadminController extends Controller
         // 3. Save to SystemSettings
         SystemSetting::set('telegram_bot_token', $token, 'telegram');
         SystemSetting::set('telegram_bot_username', $botUsername, 'telegram');
-        SystemSetting::set('telegram_bot_name', $botInfo['first_name'] ?? '1Call Bot', 'telegram');
+        SystemSetting::set('telegram_bot_name', $botInfo['first_name'] ?? 'Agent1Call Bot', 'telegram');
         SystemSetting::set('telegram_webhook_url', $webhookUrl, 'telegram');
         SystemSetting::set('telegram_webhook_status', 'connected', 'telegram');
 

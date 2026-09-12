@@ -504,7 +504,7 @@ function IntegrationsContent({
                                     <Users className="h-4 w-4 text-primary" /> amoCRM operatorlarini biriktirish (User Mapping)
                                 </h3>
                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                    1Call operatorlarini amoCRM xodimlariga biriktiring, shunda qo'ng'iroqlar ularning nomidan avtomatik saqlanadi.
+                                    Agent1Call operatorlarini amoCRM xodimlariga biriktiring, shunda qo'ng'iroqlar ularning nomidan avtomatik saqlanadi.
                                 </p>
                             </div>
                             {amoCrm?.is_active && (
@@ -517,7 +517,7 @@ function IntegrationsContent({
                         {amoCrm?.is_active ? (
                             <form onSubmit={submitMapping} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end pt-2">
                                 <div className="space-y-1">
-                                    <label className="text-xs font-semibold">1Call Operatori: *</label>
+                                    <label className="text-xs font-semibold">Agent1Call Operatori: *</label>
                                     <select
                                         value={mappingForm.data.user_id}
                                         onChange={(e) => mappingForm.setData("user_id", e.target.value)}
@@ -574,7 +574,7 @@ function IntegrationsContent({
                                     <thead className="bg-muted/50 border-b border-border text-muted-foreground uppercase font-medium">
                                         <tr>
                                             <th className="py-2.5 px-4 w-10 text-center">№</th>
-                                            <th className="py-2.5 px-4">1Call Operatori</th>
+                                            <th className="py-2.5 px-4">Agent1Call Operatori</th>
                                             <th className="py-2.5 px-4">amoCRM User ID</th>
                                             <th className="py-2.5 px-4">amoCRM Xodim Ismi</th>
                                             <th className="py-2.5 px-4 text-right">Holati</th>
@@ -890,7 +890,7 @@ function IntegrationsContent({
                                     <Users className="h-4 w-4 text-primary" /> MoySklad xodimlarini biriktirish (User Mapping)
                                 </h3>
                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                    1Call operatorlarini MoySklad xodimlariga biriktiring, shunda qo'ng'iroqlar kontragent kartasida tegishli xodimga yoziladi.
+                                    Agent1Call operatorlarini MoySklad xodimlariga biriktiring, shunda qo'ng'iroqlar kontragent kartasida tegishli xodimga yoziladi.
                                 </p>
                             </div>
                             {moySklad?.is_active && (
@@ -903,7 +903,7 @@ function IntegrationsContent({
                         {moySklad?.is_active ? (
                             <form onSubmit={submitMapping} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end pt-2">
                                 <div className="space-y-1">
-                                    <label className="text-xs font-semibold">1Call Operatori: *</label>
+                                    <label className="text-xs font-semibold">Agent1Call Operatori: *</label>
                                     <select
                                         value={mappingForm.data.user_id}
                                         onChange={(e) => mappingForm.setData("user_id", e.target.value)}
@@ -960,7 +960,7 @@ function IntegrationsContent({
                                     <thead className="bg-muted/50 border-b border-border text-muted-foreground uppercase font-medium">
                                         <tr>
                                             <th className="py-2.5 px-4 w-10 text-center">№</th>
-                                            <th className="py-2.5 px-4">1Call Operatori</th>
+                                            <th className="py-2.5 px-4">Agent1Call Operatori</th>
                                             <th className="py-2.5 px-4">MoySklad Login / UID</th>
                                             <th className="py-2.5 px-4">MoySklad Xodim Ismi</th>
                                             <th className="py-2.5 px-4 text-right">Holati</th>

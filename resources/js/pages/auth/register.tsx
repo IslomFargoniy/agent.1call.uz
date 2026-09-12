@@ -89,7 +89,7 @@ export default function Register({ passwordRules }: Props) {
                         <div className="mt-8 rounded-2xl border border-border/50 bg-background/70 p-4 sm:p-5 backdrop-blur-xs">
                             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
                                 <Zap className="h-3.5 w-3.5 text-primary" />
-                                <span>1Call platformasi imkoniyatlari</span>
+                                <span>Agent1Call platformasi imkoniyatlari</span>
                             </h3>
 
                             <div className="space-y-2.5 text-xs">
@@ -286,5 +286,5 @@ export default function Register({ passwordRules }: Props) {
 
 Register.layout = {
     title: 'Ro‘yxatdan o‘tish',
-    description: '1Call tizimidan foydalanish uchun maʼlumotlaringizni kiriting',
+    description: 'Agent1Call tizimidan foydalanish uchun maʼlumotlaringizni kiriting',
 };

@@ -109,7 +109,7 @@ export default function AdminTariffs({ tariff: singleTariff, tariffs = [], usdRa
     const [recalculate, setRecalculate] = useState(true);
 
     // 2. Base Tariff State
-    const [baseName, setBaseName] = useState(tariff?.name || '1Call Standart');
+    const [baseName, setBaseName] = useState(tariff?.name || 'Agent1Call Standart');
     const [baseCode, setBaseCode] = useState(tariff?.code || 'standard');
     const [basePriceUzs, setBasePriceUzs] = useState(tariff?.base_price_monthly || 50000);
     const [basePriceUsd, setBasePriceUsd] = useState(tariff?.price_usd_monthly || 3.89);
@@ -363,7 +363,7 @@ export default function AdminTariffs({ tariff: singleTariff, tariffs = [], usdRa
                             {t("admin.tariffsTitle", "Yagona Tarif & To'lov Parametrlari")}
                         </h2>
                         <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-primary/10 text-primary border border-primary/20">
-                            1Call Agent Modeli
+                            Agent1Call Modeli
                         </span>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -499,7 +499,7 @@ export default function AdminTariffs({ tariff: singleTariff, tariffs = [], usdRa
                         <Input
                             value={baseName}
                             onChange={(e) => setBaseName(e.target.value)}
-                            placeholder="1Call Standart"
+                            placeholder="Agent1Call Standart"
                             required
                         />
                     </div>

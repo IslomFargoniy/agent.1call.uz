@@ -45,7 +45,7 @@ class DatabaseSeeder extends Seeder
 
         $tariffs = [
             [
-                'name' => '1Call Standart',
+                'name' => 'Agent1Call Standart',
                 'code' => 'standard',
                 'base_price_monthly' => 20000,
                 'price_usd_monthly' => 3.89,

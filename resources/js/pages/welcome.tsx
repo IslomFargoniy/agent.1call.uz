@@ -49,7 +49,7 @@ export default function Welcome() {
     const structuredData = {
         '@context': 'https://schema.org',
         '@type': 'SoftwareApplication',
-        'name': '1Call Agent',
+        'name': 'Agent1Call',
         'operatingSystem': 'Android, Web',
         'applicationCategory': 'BusinessApplication, Telephony',
         'offers': {
@@ -63,13 +63,13 @@ export default function Welcome() {
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50 font-sans selection:bg-blue-600 selection:text-white">
             <Head>
-                <title>1Call Agent — Smart Korporativ Telefoniya va CRM Integratsiyasi</title>
+                <title>Agent1Call — Smart Korporativ Telefoniya va CRM Integratsiyasi</title>
                 <meta
                     name="description"
                     content="Korporativ qo‘ng‘iroqlarni real-vaqtda boshqarish, AAC formatda ovoz yozish, amoCRM va MoySklad integratsiyalari hamda 14 kunlik bepul sinov davri."
                 />
                 <meta name="keywords" content="telefoniya, amocrm integratsiya, moysklad telefoniya, qo'ng'iroqlarni yozib olish, call tracking o'zbekiston, korporativ telefon, 1call" />
-                <meta property="og:title" content="1Call Agent — Smart Korporativ Telefoniya Platformasi" />
+                <meta property="og:title" content="Agent1Call — Smart Korporativ Telefoniya Platformasi" />
                 <meta property="og:description" content="Android telefonlaridagi korporativ qo‘ng‘iroqlarni markaziy boshqaring. amoCRM, MoySklad va qulay to‘lovlar." />
                 <meta property="og:type" content="website" />
                 <meta property="og:url" content="https://agent.1call.uz" />
@@ -84,12 +84,12 @@ export default function Welcome() {
                     <Link href="/" className="flex items-center gap-3 group">
                         <img
                             src="/images/1call_logo.png"
-                            alt="1Call Logo"
+                            alt="Agent1Call Logo"
                             className="h-11 w-11 rounded-xl object-contain shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform"
                         />
                         <div className="flex flex-col">
                             <span className="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white">
-                                1Call <span className="text-blue-600">Agent</span>
+                                Agent<span className="text-blue-600">1Call</span>
                             </span>
                             <span className="text-[10px] font-semibold tracking-widest uppercase text-slate-500 dark:text-slate-400">
                                 Corporate Telephony
@@ -147,7 +147,7 @@ export default function Welcome() {
 
                     {/* Main H1 */}
                     <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white max-w-5xl mx-auto leading-[1.15]">
-                        Kompaniyangiz savdo va xizmat sifatini <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500">1Call Agent</span> bilan yangi bosqichga olib chiqing
+                        Kompaniyangiz savdo va xizmat sifatini <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500">Agent1Call</span> bilan yangi bosqichga olib chiqing
                     </h1>
 
                     {/* Description */}
@@ -286,10 +286,10 @@ export default function Welcome() {
                         Mukammal Arxitektura
                     </h2>
                     <h3 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
-                        Nima uchun eng yetakchi kompaniyalar 1Call Agentni tanlaydi?
+                        Nima uchun eng yetakchi kompaniyalar Agent1Callni tanlaydi?
                     </h3>
                     <p className="text-slate-600 dark:text-slate-300 text-base sm:text-lg">
-                        Oddiy qo‘ng‘iroq yozuvchi ilovalardan farqli ravishda, 1Call Agent — yaxlit korporativ ekotizimdir.
+                        Oddiy qo‘ng‘iroq yozuvchi ilovalardan farqli ravishda, Agent1Call — yaxlit korporativ ekotizimdir.
                     </p>
                 </div>
 
@@ -379,7 +379,7 @@ export default function Welcome() {
                             <span className="text-5xl font-black text-blue-600/20">01</span>
                             <h4 className="text-xl font-bold">Ro‘yxatdan o‘ting</h4>
                             <p className="text-sm text-slate-600 dark:text-slate-400">
-                                1Call saytida Google yoki email orqali hisob yarating. Sizga darhol 14 kunlik bepul sinov davri faollashadi.
+                                Agent1Call saytida Google yoki email orqali hisob yarating. Sizga darhol 14 kunlik bepul sinov davri faollashadi.
                             </p>
                         </div>
 
@@ -387,7 +387,7 @@ export default function Welcome() {
                             <span className="text-5xl font-black text-blue-600/20">02</span>
                             <h4 className="text-xl font-bold">Ilovani o‘rnating</h4>
                             <p className="text-sm text-slate-600 dark:text-slate-400">
-                                Operatoringiz telefoniga 1Call Agent ilovasini yuklang va QR-kodni skanerlab 5 soniyada tizimga ulang.
+                                Operatoringiz telefoniga Agent1Call ilovasini yuklang va QR-kodni skanerlab 5 soniyada tizimga ulang.
                             </p>
                         </div>
 
@@ -541,7 +541,7 @@ export default function Welcome() {
                         {[
                             {
                                 q: 'Android 14 va 15 versiyalarida qo‘ng‘iroqlar ovozi yoziladimi?',
-                                a: 'Ha, albatta. 1Call Agent Android tizimidagi eng zamonaviy AccessibilityService API dan foydalanadi. Bu Android 10 dan to eng so‘nggi Android 15 gacha bo‘lgan barcha smartfonlarda ikki tomonlama ovoz yozishni to‘liq ta’minlaydi.',
+                                a: 'Ha, albatta. Agent1Call Android tizimidagi eng zamonaviy AccessibilityService API dan foydalanadi. Bu Android 10 dan to eng so‘nggi Android 15 gacha bo‘lgan barcha smartfonlarda ikki tomonlama ovoz yozishni to‘liq ta’minlaydi.',
                             },
                             {
                                 q: 'Agar internet o‘chib qolsa, audio yozuvlar yo‘qoladimi?',
@@ -614,10 +614,10 @@ export default function Welcome() {
                     <div className="flex items-center gap-3">
                         <img
                             src="/images/1call_logo.png"
-                            alt="1Call Logo"
+                            alt="Agent1Call Logo"
                             className="h-8 w-8 rounded-lg object-contain"
                         />
-                        <span className="font-bold text-white text-base">1Call Agent</span>
+                        <span className="font-bold text-white text-base">Agent1Call</span>
                         <span className="text-xs">© {new Date().getFullYear()} {t('welcome.copyright', 'Barcha huquqlar himoyalangan.')}</span>
                     </div>
 
