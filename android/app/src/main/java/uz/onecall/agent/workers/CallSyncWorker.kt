@@ -86,16 +86,17 @@ class CallSyncWorker(
                         )
                     )
 
-                    // Optional: remove local file after successful sync to save phone memory
-                    // Only delete internal in-app recording cache, never delete user's native recordings from Samsung dialer
+                    // Keep recent local recordings for in-app instant playback.
+                    // Only cleanup cached internal recordings older than 7 days to preserve phone storage:
                     if (!call.audioFilePath.isNullOrEmpty()) {
                         try {
                             val f = File(call.audioFilePath)
-                            if (f.absolutePath.startsWith(app.filesDir.absolutePath)) {
+                            val sevenDaysAgo = System.currentTimeMillis() - (7L * 24 * 60 * 60 * 1000)
+                            if (f.absolutePath.startsWith(app.filesDir.absolutePath) && f.lastModified() < sevenDaysAgo) {
                                 f.delete()
                             }
                         } catch (e: Exception) {
-                            Log.w(TAG, "Failed to delete uploaded audio file", e)
+                            Log.w(TAG, "Failed to cleanup old audio file", e)
                         }
                     }
                 } else {

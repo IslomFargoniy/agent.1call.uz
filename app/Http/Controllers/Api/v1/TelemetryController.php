@@ -13,6 +13,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TelemetryController extends Controller
 {
@@ -241,13 +243,37 @@ class TelemetryController extends Controller
                 basename($path)
             );
 
-            $call->update([
+            // Check actual audio duration using ffprobe if available
+            $detectedDuration = null;
+            $storageDisk = Storage::disk($disk);
+            if (method_exists($storageDisk, 'path')) {
+                $fullStoredPath = $storageDisk->path($path);
+                if (file_exists($fullStoredPath)) {
+                    $cmd = "ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 " . escapeshellarg($fullStoredPath) . " 2>/dev/null";
+                    $output = @shell_exec($cmd);
+                    if ($output !== null && is_numeric(trim($output))) {
+                        $sec = (int) round((float) trim($output));
+                        if ($sec > 0) {
+                            $detectedDuration = $sec;
+                        }
+                    }
+                }
+            }
+
+            $updateData = [
                 'recording_disk' => $disk,
                 'recording_path' => $path,
                 'recording_format' => $ext,
                 'recording_size_bytes' => $audioFile->getSize(),
                 'recording_status' => 'uploaded',
-            ]);
+            ];
+
+            if ($detectedDuration !== null && ($durationSeconds <= 0 || abs($detectedDuration - $durationSeconds) > 2)) {
+                $updateData['duration_seconds'] = $detectedDuration;
+                $call->duration_seconds = $detectedDuration;
+            }
+
+            $call->update($updateData);
         }
 
         // Broadcast to live call log
@@ -268,5 +294,48 @@ class TelemetryController extends Controller
             'call_id' => (string) $call->id,
             'recording_status' => $call->recording_status,
         ]);
+    }
+
+    /**
+     * Stream recorded audio to paired Android device.
+     */
+    public function audio(Call $call, Request $request): StreamedResponse|BinaryFileResponse
+    {
+        /** @var Device $device */
+        $device = $request->user();
+        $tenant = $device->tenant;
+
+        if ($call->tenant_id !== $tenant->id) {
+            abort(403, 'Ushbu audio yozuv boshqa korxonaga tegishli.');
+        }
+
+        if (! $call->hasRecording()) {
+            abort(404, 'Audio yozuv mavjud emas.');
+        }
+
+        $disk = $call->recording_disk ?: config('filesystems.default');
+        if (! Storage::disk($disk)->exists($call->recording_path)) {
+            abort(404, 'Audio fayl saqlash joyida topilmadi.');
+        }
+
+        $storageDisk = Storage::disk($disk);
+        if (method_exists($storageDisk, 'path')) {
+            $fullPath = $storageDisk->path($call->recording_path);
+            if (file_exists($fullPath)) {
+                return response()->file($fullPath, [
+                    'Content-Type' => 'audio/mp4',
+                    'Accept-Ranges' => 'bytes',
+                ]);
+            }
+        }
+
+        return Storage::disk($disk)->response(
+            $call->recording_path,
+            "call_{$call->id}.{$call->recording_format}",
+            [
+                'Content-Type' => 'audio/mp4',
+                'Accept-Ranges' => 'bytes',
+            ]
+        );
     }
 }

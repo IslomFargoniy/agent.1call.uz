@@ -40,6 +40,17 @@ import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SimCard
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
+import uz.onecall.agent.core.AudioPlayerManager
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -106,6 +117,12 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     val app = OneCallApplication.instance
     val prefs = app.preferences
+
+    DisposableEffect(Unit) {
+        onDispose {
+            AudioPlayerManager.stop()
+        }
+    }
     val dao = app.database.callDao()
 
     val calendar = Calendar.getInstance().apply {
@@ -553,7 +570,7 @@ fun HomeScreen(
                 }
             } else {
                 items(recentCalls) { call ->
-                    CallRecordItem(call, isDualSim)
+                    CallRecordItem(call, isDualSim, prefs.baseUrl, prefs.deviceToken)
                 }
             }
         }
@@ -604,7 +621,13 @@ fun HomeScreen(
 }
 
 @Composable
-fun CallRecordItem(call: LocalCallRecord, isDualSim: Boolean = false) {
+fun CallRecordItem(
+    call: LocalCallRecord,
+    isDualSim: Boolean = false,
+    baseUrl: String = "https://agent.1call.uz",
+    token: String? = null
+) {
+    val context = LocalContext.current
     val isIncoming = call.direction.equals("INCOMING", ignoreCase = true)
     val timeFormat = SimpleDateFormat("HH:mm, dd MMM", Locale.getDefault())
     val formattedTime = timeFormat.format(Date(call.startedAt * 1000))
@@ -612,66 +635,164 @@ fun CallRecordItem(call: LocalCallRecord, isDualSim: Boolean = false) {
     val seconds = call.durationSeconds % 60
     val formattedDuration = String.format("%02d:%02d", minutes, seconds)
 
+    val playingCallId by AudioPlayerManager.playingCallId.collectAsState()
+    val isPlaying by AudioPlayerManager.isPlaying.collectAsState()
+    val currentPosMs by AudioPlayerManager.currentPositionMs.collectAsState()
+    val durationMs by AudioPlayerManager.durationMs.collectAsState()
+    val isLoading by AudioPlayerManager.isLoading.collectAsState()
+
+    val isCurrent = playingCallId == call.id
+    val hasAudio = !call.audioFilePath.isNullOrEmpty() || !call.remoteCallId.isNullOrEmpty()
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(12.dp)
         ) {
-            Icon(
-                imageVector = if (isIncoming) Icons.Default.CallReceived else Icons.Default.CallMade,
-                contentDescription = null,
-                tint = if (isIncoming) PrimaryBlue else Color(0xFF8B5CF6),
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = call.phoneNumber,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 15.sp
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = if (isIncoming) Icons.Default.CallReceived else Icons.Default.CallMade,
+                    contentDescription = null,
+                    tint = if (isIncoming) PrimaryBlue else Color(0xFF8B5CF6),
+                    modifier = Modifier.size(24.dp)
                 )
-                val simLabel = if (isDualSim) " • SIM ${if (call.simSlot == 2) 2 else 1}" else ""
-                Text(
-                    text = "$formattedTime • $formattedDuration$simLabel",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-
-            when (call.syncStatus) {
-                LocalCallRecord.STATUS_SYNCED -> {
-                    Icon(
-                        imageVector = Icons.Default.CloudDone,
-                        contentDescription = "Yuklangan",
-                        tint = AccentGreen,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                LocalCallRecord.STATUS_UPLOADING -> {
-                    Icon(
-                        imageVector = Icons.Default.CloudSync,
-                        contentDescription = "Yuklanmoqda",
-                        tint = PrimaryBlue,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                else -> {
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Kutilmoqda",
-                        fontSize = 11.sp,
-                        color = Color(0xFFF59E0B),
-                        fontWeight = FontWeight.Medium
+                        text = call.phoneNumber,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp
                     )
+                    val simLabel = if (isDualSim) " • SIM ${if (call.simSlot == 2) 2 else 1}" else ""
+                    Text(
+                        text = "$formattedTime • $formattedDuration$simLabel",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Play / Pause Button for audio
+                if (hasAudio) {
+                    if (isCurrent && isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(26.dp).padding(3.dp),
+                            strokeWidth = 2.5.dp,
+                            color = PrimaryBlue
+                        )
+                    } else {
+                        IconButton(
+                            onClick = {
+                                AudioPlayerManager.playOrToggle(context, call, baseUrl, token)
+                            },
+                            modifier = Modifier
+                                .size(34.dp)
+                                .background(
+                                    color = if (isCurrent && isPlaying) PrimaryBlue else PrimaryBlue.copy(alpha = 0.12f),
+                                    shape = CircleShape
+                                )
+                        ) {
+                            Icon(
+                                imageVector = if (isCurrent && isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = "Audio tinglash",
+                                tint = if (isCurrent && isPlaying) Color.White else PrimaryBlue,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                }
+
+                when (call.syncStatus) {
+                    LocalCallRecord.STATUS_SYNCED -> {
+                        Icon(
+                            imageVector = Icons.Default.CloudDone,
+                            contentDescription = "Yuklangan",
+                            tint = AccentGreen,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    LocalCallRecord.STATUS_UPLOADING -> {
+                        Icon(
+                            imageVector = Icons.Default.CloudSync,
+                            contentDescription = "Yuklanmoqda",
+                            tint = PrimaryBlue,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    else -> {
+                        Text(
+                            text = "Kutilmoqda",
+                            fontSize = 11.sp,
+                            color = Color(0xFFF59E0B),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+
+            // Inline progress slider when active in player
+            if (isCurrent) {
+                Spacer(modifier = Modifier.height(8.dp))
+                val totalMs = if (durationMs > 0) durationMs else maxOf(call.durationSeconds * 1000, 1000)
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                ) {
+                    Slider(
+                        value = currentPosMs.toFloat().coerceIn(0f, totalMs.toFloat()),
+                        onValueChange = { AudioPlayerManager.seekTo(it.toInt()) },
+                        valueRange = 0f..totalMs.toFloat(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(20.dp),
+                        colors = SliderDefaults.colors(
+                            thumbColor = PrimaryBlue,
+                            activeTrackColor = PrimaryBlue,
+                            inactiveTrackColor = PrimaryBlue.copy(alpha = 0.25f)
+                        )
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = formatTimeMs(currentPosMs),
+                            fontSize = 10.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            text = formatTimeMs(totalMs),
+                            fontSize = 10.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+private fun formatTimeMs(ms: Int): String {
+    val totalSecs = Math.max(0, ms / 1000)
+    val minutes = totalSecs / 60
+    val seconds = totalSecs % 60
+    return String.format("%02d:%02d", minutes, seconds)
 }

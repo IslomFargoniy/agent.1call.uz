@@ -23,6 +23,7 @@ import uz.onecall.agent.core.DualSimFilter
 import uz.onecall.agent.core.SamsungRecordingFinder
 import uz.onecall.agent.core.WorkHoursFilter
 import uz.onecall.agent.data.local.LocalCallRecord
+import java.io.File
 import uz.onecall.agent.data.remote.ApiClient
 import uz.onecall.agent.data.remote.RingingRequest
 import uz.onecall.agent.workers.CallSyncWorker
@@ -236,6 +237,23 @@ class CallAccessibilityService : AccessibilityService() {
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error checking Samsung native recording", e)
+                    }
+
+                    // Extract exact audio duration from recorded audio file
+                    try {
+                        if (!finalAudioPath.isNullOrEmpty() && File(finalAudioPath).exists() && File(finalAudioPath).length() > 0) {
+                            val mmr = android.media.MediaMetadataRetriever()
+                            mmr.setDataSource(finalAudioPath)
+                            val durMs = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+                            val fileDurSec = (durMs / 1000).toInt()
+                            if (fileDurSec > 0) {
+                                Log.i(TAG, "Extracted accurate audio file duration: ${fileDurSec}s (previous was ${duration}s)")
+                                duration = fileDurSec
+                            }
+                            mmr.release()
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Could not extract duration from audio file: ${e.message}")
                     }
 
                     val record = LocalCallRecord(

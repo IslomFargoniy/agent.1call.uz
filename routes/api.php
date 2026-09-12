@@ -49,5 +49,6 @@ Route::prefix('v1')->group(function () {
         Route::post('/telemetry/heartbeat', [TelemetryController::class, 'heartbeat'])->name('api.v1.telemetry.heartbeat');
         Route::post('/telemetry/ringing', [TelemetryController::class, 'ringing'])->name('api.v1.telemetry.ringing');
         Route::post('/telemetry/calls', [TelemetryController::class, 'calls'])->name('api.v1.telemetry.calls');
+        Route::get('/telemetry/calls/{call}/audio', [TelemetryController::class, 'audio'])->name('api.v1.telemetry.calls.audio');
     });
 });

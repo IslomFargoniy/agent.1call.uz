@@ -1,8 +1,8 @@
 {
-  "version": "1.0.9",
-  "version_code": 10,
-  "file_size": 24482212,
+  "version": "1.1.0",
+  "version_code": 11,
+  "file_size": 24503398,
   "download_url": "/downloads/1call-agent.apk",
-  "changelog": "1Call Agent v1.0.9:\n- Ilovaga ko'p tillilik to'liq qo'shildi: O'zbekcha (default), Ruscha va Inglizcha (UZ, RU, EN)\n- Sozlamalar va boshqa sahifalarda tilni 1 bosish orqali tezkor almashtirish imkoniyati\n- Ilova interfeysi qayta yuklanmasdan dinamik ravishda tanlangan tilga moslashadi\n- Tizim bildirishnomalari va xizmatlar uchun ham tillar moslashtirildi",
-  "updated_at": "2026-09-12T01:38:53.427162Z"
+  "changelog": "1Call Agent v1.1.0:\n- Ilovaning o'zida qo'ng'iroqlar audiosini tinglash (Play/Pause, vaqt, progress slayderi) imkoniyati qo'shildi\n- Qo'ng'iroq audiosining haqiqiy davomiyligini aniqlash tizimi yaxshilandi\n- Mahalliy xotirada so'nggi yozuvlar saqlanadi va ularni internetsiz eshitish mumkin",
+  "updated_at": "2026-09-12T06:04:28.638413+00:00"
 }

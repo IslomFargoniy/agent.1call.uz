@@ -111,6 +111,17 @@ class CallController extends Controller
             abort(404, 'Audio fayl saqlash joyida topilmadi.');
         }
 
+        $storageDisk = Storage::disk($disk);
+        if (method_exists($storageDisk, 'path')) {
+            $fullPath = $storageDisk->path($call->recording_path);
+            if (file_exists($fullPath)) {
+                return response()->file($fullPath, [
+                    'Content-Type' => 'audio/mp4',
+                    'Accept-Ranges' => 'bytes',
+                ]);
+            }
+        }
+
         return Storage::disk($disk)->response(
             $call->recording_path,
             "call_{$call->id}.{$call->recording_format}",

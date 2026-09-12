@@ -12,29 +12,24 @@ export function WaveformPlayer({ callId, durationSeconds, phoneNumber }: Wavefor
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState<number>(durationSeconds || 0);
     const [isMuted, setIsMuted] = useState(false);
     const [playbackRate, setPlaybackRate] = useState(1);
 
     const streamUrl = `/calls/${callId}/stream`;
 
     useEffect(() => {
+        if (durationSeconds > 0 && duration === 0) {
+            setDuration(durationSeconds);
+        }
+    }, [durationSeconds]);
+
+    const syncDuration = () => {
         const audio = audioRef.current;
-        if (!audio) return;
-
-        const updateTime = () => setCurrentTime(audio.currentTime);
-        const handleEnded = () => {
-            setIsPlaying(false);
-            setCurrentTime(0);
-        };
-
-        audio.addEventListener('timeupdate', updateTime);
-        audio.addEventListener('ended', handleEnded);
-
-        return () => {
-            audio.removeEventListener('timeupdate', updateTime);
-            audio.removeEventListener('ended', handleEnded);
-        };
-    }, []);
+        if (audio && Number.isFinite(audio.duration) && audio.duration > 0) {
+            setDuration(Math.round(audio.duration));
+        }
+    };
 
     const togglePlay = () => {
         if (!audioRef.current) return;
@@ -42,15 +37,21 @@ export function WaveformPlayer({ callId, durationSeconds, phoneNumber }: Wavefor
             audioRef.current.pause();
             setIsPlaying(false);
         } else {
-            audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+            audioRef.current
+                .play()
+                .then(() => {
+                    setIsPlaying(true);
+                    syncDuration();
+                })
+                .catch(() => setIsPlaying(false));
         }
     };
 
     const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
         const time = Number(e.target.value);
+        setCurrentTime(time);
         if (audioRef.current) {
             audioRef.current.currentTime = time;
-            setCurrentTime(time);
         }
     };
 
@@ -70,20 +71,43 @@ export function WaveformPlayer({ callId, durationSeconds, phoneNumber }: Wavefor
     };
 
     const formatTime = (secs: number) => {
-        const m = Math.floor(secs / 60).toString().padStart(2, '0');
-        const s = Math.floor(secs % 60).toString().padStart(2, '0');
+        const safeSecs = Math.max(0, Math.floor(secs));
+        const m = Math.floor(safeSecs / 60).toString().padStart(2, '0');
+        const s = (safeSecs % 60).toString().padStart(2, '0');
         return `${m}:${s}`;
     };
 
+    const effectiveDuration = duration > 0 ? duration : (durationSeconds > 0 ? durationSeconds : 1);
+
     return (
         <div className="flex items-center gap-3 bg-muted/60 p-2.5 rounded-lg border border-border/70 w-full max-w-md">
-            <audio ref={audioRef} src={streamUrl} preload="none" />
+            <audio
+                ref={audioRef}
+                src={streamUrl}
+                preload="metadata"
+                onLoadedMetadata={syncDuration}
+                onDurationChange={syncDuration}
+                onCanPlay={syncDuration}
+                onTimeUpdate={() => {
+                    if (audioRef.current) {
+                        setCurrentTime(audioRef.current.currentTime);
+                        syncDuration();
+                    }
+                }}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onEnded={() => {
+                    setIsPlaying(false);
+                    setCurrentTime(0);
+                }}
+            />
 
             <Button
                 variant="default"
                 size="icon"
                 className="h-8 w-8 rounded-full shrink-0 shadow-sm"
                 onClick={togglePlay}
+                type="button"
             >
                 {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
             </Button>
@@ -92,14 +116,15 @@ export function WaveformPlayer({ callId, durationSeconds, phoneNumber }: Wavefor
                 <input
                     type="range"
                     min={0}
-                    max={durationSeconds || 1}
+                    max={effectiveDuration}
+                    step={0.1}
                     value={currentTime}
                     onChange={handleSeek}
                     className="h-1.5 w-full cursor-pointer accent-primary rounded-lg bg-secondary"
                 />
                 <div className="flex justify-between items-center text-[11px] text-muted-foreground font-mono">
                     <span>{formatTime(currentTime)}</span>
-                    <span>{formatTime(durationSeconds)}</span>
+                    <span>{formatTime(effectiveDuration)}</span>
                 </div>
             </div>
 
@@ -108,6 +133,7 @@ export function WaveformPlayer({ callId, durationSeconds, phoneNumber }: Wavefor
                 size="sm"
                 className="text-xs px-2 h-7 font-mono font-semibold"
                 onClick={cyclePlaybackRate}
+                type="button"
             >
                 {playbackRate}x
             </Button>
@@ -117,6 +143,7 @@ export function WaveformPlayer({ callId, durationSeconds, phoneNumber }: Wavefor
                 size="icon"
                 className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
                 onClick={toggleMute}
+                type="button"
             >
                 {isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
             </Button>
