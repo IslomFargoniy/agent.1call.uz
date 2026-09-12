@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Head, router, Link } from "@inertiajs/react";
 import {
@@ -11,6 +11,8 @@ import {
     Smartphone,
     Zap,
     AlertTriangle,
+    Minus,
+    Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,12 +53,24 @@ interface BillingProps {
     paymentMethods: PaymentMethod[];
 }
 
+const DEVICE_STEPS = [1, 2, 5, 10, 20, 30, 50];
+
 export default function BillingIndex({ tenant, tariffs, paymentMethods }: BillingProps) {
     const { t } = useTranslation();
     const defaultTariff = tariffs[0] || null;
 
     const [selectedTariff, setSelectedTariff] = useState<Tariff | null>(defaultTariff);
     const [devicesCount, setDevicesCount] = useState(tenant?.allowed_devices_count || 2);
+
+    const currentStepIndex = useMemo(() => {
+        const exactIndex = DEVICE_STEPS.indexOf(devicesCount);
+        if (exactIndex !== -1) return exactIndex;
+        return DEVICE_STEPS.reduce((closestIdx, val, idx) =>
+            Math.abs(val - devicesCount) < Math.abs(DEVICE_STEPS[closestIdx] - devicesCount) ? idx : closestIdx, 0
+        );
+    }, [devicesCount]);
+
+    const progressPercent = (currentStepIndex / (DEVICE_STEPS.length - 1)) * 100;
     const [retentionDays, setRetentionDays] = useState(tenant?.audio_retention_days || 30);
     const [months, setMonths] = useState(1);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(paymentMethods[0]?.code || "payme");
@@ -235,25 +249,60 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                                 </h3>
                                 <p className="text-xs text-muted-foreground">{t("billing.step2DevicesDesc", "Bir vaqtda qo'ng'iroqlari yoziladigan xodimlar soni")}</p>
                             </div>
-                            <span className="text-xl font-bold font-mono text-primary">{devicesCount} {t("billing.devicesUnit", "ta")}</span>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-7 w-7 rounded-md"
+                                    onClick={() => {
+                                        const nextIdx = Math.max(0, currentStepIndex - 1);
+                                        setDevicesCount(DEVICE_STEPS[nextIdx]);
+                                    }}
+                                    disabled={currentStepIndex <= 0}
+                                >
+                                    <Minus className="h-3.5 w-3.5" />
+                                </Button>
+                                <span className="text-xl font-bold font-mono text-primary min-w-[2.5rem] text-center">
+                                    {devicesCount}
+                                </span>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-7 w-7 rounded-md"
+                                    onClick={() => {
+                                        const nextIdx = Math.min(DEVICE_STEPS.length - 1, currentStepIndex + 1);
+                                        setDevicesCount(DEVICE_STEPS[nextIdx]);
+                                    }}
+                                    disabled={currentStepIndex >= DEVICE_STEPS.length - 1}
+                                >
+                                    <Plus className="h-3.5 w-3.5" />
+                                </Button>
+                                <span className="text-sm font-semibold text-muted-foreground">{t("billing.devicesUnit", "ta")}</span>
+                            </div>
                         </div>
 
                         <div className="space-y-3">
                             <input
                                 type="range"
-                                min={1}
-                                max={50}
-                                value={devicesCount}
-                                onChange={(e) => setDevicesCount(Number(e.target.value))}
-                                className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                                min={0}
+                                max={DEVICE_STEPS.length - 1}
+                                step={1}
+                                value={currentStepIndex}
+                                onChange={(e) => setDevicesCount(DEVICE_STEPS[Number(e.target.value)])}
+                                style={{
+                                    background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${progressPercent}%, hsl(var(--secondary)) ${progressPercent}%, hsl(var(--secondary)) 100%)`,
+                                }}
+                                className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-primary"
                             />
-                            <div className="flex justify-between text-xs text-muted-foreground font-mono">
-                                {[1, 2, 5, 10, 20, 30, 50].map((num) => (
+                            <div className="flex justify-between text-xs text-muted-foreground font-mono pt-1">
+                                {DEVICE_STEPS.map((num) => (
                                     <button
                                         type="button"
                                         key={num}
                                         onClick={() => setDevicesCount(num)}
-                                        className={`px-2 py-0.5 rounded transition-colors ${devicesCount === num ? "bg-primary text-primary-foreground font-bold" : "hover:bg-muted"}`}
+                                        className={`px-2 py-0.5 rounded transition-colors ${devicesCount === num ? "bg-primary text-primary-foreground font-bold shadow-xs" : "hover:bg-muted"}`}
                                     >
                                         {num}
                                     </button>

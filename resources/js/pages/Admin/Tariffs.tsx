@@ -15,6 +15,8 @@ import {
     Sparkles,
     CheckCircle2,
     Sliders,
+    Minus,
+    Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +51,8 @@ interface Tariff {
     retention_options?: RetentionOption[];
     discounts?: Discount[];
 }
+
+const SIM_DEVICE_STEPS = [1, 2, 5, 10, 20, 30, 50];
 
 interface TariffsProps {
     tariff?: Tariff;
@@ -86,6 +90,16 @@ export default function AdminTariffs({ tariff: singleTariff, tariffs = [], usdRa
     const [simDevices, setSimDevices] = useState(5);
     const [simMonths, setSimMonths] = useState(3);
     const [simRetention, setSimRetention] = useState(60);
+
+    const simStepIndex = useMemo(() => {
+        const exactIndex = SIM_DEVICE_STEPS.indexOf(simDevices);
+        if (exactIndex !== -1) return exactIndex;
+        return SIM_DEVICE_STEPS.reduce((closestIdx, val, idx) =>
+            Math.abs(val - simDevices) < Math.abs(SIM_DEVICE_STEPS[closestIdx] - simDevices) ? idx : closestIdx, 0
+        );
+    }, [simDevices]);
+
+    const simProgressPercent = (simStepIndex / (SIM_DEVICE_STEPS.length - 1)) * 100;
 
     // Exchange Rate: Fetch CBU
     const handleFetchCbuRate = async () => {
@@ -725,23 +739,52 @@ export default function AdminTariffs({ tariff: singleTariff, tariffs = [], usdRa
                         <div className="space-y-2 bg-card p-4 rounded-xl border border-border">
                             <div className="flex justify-between items-center text-xs">
                                 <span className="font-semibold text-muted-foreground">Telefonlar soni:</span>
-                                <span className="font-mono font-bold text-primary">{simDevices} ta</span>
+                                <div className="flex items-center gap-1.5">
+                                    <button
+                                        type="button"
+                                        className="h-5 w-5 rounded inline-flex items-center justify-center border hover:bg-muted text-muted-foreground disabled:opacity-40"
+                                        onClick={() => {
+                                            const nextIdx = Math.max(0, simStepIndex - 1);
+                                            setSimDevices(SIM_DEVICE_STEPS[nextIdx]);
+                                        }}
+                                        disabled={simStepIndex <= 0}
+                                    >
+                                        <Minus className="h-3 w-3" />
+                                    </button>
+                                    <span className="font-mono font-bold text-primary min-w-[1.75rem] text-center">{simDevices}</span>
+                                    <button
+                                        type="button"
+                                        className="h-5 w-5 rounded inline-flex items-center justify-center border hover:bg-muted text-muted-foreground disabled:opacity-40"
+                                        onClick={() => {
+                                            const nextIdx = Math.min(SIM_DEVICE_STEPS.length - 1, simStepIndex + 1);
+                                            setSimDevices(SIM_DEVICE_STEPS[nextIdx]);
+                                        }}
+                                        disabled={simStepIndex >= SIM_DEVICE_STEPS.length - 1}
+                                    >
+                                        <Plus className="h-3 w-3" />
+                                    </button>
+                                    <span className="font-semibold text-muted-foreground text-[11px]">ta</span>
+                                </div>
                             </div>
                             <input
                                 type="range"
-                                min={1}
-                                max={50}
-                                value={simDevices}
-                                onChange={(e) => setSimDevices(Number(e.target.value))}
-                                className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                                min={0}
+                                max={SIM_DEVICE_STEPS.length - 1}
+                                step={1}
+                                value={simStepIndex}
+                                onChange={(e) => setSimDevices(SIM_DEVICE_STEPS[Number(e.target.value)])}
+                                style={{
+                                    background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${simProgressPercent}%, hsl(var(--secondary)) ${simProgressPercent}%, hsl(var(--secondary)) 100%)`,
+                                }}
+                                className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-primary"
                             />
-                            <div className="flex justify-between text-[11px] text-muted-foreground font-mono">
-                                {[2, 5, 10, 20, 50].map((n) => (
+                            <div className="flex justify-between text-[11px] text-muted-foreground font-mono pt-1">
+                                {SIM_DEVICE_STEPS.map((n) => (
                                     <button
                                         type="button"
                                         key={n}
                                         onClick={() => setSimDevices(n)}
-                                        className={`px-1.5 py-0.5 rounded ${simDevices === n ? 'bg-primary text-primary-foreground font-bold' : 'hover:bg-muted'}`}
+                                        className={`px-1.5 py-0.5 rounded transition-colors ${simDevices === n ? 'bg-primary text-primary-foreground font-bold shadow-xs' : 'hover:bg-muted'}`}
                                     >
                                         {n}
                                     </button>
