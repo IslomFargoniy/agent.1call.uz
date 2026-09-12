@@ -87,7 +87,8 @@
         "tariffs": "Tariffs & Exchange Rate",
         "paymentMethods": "Payment Methods",
         "invoices": "Payment Receipts",
-        "telegramBot": "Telegram Bot"
+        "telegramBot": "Telegram Bot",
+        "tenantsAndUsers": "Tenants & Users"
     },
     "trunks": {
         "title": "External Numbers (SIP Trunks)",

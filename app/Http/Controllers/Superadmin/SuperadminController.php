@@ -29,23 +29,54 @@ class SuperadminController extends Controller
     ) {}
 
     /**
-     * Tenants Management.
+     * Unified Tenants & Users Management for Superadmin.
      */
     public function tenants(Request $request): Response
     {
-        $query = Tenant::withCount(['users', 'devices', 'calls']);
-
-        if ($search = $request->input('search')) {
-            $query->where('name', 'like', "%{$search}%")->orWhere('slug', 'like', "%{$search}%");
-        }
-
+        $activeTab = $request->input('tab', 'tenants');
         $perPageInput = $request->input('per_page', 10);
         $perPage = (strtolower((string) $perPageInput) === 'all') ? 10000 : max(1, min(500, (int) $perPageInput));
-        $tenants = $query->orderByDesc('id')->paginate($perPage)->withQueryString();
+        $search = $request->input('search');
+
+        // 1. Tenants query
+        $tenantsQuery = Tenant::withCount(['users', 'devices', 'calls']);
+        if ($activeTab === 'tenants' && $search) {
+            $tenantsQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('slug', 'like', "%{$search}%");
+            });
+        }
+        $tenants = $tenantsQuery->orderByDesc('id')
+            ->paginate($perPage, ['*'], 'tenants_page')
+            ->withQueryString();
+
+        // 2. Users query
+        $usersQuery = User::with('tenant:id,name');
+        if ($activeTab === 'users' && $search) {
+            $usersQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone_number', 'like', "%{$search}%");
+            });
+        }
+        if ($role = $request->input('role')) {
+            $usersQuery->where('role', $role);
+        }
+        if ($tenantId = $request->input('tenant_id')) {
+            $usersQuery->where('tenant_id', $tenantId);
+        }
+        $users = $usersQuery->orderByDesc('id')
+            ->paginate($perPage, ['*'], 'users_page')
+            ->withQueryString();
+
+        $allTenants = Tenant::select('id', 'name')->orderBy('name')->get();
 
         return Inertia::render('Admin/Tenants', [
+            'activeTab' => $activeTab,
             'tenants' => $tenants,
-            'filters' => $request->only('search'),
+            'users' => $users,
+            'allTenants' => $allTenants,
+            'filters' => $request->only(['search', 'role', 'tenant_id', 'tab', 'per_page']),
         ]);
     }
 
@@ -76,30 +107,11 @@ class SuperadminController extends Controller
     }
 
     /**
-     * Users Management across all tenants.
+     * Users Management redirect to unified Tenants & Users page.
      */
-    public function users(Request $request): Response
+    public function users(Request $request): RedirectResponse
     {
-        $query = User::with('tenant:id,name');
-
-        if ($search = $request->input('search')) {
-            $query->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%");
-        }
-
-        if ($role = $request->input('role')) {
-            $query->where('role', $role);
-        }
-
-        $perPageInput = $request->input('per_page', 10);
-        $perPage = (strtolower((string) $perPageInput) === 'all') ? 10000 : max(1, min(500, (int) $perPageInput));
-        $users = $query->orderByDesc('id')->paginate($perPage)->withQueryString();
-        $tenants = Tenant::select('id', 'name')->get();
-
-        return Inertia::render('Admin/Users', [
-            'users' => $users,
-            'tenants' => $tenants,
-            'filters' => $request->only(['search', 'role']),
-        ]);
+        return redirect()->route('admin.tenants.index', array_merge($request->all(), ['tab' => 'users']));
     }
 
     /**

@@ -87,7 +87,8 @@
         "tariffs": "Tariflar & Valyuta kursi",
         "paymentMethods": "To'lov tizimlari",
         "invoices": "Karta cheklari",
-        "telegramBot": "Telegram Bot"
+        "telegramBot": "Telegram Bot",
+        "tenantsAndUsers": "Kompaniyalar va Xodimlar"
     },
     "trunks": {
         "title": "Tashqi Raqamlar (SIP Trunks)",

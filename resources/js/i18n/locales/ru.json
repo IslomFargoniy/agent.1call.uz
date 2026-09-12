@@ -87,7 +87,8 @@
         "tariffs": "Тарифы и Курс валют",
         "paymentMethods": "Платежные системы",
         "invoices": "Чеки оплаты",
-        "telegramBot": "Telegram Бот"
+        "telegramBot": "Telegram Бот",
+        "tenantsAndUsers": "Компании и Сотрудники"
     },
     "trunks": {
         "title": "Внешние Номера (SIP Trunks)",
