@@ -60,19 +60,54 @@ interface BillingProps {
     currentSubscription?: any;
 }
 
-const DEVICE_MARKS = [1, 2, 5, 10, 20, 30, 50];
-
-function countToPercent(count: number, min: number = 1, max: number = 50): number {
-    if (count <= min) return 0;
-    if (count >= max) return 100;
-    return ((count - min) / (max - min)) * 100;
+function getMarks(min: number, max: number = 50): number[] {
+    const defaultMarks = [1, 2, 5, 10, 20, 30, 50];
+    const filtered = defaultMarks.filter((m) => m >= min && m <= max);
+    if (!filtered.includes(min)) {
+        filtered.unshift(min);
+    }
+    if (!filtered.includes(max)) {
+        filtered.push(max);
+    }
+    return Array.from(new Set(filtered)).sort((a, b) => a - b);
 }
 
-function percentToCount(percent: number, min: number = 1, max: number = 50): number {
-    if (percent <= 0) return min;
-    if (percent >= 100) return max;
-    const raw = min + (percent / 100) * (max - min);
-    return Math.max(min, Math.min(max, Math.round(raw)));
+function countToSliderPercent(count: number, marks: number[]): number {
+    if (marks.length < 2) return 0;
+    if (count <= marks[0]) return 0;
+    if (count >= marks[marks.length - 1]) return 100;
+
+    const n = marks.length - 1;
+    for (let i = 0; i < n; i++) {
+        const minC = marks[i];
+        const maxC = marks[i + 1];
+        if (count >= minC && count <= maxC) {
+            const minP = (i / n) * 100;
+            const maxP = ((i + 1) / n) * 100;
+            const fraction = (count - minC) / (maxC - minC);
+            return minP + fraction * (maxP - minP);
+        }
+    }
+    return 100;
+}
+
+function sliderPercentToCount(percent: number, marks: number[]): number {
+    if (marks.length < 2) return marks[0] || 1;
+    if (percent <= 0) return marks[0];
+    if (percent >= 100) return marks[marks.length - 1];
+
+    const n = marks.length - 1;
+    for (let i = 0; i < n; i++) {
+        const minP = (i / n) * 100;
+        const maxP = ((i + 1) / n) * 100;
+        if (percent >= minP && percent <= maxP) {
+            const minC = marks[i];
+            const maxC = marks[i + 1];
+            const fraction = (percent - minP) / (maxP - minP);
+            return Math.max(minC, Math.min(maxC, Math.round(minC + fraction * (maxC - minC))));
+        }
+    }
+    return marks[marks.length - 1];
 }
 
 export default function BillingIndex({ tenant, tariffs, paymentMethods }: BillingProps) {
@@ -98,6 +133,22 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
 
     // Standard devices count (for trial / expired)
     const [standardDevicesCount, setStandardDevicesCount] = useState<number>(currentAllowed || 2);
+
+    const renewalMarks = useMemo(() => {
+        return getMarks(hasActivePaid ? currentAllowed : 1, 50);
+    }, [hasActivePaid, currentAllowed]);
+
+    const renewalPercent = useMemo(() => {
+        return countToSliderPercent(hasActivePaid ? renewalDevicesCount : standardDevicesCount, renewalMarks);
+    }, [hasActivePaid, renewalDevicesCount, standardDevicesCount, renewalMarks]);
+
+    const upgradeMarks = useMemo(() => {
+        return getMarks(currentAllowed + 1, 50);
+    }, [currentAllowed]);
+
+    const upgradePercent = useMemo(() => {
+        return countToSliderPercent(upgradeTargetDevices, upgradeMarks);
+    }, [upgradeTargetDevices, upgradeMarks]);
 
     const [selectedTariff, setSelectedTariff] = useState<Tariff | null>(defaultTariff);
     const [retentionDays, setRetentionDays] = useState(tenant?.audio_retention_days || 30);
@@ -401,13 +452,13 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                                         <div className="w-full h-2 bg-secondary rounded-full overflow-hidden relative">
                                             <div
                                                 className="h-full bg-primary transition-all duration-75"
-                                                style={{ width: `${countToPercent(upgradeTargetDevices, currentAllowed + 1, 50)}%` }}
+                                                style={{ width: `calc(14px + (100% - 28px) * ${upgradePercent / 100})` }}
                                             />
                                         </div>
                                         <div
                                             className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 bg-background border-2 border-primary rounded-full shadow-md pointer-events-none transition-all duration-75 flex items-center justify-center ring-2 ring-primary/20"
                                             style={{
-                                                left: `calc(10px + (100% - 20px) * ${countToPercent(upgradeTargetDevices, currentAllowed + 1, 50) / 100})`,
+                                                left: `calc(14px + (100% - 28px) * ${upgradePercent / 100})`,
                                             }}
                                         >
                                             <div className="w-1.5 h-1.5 rounded-full bg-primary" />
@@ -417,33 +468,29 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                                             min={0}
                                             max={100}
                                             step={0.1}
-                                            value={countToPercent(upgradeTargetDevices, currentAllowed + 1, 50)}
-                                            onChange={(e) => setUpgradeTargetDevices(percentToCount(Number(e.target.value), currentAllowed + 1, 50))}
+                                            value={upgradePercent}
+                                            onChange={(e) => setUpgradeTargetDevices(sliderPercentToCount(Number(e.target.value), upgradeMarks))}
                                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                             aria-label="Telefonlar soni"
                                         />
                                     </div>
 
-                                    {/* Quick Increment Buttons */}
-                                    <div className="flex flex-wrap gap-2 pt-1">
-                                        {[1, 2, 3, 5, 10, 20].map((add) => {
-                                            const val = currentAllowed + add;
-                                            if (val > 50) return null;
-                                            return (
-                                                <button
-                                                    type="button"
-                                                    key={add}
-                                                    onClick={() => setUpgradeTargetDevices(val)}
-                                                    className={`py-1 px-2.5 rounded-lg text-xs font-semibold transition-all ${
-                                                        upgradeTargetDevices === val
-                                                            ? "bg-primary text-primary-foreground shadow-xs"
-                                                            : "bg-secondary text-secondary-foreground hover:bg-muted"
-                                                    }`}
-                                                >
-                                                    +{add} ta ({val} jami)
-                                                </button>
-                                            );
-                                        })}
+                                    {/* Marks Buttons aligned with slider */}
+                                    <div className="flex justify-between text-xs text-muted-foreground font-mono pt-0.5">
+                                        {upgradeMarks.map((num) => (
+                                            <button
+                                                type="button"
+                                                key={num}
+                                                onClick={() => setUpgradeTargetDevices(num)}
+                                                className={`min-w-[1.75rem] py-0.5 px-1 rounded text-center transition-all ${
+                                                    upgradeTargetDevices === num
+                                                        ? "bg-primary text-primary-foreground font-bold shadow-xs scale-105"
+                                                        : "hover:bg-muted"
+                                                }`}
+                                            >
+                                                {num}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
 
@@ -526,14 +573,14 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                                             <div
                                                 className="h-full bg-primary transition-all duration-75"
                                                 style={{
-                                                    width: `${countToPercent(hasActivePaid ? renewalDevicesCount : standardDevicesCount, hasActivePaid ? currentAllowed : 1, 50)}%`,
+                                                    width: `calc(14px + (100% - 28px) * ${renewalPercent / 100})`,
                                                 }}
                                             />
                                         </div>
                                         <div
                                             className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 bg-background border-2 border-primary rounded-full shadow-md pointer-events-none transition-all duration-75 flex items-center justify-center ring-2 ring-primary/20"
                                             style={{
-                                                left: `calc(10px + (100% - 20px) * ${countToPercent(hasActivePaid ? renewalDevicesCount : standardDevicesCount, hasActivePaid ? currentAllowed : 1, 50) / 100})`,
+                                                left: `calc(14px + (100% - 28px) * ${renewalPercent / 100})`,
                                             }}
                                         >
                                             <div className="w-1.5 h-1.5 rounded-full bg-primary" />
@@ -543,9 +590,9 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                                             min={0}
                                             max={100}
                                             step={0.1}
-                                            value={countToPercent(hasActivePaid ? renewalDevicesCount : standardDevicesCount, hasActivePaid ? currentAllowed : 1, 50)}
+                                            value={renewalPercent}
                                             onChange={(e) => {
-                                                const val = percentToCount(Number(e.target.value), hasActivePaid ? currentAllowed : 1, 50);
+                                                const val = sliderPercentToCount(Number(e.target.value), renewalMarks);
                                                 if (hasActivePaid) setRenewalDevicesCount(val);
                                                 else setStandardDevicesCount(val);
                                             }}
@@ -555,9 +602,7 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                                     </div>
 
                                     <div className="flex justify-between text-xs text-muted-foreground font-mono pt-0.5">
-                                        {DEVICE_MARKS.map((num) => {
-                                            const minRequired = hasActivePaid ? currentAllowed : 1;
-                                            if (num < minRequired) return null;
+                                        {renewalMarks.map((num) => {
                                             const activeCount = hasActivePaid ? renewalDevicesCount : standardDevicesCount;
                                             return (
                                                 <button
