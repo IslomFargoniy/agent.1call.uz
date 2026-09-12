@@ -148,6 +148,6 @@ class DatabaseSeeder extends Seeder
         }
 
         // 4. PayUz Payment Systems & Params
-        $this->call(\Goodoneuz\PayUz\Database\Seeds\PayUzSeeder::class);
+        $this->call(PayUzInitSeeder::class);
     }
 }
