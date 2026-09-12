@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { WaveformPlayer } from '@/components/waveform-player';
+import { PaginationNav } from '@/components/ui/pagination-nav';
 
 interface CallRecord {
     id: number;
@@ -178,6 +179,7 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                     <table className="w-full text-left text-sm">
                         <thead className="bg-muted/50 border-b border-border text-muted-foreground text-xs uppercase font-medium">
                             <tr>
+                                <th className="py-3 px-4 w-12 text-center">№</th>
                                 <th className="py-3 px-4">{t('calls.directionNumber', "Yo'nalish / Raqam")}</th>
                                 <th className="py-3 px-4">{t('calls.deviceSim', 'Qurilma / SIM')}</th>
                                 <th className="py-3 px-4">{t('calls.operator', 'Operator')}</th>
@@ -189,13 +191,16 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                         <tbody className="divide-y divide-border">
                             {calls.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={canDownload ? 6 : 5} className="py-8 text-center text-muted-foreground text-sm">
+                                    <td colSpan={canDownload ? 7 : 6} className="py-8 text-center text-muted-foreground text-sm">
                                         {t('calls.noCallsFound', "Ko'rsatilgan filtrlar bo'yicha hech qanday qo'ng'iroq topilmadi.")}
                                     </td>
                                 </tr>
                             ) : (
-                                calls.data.map((call) => (
+                                calls.data.map((call, idx) => (
                                     <tr key={call.id} className="hover:bg-muted/30 transition-colors">
+                                        <td className="py-3.5 px-4 text-center font-mono text-xs text-muted-foreground">
+                                            {((calls.current_page - 1) * (calls.per_page || 10)) + idx + 1}
+                                        </td>
                                         <td className="py-3.5 px-4">
                                             <div className="flex items-center gap-2.5">
                                                 <div className={`p-1.5 rounded-md ${
@@ -296,24 +301,14 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                 </div>
 
                 {/* Pagination */}
-                {calls.last_page > 1 && (
-                    <div className="p-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{t("calls.pageOf", "Sahifa {{current}} / {{last}}", { current: calls.current_page, last: calls.last_page })}</span>
-                        <div className="flex gap-1">
-                            {calls.links.map((link, idx) => (
-                                <Button
-                                    key={idx}
-                                    variant={link.active ? 'default' : 'outline'}
-                                    size="sm"
-                                    className="h-8 px-3 text-xs"
-                                    disabled={!link.url}
-                                    onClick={() => link.url && router.get(link.url)}
-                                    dangerouslySetInnerHTML={{ __html: link.label }}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                )}
+                <PaginationNav
+                    links={calls.links}
+                    current_page={calls.current_page}
+                    last_page={calls.last_page}
+                    from={calls.from}
+                    to={calls.to}
+                    total={calls.total}
+                />
             </div>
         </div>
     );

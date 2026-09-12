@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
+import { PaginationNav, PaginationLink } from "@/components/ui/pagination-nav";
 import { Input } from "@/components/ui/input";
 
 interface DeviceItem {
@@ -41,8 +42,19 @@ interface DeviceItem {
     user_id?: number;
 }
 
+interface PaginatedDevices {
+    data: DeviceItem[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+    per_page: number;
+    links: PaginationLink[];
+}
+
 interface DevicesProps {
-    devices: DeviceItem[];
+    devices: PaginatedDevices | DeviceItem[];
     operators: { id: number; name: string }[];
     quota: {
         allowed: number;
@@ -53,6 +65,8 @@ interface DevicesProps {
 
 export default function DevicesIndex({ devices, operators, quota, tenant_uuid }: DevicesProps) {
     const { t } = useTranslation();
+    const deviceList: DeviceItem[] = Array.isArray(devices) ? devices : (devices?.data || []);
+    const pagination = !Array.isArray(devices) ? (devices as PaginatedDevices) : null;
     const [editingDevice, setEditingDevice] = useState<DeviceItem | null>(null);
     const [selectedPairingDevice, setSelectedPairingDevice] = useState<DeviceItem | null>(null);
     const [showPairModal, setShowPairModal] = useState(false);
@@ -71,8 +85,8 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
     });
 
     const activePairingDevice = selectedPairingDevice
-        ? (devices.find((d) => d.id === selectedPairingDevice.id) || selectedPairingDevice)
-        : (devices.find((d) => !d.is_paired && d.pairing_code) || null);
+        ? (deviceList.find((d) => d.id === selectedPairingDevice.id) || selectedPairingDevice)
+        : (deviceList.find((d) => !d.is_paired && d.pairing_code) || null);
 
     useEffect(() => {
         if (!activePairingDevice?.pairing_code) {
@@ -243,6 +257,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                 <table className="w-full text-left text-sm">
                     <thead className="bg-muted/50 border-b border-border text-muted-foreground text-xs uppercase font-medium">
                         <tr>
+                            <th className="py-3 px-4 w-12 text-center">№</th>
                             <th className="py-3 px-4">{t("devices.name", "Qurilma nomi")}</th>
                             <th className="py-3 px-4">{t("devices.assignedOperator", "Mas\x27ul Operator")}</th>
                             <th className="py-3 px-4">{t("devices.simSlot", "SIM Slot")}</th>
@@ -253,15 +268,20 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                        {devices.length === 0 ? (
+                        {deviceList.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="py-8 text-center text-muted-foreground text-sm">
+                                <td colSpan={8} className="py-8 text-center text-muted-foreground text-sm">
                                     {t("devices.noDevices", "Hozircha hech qanday telefon ulanmagan. \"Yangi telefon ulash\" tugmasini bosing.")}
                                 </td>
                             </tr>
                         ) : (
-                            devices.map((device) => (
+                            deviceList.map((device, idx) => {
+                                const rowNum = pagination ? (((pagination.current_page - 1) * (pagination.per_page || 10)) + idx + 1) : idx + 1;
+                                return (
                                 <tr key={device.id} className="hover:bg-muted/30 transition-colors">
+                                    <td className="py-3.5 px-4 text-center font-mono text-xs text-muted-foreground">
+                                        {rowNum}
+                                    </td>
                                     <td className="py-3.5 px-4">
                                         <div className="font-semibold">{device.name}</div>
                                         <div className="text-xs text-muted-foreground font-mono">{device.model || device.device_uid}</div>
@@ -366,10 +386,23 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                                         </div>
                                     </td>
                                 </tr>
-                            ))
+                                );
+                            })
                         )}
                     </tbody>
                 </table>
+
+                {/* Pagination */}
+                {pagination && (
+                    <PaginationNav
+                        links={pagination.links}
+                        current_page={pagination.current_page}
+                        last_page={pagination.last_page}
+                        from={pagination.from}
+                        to={pagination.to}
+                        total={pagination.total}
+                    />
+                )}
             </div>
 
             

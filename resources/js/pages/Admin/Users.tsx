@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PaginationNav, PaginationLink } from '@/components/ui/pagination-nav';
 
 interface UserItem {
     id: number;
@@ -30,6 +31,10 @@ interface UsersProps {
         current_page: number;
         last_page: number;
         total: number;
+        from: number | null;
+        to: number | null;
+        per_page: number;
+        links: PaginationLink[];
     };
     tenants: { id: number; name: string }[];
     filters: { search?: string; role?: string };
@@ -111,6 +116,7 @@ export default function AdminUsers({ users, tenants, filters }: UsersProps) {
                 <table className="w-full text-left text-sm">
                     <thead className="bg-muted/50 border-b border-border text-muted-foreground text-xs uppercase font-medium">
                         <tr>
+                            <th className="py-3 px-4 w-12 text-center">№</th>
                             <th className="py-3 px-4">{t("admin.user", "Foydalanuvchi")}</th>
                             <th className="py-3 px-4">{t("admin.role", "Rol")}</th>
                             <th className="py-3 px-4">{t("admin.company", "Kompaniya")}</th>
@@ -120,8 +126,11 @@ export default function AdminUsers({ users, tenants, filters }: UsersProps) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                        {users.data.map((u) => (
+                        {users.data.map((u, idx) => (
                             <tr key={u.id} className="hover:bg-muted/30 transition-colors">
+                                <td className="py-3.5 px-4 text-center font-mono text-xs text-muted-foreground">
+                                    {((users.current_page - 1) * (users.per_page || 10)) + idx + 1}
+                                </td>
                                 <td className="py-3.5 px-4">
                                     <div className="font-bold">{u.name}</div>
                                     <div className="text-xs text-muted-foreground">{u.email}</div>
@@ -161,6 +170,16 @@ export default function AdminUsers({ users, tenants, filters }: UsersProps) {
                         ))}
                     </tbody>
                 </table>
+
+                {/* Pagination */}
+                <PaginationNav
+                    links={users.links}
+                    current_page={users.current_page}
+                    last_page={users.last_page}
+                    from={users.from}
+                    to={users.to}
+                    total={users.total}
+                />
             </div>
 
             {/* Edit Modal */}

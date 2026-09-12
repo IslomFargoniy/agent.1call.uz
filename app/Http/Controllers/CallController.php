@@ -72,7 +72,8 @@ class CallController extends Controller
             $query->where('user_id', $userId);
         }
 
-        $calls = $query->orderByDesc('call_timestamp')->paginate(20)->withQueryString();
+        $perPage = (int) $request->input('per_page', 10);
+        $calls = $query->orderByDesc('call_timestamp')->paginate($perPage)->withQueryString();
 
         $devices = Device::select('id', 'name', 'model')->get();
         $operators = $user->isOperator() ? [] : User::where('role', 'operator')->select('id', 'name')->get();

@@ -16,6 +16,7 @@ use App\Services\Telegram\TelegramNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -38,7 +39,8 @@ class SuperadminController extends Controller
             $query->where('name', 'like', "%{$search}%")->orWhere('slug', 'like', "%{$search}%");
         }
 
-        $tenants = $query->orderByDesc('id')->paginate(15)->withQueryString();
+        $perPage = (int) $request->input('per_page', 10);
+        $tenants = $query->orderByDesc('id')->paginate($perPage)->withQueryString();
 
         return Inertia::render('Admin/Tenants', [
             'tenants' => $tenants,
@@ -87,7 +89,8 @@ class SuperadminController extends Controller
             $query->where('role', $role);
         }
 
-        $users = $query->orderByDesc('id')->paginate(20)->withQueryString();
+        $perPage = (int) $request->input('per_page', 10);
+        $users = $query->orderByDesc('id')->paginate($perPage)->withQueryString();
         $tenants = Tenant::select('id', 'name')->get();
 
         return Inertia::render('Admin/Users', [
@@ -309,9 +312,11 @@ class SuperadminController extends Controller
      */
     public function invoices(Request $request): Response
     {
+        $perPage = (int) $request->input('per_page', 10);
         $invoices = Invoice::with(['tenant:id,name', 'subscription.tariff', 'approver:id,name'])
             ->orderByDesc('id')
-            ->paginate(20);
+            ->paginate($perPage)
+            ->withQueryString();
 
         return Inertia::render('Admin/Invoices', [
             'invoices' => $invoices,
@@ -466,5 +471,22 @@ class SuperadminController extends Controller
         session()->forget('superadmin_tenant_id');
 
         return back()->with('success', 'Barcha kompaniyalar (asosiy tizim) rejimiga qaytildi.');
+    }
+    /**
+     * View receipt screenshot or file.
+     */
+    public function viewReceipt(Invoice $invoice)
+    {
+        if (! $invoice->receipt_image_path) {
+            abort(404, 'Chek fayli yuklanmagan.');
+        }
+
+        $disk = Storage::disk('public')->exists($invoice->receipt_image_path) ? 'public' : 'local';
+
+        if (! Storage::disk($disk)->exists($invoice->receipt_image_path)) {
+            abort(404, 'Chek fayli serverda topilmadi.');
+        }
+
+        return Storage::disk($disk)->response($invoice->receipt_image_path);
     }
 }

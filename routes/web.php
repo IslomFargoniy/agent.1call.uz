@@ -80,6 +80,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/invoices', [BillingWebController::class, 'invoices'])->name('invoices');
         Route::post('/checkout', [BillingWebController::class, 'checkout'])->name('checkout');
         Route::post('/upload-receipt', [BillingWebController::class, 'uploadReceipt'])->name('upload-receipt');
+        Route::post('/invoices/{invoice}/upload-receipt', [BillingWebController::class, 'uploadReceiptForInvoice'])->name('invoices.upload-receipt');
+        Route::get('/invoices/{invoice}/receipt', [BillingWebController::class, 'viewReceipt'])->name('invoices.receipt');
     });
 
     // 4. Superadmin Platform Management Routes (/admin/*)
@@ -101,6 +103,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/payment-methods/{method}', [SuperadminController::class, 'updatePaymentMethod'])->name('payment-methods.update');
 
         Route::get('/invoices', [SuperadminController::class, 'invoices'])->name('invoices.index');
+        Route::get('/invoices/{invoice}/receipt', [SuperadminController::class, 'viewReceipt'])->name('invoices.receipt');
         Route::post('/invoices/{invoice}/approve', [SuperadminController::class, 'approveInvoice'])->name('invoices.approve');
         Route::post('/invoices/{invoice}/reject', [SuperadminController::class, 'rejectInvoice'])->name('invoices.reject');
 

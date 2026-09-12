@@ -222,6 +222,13 @@ function IntegrationsContent({
     const amoLogs = safeLogs.filter((l) => l.crm_type?.toLowerCase() === "amocrm");
     const moyLogs = safeLogs.filter((l) => l.crm_type?.toLowerCase() === "moysklad");
 
+    const [amoLogPage, setAmoLogPage] = useState(1);
+    const [moyLogPage, setMoyLogPage] = useState(1);
+    const amoTotalPages = Math.ceil(amoLogs.length / 10) || 1;
+    const moyTotalPages = Math.ceil(moyLogs.length / 10) || 1;
+    const paginatedAmoLogs = amoLogs.slice((amoLogPage - 1) * 10, amoLogPage * 10);
+    const paginatedMoyLogs = moyLogs.slice((moyLogPage - 1) * 10, moyLogPage * 10);
+
     return (
         <div className="p-6 space-y-8 max-w-6xl mx-auto">
             <Head title={t("integrations.title", "CRM Integratsiyalari (amoCRM & MoySklad)")} />
@@ -569,6 +576,7 @@ function IntegrationsContent({
                                 <table className="w-full text-left text-xs">
                                     <thead className="bg-muted/50 border-b border-border text-muted-foreground uppercase font-medium">
                                         <tr>
+                                            <th className="py-2.5 px-4 w-10 text-center">№</th>
                                             <th className="py-2.5 px-4">1Call Operatori</th>
                                             <th className="py-2.5 px-4">amoCRM User ID</th>
                                             <th className="py-2.5 px-4">amoCRM Xodim Ismi</th>
@@ -576,8 +584,9 @@ function IntegrationsContent({
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border">
-                                        {amoMappings.map((m) => (
+                                        {amoMappings.map((m, idx) => (
                                             <tr key={m.id} className="hover:bg-muted/30 transition-colors">
+                                                <td className="py-2.5 px-4 text-center font-mono text-muted-foreground">{idx + 1}</td>
                                                 <td className="py-2.5 px-4 font-semibold text-foreground">
                                                     {m.user?.name || `Operator #${m.user_id}`}
                                                 </td>
@@ -620,6 +629,7 @@ function IntegrationsContent({
                         <table className="w-full text-left text-sm">
                             <thead className="bg-muted/50 border-b border-border text-muted-foreground text-xs uppercase font-medium">
                                 <tr>
+                                    <th className="py-3 px-4 w-10 text-center">№</th>
                                     <th className="py-3 px-4">Qo'ng'iroq ID</th>
                                     <th className="py-3 px-4">Holati</th>
                                     <th className="py-3 px-4">Xabar / Tafsilot</th>
@@ -629,13 +639,16 @@ function IntegrationsContent({
                             <tbody className="divide-y divide-border text-xs">
                                 {amoLogs.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="py-6 text-center text-muted-foreground">
+                                        <td colSpan={5} className="py-6 text-center text-muted-foreground">
                                             Hozircha amoCRM bo'yicha hech qanday sinxronizatsiya logi mavjud emas.
                                         </td>
                                     </tr>
                                 ) : (
-                                    amoLogs.map((log) => (
+                                    paginatedAmoLogs.map((log, idx) => (
                                         <tr key={log.id} className="hover:bg-muted/30 transition-colors">
+                                            <td className="py-3 px-4 text-center font-mono text-xs text-muted-foreground">
+                                                {((amoLogPage - 1) * 10) + idx + 1}
+                                            </td>
                                             <td className="py-3 px-4 font-mono font-semibold text-primary">
                                                 #{log.call_id || "—"}
                                             </td>
@@ -659,6 +672,32 @@ function IntegrationsContent({
                                 )}
                             </tbody>
                         </table>
+
+                        {moyTotalPages > 1 && (
+                            <div className="p-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+                                <span>Jami {moyLogs.length} ta yozuv ({moyLogPage} / {moyTotalPages}-sahifa)</span>
+                                <div className="flex gap-1">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 px-2.5 text-xs"
+                                        disabled={moyLogPage <= 1}
+                                        onClick={() => setMoyLogPage((p) => Math.max(1, p - 1))}
+                                    >
+                                        « Oldingi
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 px-2.5 text-xs"
+                                        disabled={moyLogPage >= moyTotalPages}
+                                        onClick={() => setMoyLogPage((p) => Math.min(moyTotalPages, p + 1))}
+                                    >
+                                        Keyingi »
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -897,6 +936,7 @@ function IntegrationsContent({
                                 <table className="w-full text-left text-xs">
                                     <thead className="bg-muted/50 border-b border-border text-muted-foreground uppercase font-medium">
                                         <tr>
+                                            <th className="py-2.5 px-4 w-10 text-center">№</th>
                                             <th className="py-2.5 px-4">1Call Operatori</th>
                                             <th className="py-2.5 px-4">MoySklad Login / UID</th>
                                             <th className="py-2.5 px-4">MoySklad Xodim Ismi</th>
@@ -904,8 +944,9 @@ function IntegrationsContent({
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border">
-                                        {moyMappings.map((m) => (
+                                        {moyMappings.map((m, idx) => (
                                             <tr key={m.id} className="hover:bg-muted/30 transition-colors">
+                                                <td className="py-2.5 px-4 text-center font-mono text-muted-foreground">{idx + 1}</td>
                                                 <td className="py-2.5 px-4 font-semibold text-foreground">
                                                     {m.user?.name || `Operator #${m.user_id}`}
                                                 </td>
@@ -948,6 +989,7 @@ function IntegrationsContent({
                         <table className="w-full text-left text-sm">
                             <thead className="bg-muted/50 border-b border-border text-muted-foreground text-xs uppercase font-medium">
                                 <tr>
+                                    <th className="py-3 px-4 w-10 text-center">№</th>
                                     <th className="py-3 px-4">Qo'ng'iroq ID</th>
                                     <th className="py-3 px-4">Holati</th>
                                     <th className="py-3 px-4">Xabar / Tafsilot</th>
@@ -957,13 +999,16 @@ function IntegrationsContent({
                             <tbody className="divide-y divide-border text-xs">
                                 {moyLogs.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="py-6 text-center text-muted-foreground">
+                                        <td colSpan={5} className="py-6 text-center text-muted-foreground">
                                             Hozircha MoySklad bo'yicha hech qanday sinxronizatsiya logi mavjud emas.
                                         </td>
                                     </tr>
                                 ) : (
-                                    moyLogs.map((log) => (
+                                    paginatedMoyLogs.map((log, idx) => (
                                         <tr key={log.id} className="hover:bg-muted/30 transition-colors">
+                                            <td className="py-3 px-4 text-center font-mono text-xs text-muted-foreground">
+                                                {((moyLogPage - 1) * 10) + idx + 1}
+                                            </td>
                                             <td className="py-3 px-4 font-mono font-semibold text-primary">
                                                 #{log.call_id || "—"}
                                             </td>
@@ -987,6 +1032,32 @@ function IntegrationsContent({
                                 )}
                             </tbody>
                         </table>
+
+                        {moyTotalPages > 1 && (
+                            <div className="p-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+                                <span>Jami {moyLogs.length} ta yozuv ({moyLogPage} / {moyTotalPages}-sahifa)</span>
+                                <div className="flex gap-1">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 px-2.5 text-xs"
+                                        disabled={moyLogPage <= 1}
+                                        onClick={() => setMoyLogPage((p) => Math.max(1, p - 1))}
+                                    >
+                                        « Oldingi
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 px-2.5 text-xs"
+                                        disabled={moyLogPage >= moyTotalPages}
+                                        onClick={() => setMoyLogPage((p) => Math.min(moyTotalPages, p + 1))}
+                                    >
+                                        Keyingi »
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

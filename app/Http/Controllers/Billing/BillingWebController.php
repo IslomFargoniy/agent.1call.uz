@@ -13,6 +13,7 @@ use App\Services\Billing\SubscriptionService;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -67,9 +68,11 @@ class BillingWebController extends Controller
      */
     public function invoices(Request $request): Response
     {
+        $perPage = (int) $request->input('per_page', 10);
         $invoices = Invoice::with('subscription.tariff')
             ->orderByDesc('id')
-            ->paginate(15);
+            ->paginate($perPage)
+            ->withQueryString();
 
         return Inertia::render('Billing/Invoices', [
             'invoices' => $invoices,
@@ -126,12 +129,17 @@ class BillingWebController extends Controller
         /** @var Invoice $invoice */
         $invoice = Invoice::findOrFail($validated['invoice_id']);
 
+        $user = $request->user();
+        if (! $user->isSuperAdmin() && $invoice->tenant_id !== $user->tenant_id) {
+            abort(403, 'Ushbu invoysga ruxsat berilmagan.');
+        }
+
         $file = $request->file('receipt_image');
         $ext = $file->getClientOriginalExtension();
         $path = $file->storeAs(
             "receipts/{$invoice->tenant_id}",
             "receipt_{$invoice->id}_".time().".{$ext}",
-            'local'
+            'public'
         );
 
         $invoice->update([
@@ -143,5 +151,37 @@ class BillingWebController extends Controller
         SendTelegramAlertJob::dispatch('receipt_uploaded', null, $invoice);
 
         return back()->with('success', 'To\'lov cheki muvaffaqiyatli yuklandi. Administrator tekshiruvidan so\'ng obunangiz faollashtiriladi.');
+    }
+
+    /**
+     * Upload screenshot receipt via parameterized route.
+     */
+    public function uploadReceiptForInvoice(Invoice $invoice, Request $request): RedirectResponse
+    {
+        $request->merge(['invoice_id' => $invoice->id]);
+        return $this->uploadReceipt($request);
+    }
+
+    /**
+     * View or stream the uploaded receipt.
+     */
+    public function viewReceipt(Invoice $invoice, Request $request)
+    {
+        $user = $request->user();
+        if (! $user->isSuperAdmin() && $invoice->tenant_id !== $user->tenant_id) {
+            abort(403);
+        }
+
+        if (! $invoice->receipt_image_path) {
+            abort(404, 'Chek fayli yuklanmagan.');
+        }
+
+        $disk = Storage::disk('public')->exists($invoice->receipt_image_path) ? 'public' : 'local';
+
+        if (! Storage::disk($disk)->exists($invoice->receipt_image_path)) {
+            abort(404, 'Chek fayli serverda topilmadi.');
+        }
+
+        return Storage::disk($disk)->response($invoice->receipt_image_path);
     }
 }

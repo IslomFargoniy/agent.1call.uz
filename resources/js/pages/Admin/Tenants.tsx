@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PaginationNav, PaginationLink } from '@/components/ui/pagination-nav';
 
 interface TenantItem {
     id: number;
@@ -35,6 +36,10 @@ interface TenantsProps {
         current_page: number;
         last_page: number;
         total: number;
+        from: number | null;
+        to: number | null;
+        per_page: number;
+        links: PaginationLink[];
     };
     filters: { search?: string };
 }
@@ -106,6 +111,7 @@ export default function AdminTenants({ tenants, filters }: TenantsProps) {
                 <table className="w-full text-left text-sm">
                     <thead className="bg-muted/50 border-b border-border text-muted-foreground text-xs uppercase font-medium">
                         <tr>
+                            <th className="py-3 px-4 w-12 text-center">№</th>
                             <th className="py-3 px-4">{t("admin.company", "Kompaniya")}</th>
                             <th className="py-3 px-4">{t("admin.statistics", "Statistika")}</th>
                             <th className="py-3 px-4">{t("admin.limitArchive", "Limit / Arxiv")}</th>
@@ -115,8 +121,11 @@ export default function AdminTenants({ tenants, filters }: TenantsProps) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                        {tenants.data.map((tenant) => (
+                        {tenants.data.map((tenant, idx) => (
                             <tr key={tenant.id} className="hover:bg-muted/30 transition-colors">
+                                <td className="py-3.5 px-4 text-center font-mono text-xs text-muted-foreground">
+                                    {((tenants.current_page - 1) * (tenants.per_page || 10)) + idx + 1}
+                                </td>
                                 <td className="py-3.5 px-4">
                                     <div className="font-bold">{tenant.name}</div>
                                     <div className="text-xs text-muted-foreground font-mono">{tenant.uuid}</div>
@@ -171,6 +180,16 @@ export default function AdminTenants({ tenants, filters }: TenantsProps) {
                         ))}
                     </tbody>
                 </table>
+
+                {/* Pagination */}
+                <PaginationNav
+                    links={tenants.links}
+                    current_page={tenants.current_page}
+                    last_page={tenants.last_page}
+                    from={tenants.from}
+                    to={tenants.to}
+                    total={tenants.total}
+                />
             </div>
 
             {/* Edit Modal */}

@@ -58,7 +58,12 @@ class DeviceManagementController extends Controller
             $usersQuery->where('tenant_id', $tenant->id);
         }
 
-        $devices = $devicesQuery->get();
+        $pairedCount = $tenant
+            ? Device::where('tenant_id', $tenant->id)->where('is_paired', true)->count()
+            : Device::where('is_paired', true)->count();
+
+        $perPage = (int) $request->input('per_page', 10);
+        $devices = $devicesQuery->paginate($perPage)->withQueryString();
         $users = $usersQuery->get();
 
         return Inertia::render('Devices/Index', [
@@ -66,7 +71,7 @@ class DeviceManagementController extends Controller
             'operators' => $users,
             'quota' => [
                 'allowed' => $tenant?->allowed_devices_count ?? 2,
-                'paired' => $devices->where('is_paired', true)->count(),
+                'paired' => $pairedCount,
             ],
             'tenant_uuid' => $tenant?->uuid,
         ]);
