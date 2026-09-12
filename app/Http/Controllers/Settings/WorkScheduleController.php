@@ -26,7 +26,7 @@ class WorkScheduleController extends Controller
         if (! $tenant && $request->user()?->isSuperAdmin()) {
             $selectedTenantId = session('superadmin_tenant_id');
             if ($selectedTenantId) {
-                $tenant = Tenant::find($selectedTenantId);
+                $tenant = Tenant::find((int) $selectedTenantId);
             }
         }
 
@@ -43,13 +43,13 @@ class WorkScheduleController extends Controller
         return Inertia::render('WorkSchedule/Index', [
             'isAllTenants' => $tenant === null,
             'tenant' => $tenant ? ['id' => $tenant->id, 'name' => $tenant->name] : null,
-            'workSchedule' => $tenant?->work_schedule ?? [
+            'workSchedule' => ($tenant && $tenant->work_schedule) ? $tenant->work_schedule : [
                 'enabled' => false,
                 'start_time' => '09:00',
                 'end_time' => '18:00',
                 'days' => [1, 2, 3, 4, 5], // Mon - Fri
             ],
-            'privacyBlacklist' => $tenant?->privacy_blacklist ?? [],
+            'privacyBlacklist' => ($tenant && $tenant->privacy_blacklist) ? $tenant->privacy_blacklist : [],
             'telegramChatId' => $tenant?->telegram_chat_id,
         ]);
     }

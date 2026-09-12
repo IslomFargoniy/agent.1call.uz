@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     PhoneCall,
     PhoneIncoming,
@@ -50,16 +50,18 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ tenant, stats, recent_calls }: DashboardProps) {
+    const { auth } = usePage<any>().props;
+    const tenantId = auth?.user?.tenant_id;
     const { t } = useTranslation();
     const [liveRinging, setLiveRinging] = useState<any | null>(null);
     const [callsList, setCallsList] = useState<CallItem[]>(recent_calls || []);
 
     useEffect(() => {
         const echo = getEcho();
-        if (!echo) return;
+        if (!echo || !tenantId) return;
 
         // Listen for ringing and call logged events
-        const channel = echo.private('tenant.1'); // replaced dynamically or listening
+        const channel = echo.private(`tenant.${tenantId}`);
         
         channel.listen('.call.ringing', (e: any) => {
             setLiveRinging(e.callData);
@@ -77,7 +79,7 @@ export default function Dashboard({ tenant, stats, recent_calls }: DashboardProp
             channel.stopListening('.call.ringing');
             channel.stopListening('.call.logged');
         };
-    }, []);
+    }, [tenantId]);
 
     const formatDuration = (secs: number) => {
         const m = Math.floor(secs / 60);

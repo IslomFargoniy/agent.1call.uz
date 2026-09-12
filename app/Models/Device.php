@@ -11,6 +11,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * @property int $id
+ * @property int $tenant_id
+ * @property int|null $user_id
+ * @property string $device_uid
+ * @property string $name
+ * @property string|null $model
+ * @property array<string, mixed>|null $sim_slots_info
+ * @property int|null $selected_sim_slot
+ * @property bool $accessibility_service_enabled
+ * @property int|null $battery_level
+ * @property string|null $pairing_code
+ * @property bool $is_paired
+ * @property \Carbon\Carbon|null $paired_at
+ * @property \Carbon\Carbon|null $last_seen_at
+ */
 class Device extends Model implements AuthenticatableContract
 {
     use Authenticatable, BelongsToTenant, HasApiTokens, HasFactory;

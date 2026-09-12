@@ -40,7 +40,7 @@ class IntegrationController extends Controller
         if (! $tenant && $request->user()?->isSuperAdmin()) {
             $selectedTenantId = session('superadmin_tenant_id');
             if ($selectedTenantId) {
-                $tenant = Tenant::find($selectedTenantId);
+                $tenant = Tenant::find((int) $selectedTenantId);
             }
         }
 
@@ -57,7 +57,7 @@ class IntegrationController extends Controller
         $amoCrm = $tenant ? TenantIntegration::where('tenant_id', $tenant->id)->where('crm_type', 'amocrm')->first() : null;
         $moySklad = $tenant ? TenantIntegration::where('tenant_id', $tenant->id)->where('crm_type', 'moysklad')->first() : null;
 
-        $operators = $tenant ? User::where('tenant_id', $tenant->id)->where('role', 'operator')->select('id', 'name', 'phone_number')->get() : collect();
+        $operators = $tenant ? User::where('tenant_id', $tenant->id)->select('id', 'name', 'phone_number')->get() : collect();
 
         $mappings = $tenant ? IntegrationUserMapping::where('tenant_id', $tenant->id)->with('user:id,name')->get() : collect();
         $recentLogs = $tenant ? IntegrationSyncLog::where('tenant_id', $tenant->id)->orderByDesc('id')->limit(15)->get() : collect();
@@ -68,13 +68,13 @@ class IntegrationController extends Controller
             'amoCrm' => $amoCrm ? [
                 'id' => $amoCrm->id,
                 'is_active' => (bool) $amoCrm->is_active,
-                'subdomain' => $amoCrm->credentials['subdomain'] ?? '',
+                'subdomain' => is_array($amoCrm->credentials) ? ($amoCrm->credentials['subdomain'] ?? '') : '',
                 'settings' => $amoCrm->settings ?? [],
             ] : null,
             'moySklad' => $moySklad ? [
                 'id' => $moySklad->id,
                 'is_active' => (bool) $moySklad->is_active,
-                'login' => $moySklad->credentials['login'] ?? '',
+                'login' => is_array($moySklad->credentials) ? ($moySklad->credentials['login'] ?? '') : '',
                 'settings' => $moySklad->settings ?? [],
             ] : null,
             'operators' => $operators,
@@ -86,7 +86,7 @@ class IntegrationController extends Controller
     /**
      * Save amoCRM settings and redirect to OAuth.
      */
-    public function saveAmoCrm(Request $request, TenantContext $tenantContext): RedirectResponse
+    public function saveAmoCrm(Request $request, TenantContext $tenantContext): \Symfony\Component\HttpFoundation\Response
     {
         $tenant = $this->resolveTenant($request, $tenantContext);
 

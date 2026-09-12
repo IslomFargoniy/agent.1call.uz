@@ -5,6 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property string $code
+ * @property string $name
+ * @property bool $is_active
+ * @property array<mixed>|null $settings
+ * @property string|null $instructions
+ * @property int $sort_order
+ */
 class PaymentMethod extends Model
 {
     use HasFactory;

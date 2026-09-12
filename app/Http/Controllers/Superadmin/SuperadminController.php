@@ -189,6 +189,7 @@ class SuperadminController extends Controller
                 ]);
 
                 foreach ($tariff->retentionOptions as $option) {
+                    /** @var \App\Models\TariffRetentionOption $option */
                     $option->update([
                         'additional_price_usd_monthly' => round($option->additional_price_monthly / $rate, 2),
                     ]);
@@ -297,7 +298,7 @@ class SuperadminController extends Controller
     public function paymentMethods(): Response
     {
         $methods = PaymentMethod::orderBy('sort_order')->get()->map(function ($method) {
-            $settings = $method->settings ?? [];
+            $settings = is_array($method->settings) ? $method->settings : [];
 
             if ($method->code === 'click') {
                 $params = \Goodoneuz\PayUz\Models\PaymentSystemParam::where('system', 'click')->pluck('value', 'name');
@@ -505,13 +506,15 @@ class SuperadminController extends Controller
             ->orderBy('name')
             ->get()
             ->map(function ($t) {
+                /** @var \App\Models\Tenant $t */
+                /** @var \App\Models\User|null $primaryUser */
                 $primaryUser = $t->users->first();
 
                 return [
                     'id' => $t->id,
                     'name' => $t->name,
                     'slug' => $t->slug,
-                    'email' => $primaryUser?->email ?? $t->slug,
+                    'email' => $primaryUser ? $primaryUser->email : $t->slug,
                     'is_active' => (bool) $t->is_active,
                 ];
             });
@@ -531,7 +534,7 @@ class SuperadminController extends Controller
         $tenantId = $request->input('tenant_id');
 
         if ($tenantId) {
-            $tenant = Tenant::find($tenantId);
+            $tenant = Tenant::find((int) $tenantId);
             if ($tenant) {
                 session(['superadmin_tenant_id' => (int) $tenant->id]);
 
@@ -546,7 +549,7 @@ class SuperadminController extends Controller
     /**
      * View receipt screenshot or file.
      */
-    public function viewReceipt(Invoice $invoice)
+    public function viewReceipt(Invoice $invoice): \Symfony\Component\HttpFoundation\StreamedResponse
     {
         if (! $invoice->receipt_image_path) {
             abort(404, 'Chek fayli yuklanmagan.');

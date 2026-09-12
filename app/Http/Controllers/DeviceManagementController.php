@@ -26,7 +26,7 @@ class DeviceManagementController extends Controller
         if (! $tenant && $request->user()?->isSuperAdmin()) {
             $selectedTenantId = session('superadmin_tenant_id');
             if ($selectedTenantId) {
-                $tenant = Tenant::find($selectedTenantId);
+                $tenant = Tenant::find((int) $selectedTenantId);
             }
         }
 
@@ -77,7 +77,7 @@ class DeviceManagementController extends Controller
 
         if (! $tenant && $request->user()?->isSuperAdmin()) {
             if ($tenantId = $request->input('tenant_id')) {
-                $tenant = Tenant::find($tenantId);
+                $tenant = Tenant::find((int) $tenantId);
             }
             if (! $tenant) {
                 $tenant = Tenant::firstOrCreate(
@@ -135,21 +135,23 @@ class DeviceManagementController extends Controller
             'sim2_carrier' => ['nullable', 'string', 'max:50'],
         ]);
 
-        $simSlotsInfo = $device->sim_slots_info ?? [];
-        if (! is_array($simSlotsInfo)) {
-            $simSlotsInfo = [];
-        }
+        /** @var array<string, mixed> $simSlotsInfo */
+        $simSlotsInfo = is_array($device->sim_slots_info) ? $device->sim_slots_info : [];
+        /** @var array<string, mixed> $existingSim1 */
+        $existingSim1 = (isset($simSlotsInfo['sim1']) && is_array($simSlotsInfo['sim1'])) ? $simSlotsInfo['sim1'] : [];
+        /** @var array<string, mixed> $existingSim2 */
+        $existingSim2 = (isset($simSlotsInfo['sim2']) && is_array($simSlotsInfo['sim2'])) ? $simSlotsInfo['sim2'] : [];
 
         $simSlotsInfo['sim1'] = [
             'slot' => 1,
-            'phone_number' => $request->input('sim1_number', $simSlotsInfo['sim1']['phone_number'] ?? null),
-            'carrier' => $request->input('sim1_carrier', $simSlotsInfo['sim1']['carrier'] ?? null),
+            'phone_number' => $request->input('sim1_number', $existingSim1['phone_number'] ?? null),
+            'carrier' => $request->input('sim1_carrier', $existingSim1['carrier'] ?? null),
         ];
 
         $simSlotsInfo['sim2'] = [
             'slot' => 2,
-            'phone_number' => $request->input('sim2_number', $simSlotsInfo['sim2']['phone_number'] ?? null),
-            'carrier' => $request->input('sim2_carrier', $simSlotsInfo['sim2']['carrier'] ?? null),
+            'phone_number' => $request->input('sim2_number', $existingSim2['phone_number'] ?? null),
+            'carrier' => $request->input('sim2_carrier', $existingSim2['carrier'] ?? null),
         ];
 
         $device->update([

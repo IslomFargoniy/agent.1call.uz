@@ -98,7 +98,11 @@ class BillingWebController extends Controller
             'payment_method' => ['required', 'in:click,payme,card_transfer,lemonsqueezy'],
         ]);
 
-        $tariff = Tariff::findOrFail($validated['tariff_id']);
+        /** @var Tariff $tariff */
+        $tariff = Tariff::query()->findOrFail((int) $validated['tariff_id']);
+        if (! $tenant) {
+            abort(404, 'Kompaniya topilmadi.');
+        }
 
         $invoice = $this->subscriptionService->createInvoice(
             $tenant,
@@ -177,7 +181,7 @@ class BillingWebController extends Controller
     /**
      * View or stream the uploaded receipt.
      */
-    public function viewReceipt(Invoice $invoice, Request $request)
+    public function viewReceipt(Invoice $invoice, Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
     {
         $user = $request->user();
         if (! $user->isSuperAdmin() && $invoice->tenant_id !== $user->tenant_id) {

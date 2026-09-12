@@ -6,6 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $tariff_id
+ * @property int $retention_days
+ * @property int $additional_price_monthly
+ * @property float $additional_price_usd_monthly
+ * @property bool $is_active
+ */
 class TariffRetentionOption extends Model
 {
     use HasFactory;

@@ -115,7 +115,7 @@ class CallController extends Controller
         }
 
         $storageDisk = Storage::disk($disk);
-        if (method_exists($storageDisk, 'path')) {
+        try {
             $fullPath = $storageDisk->path($call->recording_path);
             if (file_exists($fullPath)) {
                 return response()->file($fullPath, [
@@ -123,6 +123,8 @@ class CallController extends Controller
                     'Accept-Ranges' => 'bytes',
                 ]);
             }
+        } catch (\Throwable) {
+            // Some drivers do not support local paths
         }
 
         return Storage::disk($disk)->response(
@@ -157,7 +159,7 @@ class CallController extends Controller
 
         return Storage::disk($disk)->download(
             $call->recording_path,
-            "call_{$call->phone_number}_{$call->call_timestamp->format('Ymd_His')}.{$call->recording_format}"
+            "call_{$call->phone_number}_" . ($call->call_timestamp ? \Carbon\Carbon::parse($call->call_timestamp)->format('Ymd_His') : date('Ymd_His')) . ".{$call->recording_format}"
         );
     }
 }
