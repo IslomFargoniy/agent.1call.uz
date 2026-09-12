@@ -71,8 +71,9 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
         sim2_carrier: "",
     });
 
-    const activePairingDevice =
-        selectedPairingDevice || devices.find((d) => !d.is_paired && d.pairing_code);
+    const activePairingDevice = selectedPairingDevice
+        ? (devices.find((d) => d.id === selectedPairingDevice.id) || selectedPairingDevice)
+        : (devices.find((d) => !d.is_paired && d.pairing_code) || null);
 
     useEffect(() => {
         if (!activePairingDevice?.pairing_code) {
@@ -140,8 +141,26 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
 
     const generateCode = () => {
         router.post("/devices/pair-code", {}, {
-            onSuccess: () => {
-                setSelectedPairingDevice(null);
+            onSuccess: (page: any) => {
+                const newDeviceId = page?.props?.flash?.new_device_id;
+                const pageDevices: DeviceItem[] = page?.props?.devices || [];
+
+                let targetDevice: DeviceItem | undefined;
+                if (newDeviceId) {
+                    targetDevice = pageDevices.find((d) => d.id === newDeviceId);
+                }
+
+                if (!targetDevice) {
+                    // Fallback: get the newest unpaired device (highest ID)
+                    const unpaired = pageDevices.filter((d) => !d.is_paired && d.pairing_code);
+                    if (unpaired.length > 0) {
+                        targetDevice = unpaired.reduce((prev, curr) => (curr.id > prev.id ? curr : prev));
+                    }
+                }
+
+                if (targetDevice) {
+                    setSelectedPairingDevice(targetDevice);
+                }
                 setShowPairModal(true);
             },
         });
@@ -518,8 +537,17 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
 
             {/* Pairing Modal with QR Code */}
             {showPairModal && activePairingDevice?.pairing_code && (
-                <div className="fixed inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-                    <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                <div
+                    className="fixed inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+                    onClick={() => {
+                        setShowPairModal(false);
+                        setSelectedPairingDevice(null);
+                    }}
+                >
+                    <div
+                        className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="text-center space-y-1">
                             <div className="inline-flex p-2 rounded-full bg-primary/10 text-primary mb-1">
                                 <QrCode className="h-5 w-5" />

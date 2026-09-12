@@ -50,7 +50,7 @@ class DeviceManagementController extends Controller
     {
         $tenant = $this->resolveTenant($request, $tenantContext);
 
-        $devicesQuery = Device::with('user:id,name')->orderBy('id');
+        $devicesQuery = Device::with('user:id,name')->orderByDesc('id');
         $usersQuery = User::where('role', 'operator')->select('id', 'name');
 
         if ($tenant) {
@@ -92,7 +92,7 @@ class DeviceManagementController extends Controller
         $code = (string) mt_rand(100000, 999999);
         $deviceIndex = Device::where('tenant_id', $tenant->id)->count() + 1;
 
-        Device::create([
+        $newDevice = Device::create([
             'tenant_id' => $tenant->id,
             'device_uid' => 'pending_'.bin2hex(random_bytes(6)),
             'name' => 'Yangi Telefon #'.$deviceIndex,
@@ -100,7 +100,10 @@ class DeviceManagementController extends Controller
             'is_paired' => false,
         ]);
 
-        return back()->with('success', "Yangi ulanish kodi generatsiya qilindi: {$code}");
+        return back()->with([
+            'success' => "Yangi ulanish kodi generatsiya qilindi: {$code}",
+            'new_device_id' => $newDevice->id,
+        ]);
     }
 
     /**
