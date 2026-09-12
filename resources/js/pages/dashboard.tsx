@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { WaveformPlayer } from '@/components/waveform-player';
 import { getEcho } from '@/lib/echo';
+import { formatDate, formatTime } from '@/lib/datetime';
 
 interface CallItem {
     id: number;
@@ -96,7 +97,7 @@ export default function Dashboard({ tenant, stats, recent_calls }: DashboardProp
                         <div>
                             <span className="font-semibold text-amber-900 dark:text-amber-200">{t('dashboard.trialActive', '14 kunlik Bepul Sinov Davri faol.')}</span>
                             <p className="text-xs text-amber-700 dark:text-amber-300">
-                                {t('dashboard.trialEndsOn', 'Sinov muddati tugash sanasi: {{date}}. Barcha imkoniyatlar to\'liq ochiq.', { date: new Date(tenant.trial_ends_at || '').toLocaleDateString('uz-UZ') })}
+                                {t('dashboard.trialEndsOn', 'Sinov muddati tugash sanasi: {{date}}. Barcha imkoniyatlar to\'liq ochiq.', { date: formatDate(tenant.trial_ends_at) })}
                             </p>
                         </div>
                     </div>
@@ -254,7 +255,7 @@ export default function Dashboard({ tenant, stats, recent_calls }: DashboardProp
                                         <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                                             <span>{call.device?.name || t("calls.device", "Telefon")}</span>
                                             {call.user && <span>• {t("calls.operator", "Operator")}: {call.user.name}</span>}
-                                            <span>• {new Date(call.call_timestamp).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}</span>
+                                            <span>• {formatTime(call.call_timestamp)}</span>
                                         </div>
                                     </div>
                                 </div>

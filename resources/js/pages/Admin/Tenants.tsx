@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PaginationNav, PaginationLink } from '@/components/ui/pagination-nav';
+import { formatDate } from '@/lib/datetime';
 
 interface TenantItem {
     id: number;
@@ -150,11 +151,11 @@ export default function AdminTenants({ tenants, filters }: TenantsProps) {
                                 <td className="py-3.5 px-4 text-xs font-mono">
                                     {tenant.subscription_expires_at ? (
                                         <span className="text-emerald-600 font-semibold">
-                                            {new Date(tenant.subscription_expires_at).toLocaleDateString('uz-UZ')}
+                                            {formatDate(tenant.subscription_expires_at)}
                                         </span>
                                     ) : tenant.trial_ends_at ? (
                                         <span className="text-amber-600">
-                                            {t("admin.trialPrefix", "Sinov:")} {new Date(tenant.trial_ends_at).toLocaleDateString('uz-UZ')}
+                                            {t("admin.trialPrefix", "Sinov:")} {formatDate(tenant.trial_ends_at)}
                                         </span>
                                     ) : (
                                         t("admin.unlimited", "Muddatsiz")

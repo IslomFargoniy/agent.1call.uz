@@ -62,6 +62,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'locale' => app()->getLocale(),
+            'timezone' => \App\Services\TimezoneService::resolveTimezone($request),
             'auth' => [
                 'user' => $user ? [
                     'id' => $user->id,

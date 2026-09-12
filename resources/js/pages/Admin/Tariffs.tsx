@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { formatDateTime } from '@/lib/datetime';
 
 interface RetentionOption {
     id: number;
@@ -360,7 +361,7 @@ export default function AdminTariffs({ tariff: singleTariff, tariffs = [], usdRa
                             {rateUpdatedAt && (
                                 <p className="text-[11px] text-muted-foreground/80 flex items-center gap-1 font-mono pt-0.5">
                                     <Calendar className="h-3 w-3" />
-                                    {t("admin.lastUpdated", "Tizimda oxirgi yangilanish")}: {new Date(rateUpdatedAt).toLocaleString('uz-UZ')}
+                                    {t("admin.lastUpdated", "Tizimda oxirgi yangilanish")}: {formatDateTime(rateUpdatedAt)}
                                 </p>
                             )}
                         </div>

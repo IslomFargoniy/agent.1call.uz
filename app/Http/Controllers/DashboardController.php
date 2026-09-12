@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Call;
 use App\Models\Device;
 use App\Services\Tenancy\TenantContext;
+use App\Services\TimezoneService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -17,7 +18,7 @@ class DashboardController extends Controller
         $user = $request->user();
         $tenant = $tenantContext->getTenant() ?? $user->tenant;
 
-        $today = Carbon::today();
+        $today = TimezoneService::localTodayStartToUtc(TimezoneService::resolveTimezone($request));
 
         $callsQuery = Call::query();
         if ($user->isOperator()) {

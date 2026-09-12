@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AmoCrmLogo, MoySkladLogo } from "@/components/brand-logos";
 import { cn } from "@/lib/utils";
+import { formatLogTime } from "@/lib/datetime";
 
 interface IntegrationsProps {
     amoCrm?: {
@@ -204,16 +205,7 @@ function IntegrationsContent({
         setTimeout(() => setCopiedRedirectUrl(false), 2000);
     };
 
-    const formatLogTime = (dateStr?: string) => {
-        if (!dateStr) return "—";
-        try {
-            const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return "—";
-            return d.toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) + " " + d.toLocaleDateString("uz-UZ", { day: "2-digit", month: "short" });
-        } catch {
-            return String(dateStr);
-        }
-    };
+
 
     // Filter mappings and logs for active tab
     const amoMappings = safeMappings.filter((m) => amoCrm?.id && m.tenant_integration_id === amoCrm.id);

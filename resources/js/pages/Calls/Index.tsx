@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { WaveformPlayer } from '@/components/waveform-player';
 import { PaginationNav } from '@/components/ui/pagination-nav';
+import { formatDateTime } from '@/lib/datetime';
 
 interface CallRecord {
     id: number;
@@ -260,14 +261,7 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                                             {call.user?.name || call.device?.user?.name || '—'}
                                         </td>
                                         <td className="py-3.5 px-4 text-xs text-muted-foreground font-mono">
-                                            {new Date(call.call_timestamp).toLocaleString('uz-UZ', {
-                                                year: 'numeric',
-                                                month: '2-digit',
-                                                day: '2-digit',
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                                second: '2-digit',
-                                            })}
+                                            {formatDateTime(call.call_timestamp)}
                                         </td>
                                         <td className="py-3.5 px-4">
                                             {call.duration_seconds > 0 && call.recording_status === 'uploaded' ? (

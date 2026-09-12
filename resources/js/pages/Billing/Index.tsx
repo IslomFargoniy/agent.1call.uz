@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PaymentMethodLogo } from "@/components/brand-logos";
+import { formatDate } from "@/lib/datetime";
 
 interface Tariff {
     id: number;
@@ -209,9 +210,9 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                             <div>
                                 <span className="block text-foreground font-semibold">
                                     {tenant.subscription_expires_at
-                                        ? new Date(tenant.subscription_expires_at).toLocaleDateString("uz-UZ")
+                                        ? formatDate(tenant.subscription_expires_at)
                                         : tenant.trial_ends_at
-                                            ? new Date(tenant.trial_ends_at).toLocaleDateString("uz-UZ")
+                                            ? formatDate(tenant.trial_ends_at)
                                             : "—"}
                                 </span>
                                 <span>{t("billing.expiresAt", "Amal qilish muddati")}</span>

@@ -33,7 +33,7 @@ class TelemetryController extends Controller
             'battery_level' => $request->input('battery_level', $device->battery_level),
             'accessibility_service_enabled' => (bool) $accessibility,
             'selected_sim_slot' => $request->input('selected_sim_slot', $device->selected_sim_slot),
-            'last_seen_at' => Carbon::now(),
+            'last_seen_at' => Carbon::now('UTC'),
         ];
 
         if ($request->has('sim_slots_info')) {
@@ -91,15 +91,15 @@ class TelemetryController extends Controller
 
         $rawTimestamp = $request->input('timestamp');
         if (is_numeric($rawTimestamp)) {
-            $callTime = Carbon::createFromTimestamp((int) $rawTimestamp);
+            $callTime = Carbon::createFromTimestamp((int) $rawTimestamp, 'UTC');
         } elseif (! empty($rawTimestamp)) {
             try {
-                $callTime = Carbon::parse($rawTimestamp);
+                $callTime = Carbon::parse($rawTimestamp)->setTimezone('UTC');
             } catch (\Exception $e) {
-                $callTime = Carbon::now();
+                $callTime = Carbon::now('UTC');
             }
         } else {
-            $callTime = Carbon::now();
+            $callTime = Carbon::now('UTC');
         }
 
         // Dual-SIM check: if device has a selected SIM slot and call is on other SIM, ignore
@@ -173,18 +173,18 @@ class TelemetryController extends Controller
             }
         }
 
-        // Timestamp can come as call_timestamp, started_at or ended_at
+        // Timestamp can come as call_timestamp, started_at or ended_at (enforce UTC)
         $timestampInput = $request->input('call_timestamp') ?? $request->input('started_at');
         if (is_numeric($timestampInput)) {
-            $callTimestamp = Carbon::createFromTimestamp((int) $timestampInput);
+            $callTimestamp = Carbon::createFromTimestamp((int) $timestampInput, 'UTC');
         } elseif (! empty($timestampInput)) {
             try {
-                $callTimestamp = Carbon::parse($timestampInput);
+                $callTimestamp = Carbon::parse($timestampInput)->setTimezone('UTC');
             } catch (\Exception $e) {
-                $callTimestamp = Carbon::now();
+                $callTimestamp = Carbon::now('UTC');
             }
         } else {
-            $callTimestamp = Carbon::now();
+            $callTimestamp = Carbon::now('UTC');
         }
 
         // Dual-SIM corporate slot check

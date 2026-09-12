@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
+import { formatDateTime } from "@/lib/datetime";
 import { PaginationNav, PaginationLink } from "@/components/ui/pagination-nav";
 import { Input } from "@/components/ui/input";
 
@@ -337,7 +338,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                                                 </span>
                                                 {device.last_seen_at && (
                                                     <span className="block text-[11px] font-mono">
-                                                        {new Date(device.last_seen_at).toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}
+                                                        {formatDateTime(device.last_seen_at, { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}
                                                     </span>
                                                 )}
                                             </div>

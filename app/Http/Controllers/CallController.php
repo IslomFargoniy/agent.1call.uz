@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Call;
 use App\Models\Device;
 use App\Models\User;
+use App\Services\TimezoneService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -55,11 +56,12 @@ class CallController extends Controller
         }
 
         // Date range
+        $userTimezone = TimezoneService::resolveTimezone($request);
         if ($startDate = $request->input('start_date')) {
-            $query->where('call_timestamp', '>=', Carbon::parse($startDate)->startOfDay());
+            $query->where('call_timestamp', '>=', TimezoneService::localStartOfDayToUtc($startDate, $userTimezone));
         }
         if ($endDate = $request->input('end_date')) {
-            $query->where('call_timestamp', '<=', Carbon::parse($endDate)->endOfDay());
+            $query->where('call_timestamp', '<=', TimezoneService::localEndOfDayToUtc($endDate, $userTimezone));
         }
 
         // Device filter

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PaginationNav, PaginationLink } from "@/components/ui/pagination-nav";
+import { formatDate, formatDateTime } from "@/lib/datetime";
 
 interface InvoiceItem {
     id: number;
@@ -119,7 +120,7 @@ export default function AdminInvoices({ invoices }: InvoicesProps) {
                                         <td className="py-3.5 px-4">
                                             <div className="font-semibold">{inv.tenant?.name || `Tenant #${inv.tenant_id}`}</div>
                                             <div className="text-xs text-muted-foreground font-mono">
-                                                {new Date(inv.created_at).toLocaleDateString("uz-UZ")}
+                                                {formatDate(inv.created_at)}
                                             </div>
                                         </td>
                                         <td className="py-3.5 px-4 font-mono font-bold">
@@ -263,7 +264,7 @@ export default function AdminInvoices({ invoices }: InvoicesProps) {
                         </div>
 
                         <div className="flex justify-between items-center text-xs text-muted-foreground pt-1">
-                            <span>Sana: {new Date(viewingReceipt.created_at).toLocaleString("uz-UZ")}</span>
+                            <span>Sana: {formatDateTime(viewingReceipt.created_at)}</span>
                             <Button variant="outline" size="sm" onClick={() => setViewingReceipt(null)}>
                                 {t("devices.closeBtn", "Yopish")}
                             </Button>
