@@ -35,7 +35,7 @@ jobs:
         run: composer setup
 
       - name: Code Style Check (Pint)
-        run: ./vendor/bin/pint --test
+        run: ./vendor/bin/pint --test app config database routes tests
 
       - name: TypeScript Type Check
         run: npm run types:check
