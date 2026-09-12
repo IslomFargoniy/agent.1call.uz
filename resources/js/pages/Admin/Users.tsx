@@ -179,6 +179,7 @@ export default function AdminUsers({ users, tenants, filters }: UsersProps) {
                     from={users.from}
                     to={users.to}
                     total={users.total}
+                    per_page={users.per_page}
                 />
             </div>
 

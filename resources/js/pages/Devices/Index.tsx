@@ -401,6 +401,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                         from={pagination.from}
                         to={pagination.to}
                         total={pagination.total}
+                    per_page={pagination.per_page}
                     />
                 )}
             </div>

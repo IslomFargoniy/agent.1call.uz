@@ -308,6 +308,7 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                     from={calls.from}
                     to={calls.to}
                     total={calls.total}
+                    per_page={calls.per_page}
                 />
             </div>
         </div>

@@ -72,7 +72,8 @@ class CallController extends Controller
             $query->where('user_id', $userId);
         }
 
-        $perPage = (int) $request->input('per_page', 10);
+        $perPageInput = $request->input('per_page', 10);
+        $perPage = (strtolower((string) $perPageInput) === 'all') ? 10000 : max(1, min(500, (int) $perPageInput));
         $calls = $query->orderByDesc('call_timestamp')->paginate($perPage)->withQueryString();
 
         $devices = Device::select('id', 'name', 'model')->get();

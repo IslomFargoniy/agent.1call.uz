@@ -62,7 +62,8 @@ class DeviceManagementController extends Controller
             ? Device::where('tenant_id', $tenant->id)->where('is_paired', true)->count()
             : Device::where('is_paired', true)->count();
 
-        $perPage = (int) $request->input('per_page', 10);
+        $perPageInput = $request->input('per_page', 10);
+        $perPage = (strtolower((string) $perPageInput) === 'all') ? 10000 : max(1, min(500, (int) $perPageInput));
         $devices = $devicesQuery->paginate($perPage)->withQueryString();
         $users = $usersQuery->get();
 

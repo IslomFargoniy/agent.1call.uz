@@ -223,11 +223,16 @@ function IntegrationsContent({
     const moyLogs = safeLogs.filter((l) => l.crm_type?.toLowerCase() === "moysklad");
 
     const [amoLogPage, setAmoLogPage] = useState(1);
+    const [amoPerPage, setAmoPerPage] = useState<"10" | "30" | "50" | "all">("10");
+    const amoPageSize = amoPerPage === "all" ? Math.max(1, amoLogs.length) : Number(amoPerPage);
+    const amoTotalPages = amoPerPage === "all" ? 1 : Math.ceil(amoLogs.length / amoPageSize) || 1;
+    const paginatedAmoLogs = amoPerPage === "all" ? amoLogs : amoLogs.slice((amoLogPage - 1) * amoPageSize, amoLogPage * amoPageSize);
+
     const [moyLogPage, setMoyLogPage] = useState(1);
-    const amoTotalPages = Math.ceil(amoLogs.length / 10) || 1;
-    const moyTotalPages = Math.ceil(moyLogs.length / 10) || 1;
-    const paginatedAmoLogs = amoLogs.slice((amoLogPage - 1) * 10, amoLogPage * 10);
-    const paginatedMoyLogs = moyLogs.slice((moyLogPage - 1) * 10, moyLogPage * 10);
+    const [moyPerPage, setMoyPerPage] = useState<"10" | "30" | "50" | "all">("10");
+    const moyPageSize = moyPerPage === "all" ? Math.max(1, moyLogs.length) : Number(moyPerPage);
+    const moyTotalPages = moyPerPage === "all" ? 1 : Math.ceil(moyLogs.length / moyPageSize) || 1;
+    const paginatedMoyLogs = moyPerPage === "all" ? moyLogs : moyLogs.slice((moyLogPage - 1) * moyPageSize, moyLogPage * moyPageSize);
 
     return (
         <div className="p-6 space-y-8 max-w-6xl mx-auto">
@@ -647,7 +652,7 @@ function IntegrationsContent({
                                     paginatedAmoLogs.map((log, idx) => (
                                         <tr key={log.id} className="hover:bg-muted/30 transition-colors">
                                             <td className="py-3 px-4 text-center font-mono text-xs text-muted-foreground">
-                                                {((amoLogPage - 1) * 10) + idx + 1}
+                                                {((amoLogPage - 1) * (amoPerPage === 'all' ? amoLogs.length : Number(amoPerPage))) + idx + 1}
                                             </td>
                                             <td className="py-3 px-4 font-mono font-semibold text-primary">
                                                 #{log.call_id || "—"}
@@ -673,31 +678,57 @@ function IntegrationsContent({
                             </tbody>
                         </table>
 
-                        {moyTotalPages > 1 && (
-                            <div className="p-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                                <span>Jami {moyLogs.length} ta yozuv ({moyLogPage} / {moyTotalPages}-sahifa)</span>
-                                <div className="flex gap-1">
+                        <div className="p-3 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                                <span>Jami: <strong className="text-foreground font-mono">{amoLogs.length}</strong> ta yozuv {amoPerPage !== 'all' && amoTotalPages > 1 ? `(${amoLogPage} / ${amoTotalPages}-sahifa)` : ''}</span>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[11px] font-medium text-muted-foreground/80">Qatorlar:</span>
+                                    <div className="inline-flex rounded-lg border border-border/80 p-0.5 bg-muted/40 shadow-2xs">
+                                        {(['10', '30', '50', 'all'] as const).map((opt) => (
+                                            <button
+                                                key={opt}
+                                                type="button"
+                                                onClick={() => {
+                                                    setAmoPerPage(opt);
+                                                    setAmoLogPage(1);
+                                                }}
+                                                className={`px-2 py-0.5 text-[11px] font-semibold rounded-md transition-all ${
+                                                    amoPerPage === opt
+                                                        ? 'bg-background text-foreground shadow-xs font-bold'
+                                                        : 'text-muted-foreground hover:text-foreground'
+                                                }`}
+                                            >
+                                                {opt === 'all' ? 'All' : opt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {amoTotalPages > 1 && (
+                                <div className="flex items-center gap-1">
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         className="h-7 px-2.5 text-xs"
-                                        disabled={moyLogPage <= 1}
-                                        onClick={() => setMoyLogPage((p) => Math.max(1, p - 1))}
+                                        disabled={amoLogPage <= 1}
+                                        onClick={() => setAmoLogPage((p) => Math.max(1, p - 1))}
                                     >
                                         « Oldingi
                                     </Button>
+                                    <span className="px-2 text-xs font-mono">{amoLogPage} / {amoTotalPages}</span>
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         className="h-7 px-2.5 text-xs"
-                                        disabled={moyLogPage >= moyTotalPages}
-                                        onClick={() => setMoyLogPage((p) => Math.min(moyTotalPages, p + 1))}
+                                        disabled={amoLogPage >= amoTotalPages}
+                                        onClick={() => setAmoLogPage((p) => Math.min(amoTotalPages, p + 1))}
                                     >
                                         Keyingi »
                                     </Button>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
@@ -1007,7 +1038,7 @@ function IntegrationsContent({
                                     paginatedMoyLogs.map((log, idx) => (
                                         <tr key={log.id} className="hover:bg-muted/30 transition-colors">
                                             <td className="py-3 px-4 text-center font-mono text-xs text-muted-foreground">
-                                                {((moyLogPage - 1) * 10) + idx + 1}
+                                                {((moyLogPage - 1) * (moyPerPage === 'all' ? moyLogs.length : Number(moyPerPage))) + idx + 1}
                                             </td>
                                             <td className="py-3 px-4 font-mono font-semibold text-primary">
                                                 #{log.call_id || "—"}
@@ -1033,10 +1064,35 @@ function IntegrationsContent({
                             </tbody>
                         </table>
 
-                        {moyTotalPages > 1 && (
-                            <div className="p-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                                <span>Jami {moyLogs.length} ta yozuv ({moyLogPage} / {moyTotalPages}-sahifa)</span>
-                                <div className="flex gap-1">
+                        <div className="p-3 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                                <span>Jami: <strong className="text-foreground font-mono">{moyLogs.length}</strong> ta yozuv {moyPerPage !== 'all' && moyTotalPages > 1 ? `(${moyLogPage} / ${moyTotalPages}-sahifa)` : ''}</span>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[11px] font-medium text-muted-foreground/80">Qatorlar:</span>
+                                    <div className="inline-flex rounded-lg border border-border/80 p-0.5 bg-muted/40 shadow-2xs">
+                                        {(['10', '30', '50', 'all'] as const).map((opt) => (
+                                            <button
+                                                key={opt}
+                                                type="button"
+                                                onClick={() => {
+                                                    setMoyPerPage(opt);
+                                                    setMoyLogPage(1);
+                                                }}
+                                                className={`px-2 py-0.5 text-[11px] font-semibold rounded-md transition-all ${
+                                                    moyPerPage === opt
+                                                        ? 'bg-background text-foreground shadow-xs font-bold'
+                                                        : 'text-muted-foreground hover:text-foreground'
+                                                }`}
+                                            >
+                                                {opt === 'all' ? 'All' : opt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {moyTotalPages > 1 && (
+                                <div className="flex items-center gap-1">
                                     <Button
                                         variant="outline"
                                         size="sm"
@@ -1046,6 +1102,7 @@ function IntegrationsContent({
                                     >
                                         « Oldingi
                                     </Button>
+                                    <span className="px-2 text-xs font-mono">{moyLogPage} / {moyTotalPages}</span>
                                     <Button
                                         variant="outline"
                                         size="sm"
@@ -1056,8 +1113,60 @@ function IntegrationsContent({
                                         Keyingi »
                                     </Button>
                                 </div>
+                            )}
+                        </div>
+
+                        <div className="p-3 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                                <span>Jami: <strong className="text-foreground font-mono">{amoLogs.length}</strong> ta yozuv {amoPerPage !== 'all' && amoTotalPages > 1 ? `(${amoLogPage} / ${amoTotalPages}-sahifa)` : ''}</span>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[11px] font-medium text-muted-foreground/80">Qatorlar:</span>
+                                    <div className="inline-flex rounded-lg border border-border/80 p-0.5 bg-muted/40 shadow-2xs">
+                                        {(['10', '30', '50', 'all'] as const).map((opt) => (
+                                            <button
+                                                key={opt}
+                                                type="button"
+                                                onClick={() => {
+                                                    setAmoPerPage(opt);
+                                                    setAmoLogPage(1);
+                                                }}
+                                                className={`px-2 py-0.5 text-[11px] font-semibold rounded-md transition-all ${
+                                                    amoPerPage === opt
+                                                        ? 'bg-background text-foreground shadow-xs font-bold'
+                                                        : 'text-muted-foreground hover:text-foreground'
+                                                }`}
+                                            >
+                                                {opt === 'all' ? 'All' : opt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
-                        )}
+
+                            {amoTotalPages > 1 && (
+                                <div className="flex items-center gap-1">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 px-2.5 text-xs"
+                                        disabled={amoLogPage <= 1}
+                                        onClick={() => setAmoLogPage((p) => Math.max(1, p - 1))}
+                                    >
+                                        « Oldingi
+                                    </Button>
+                                    <span className="px-2 text-xs font-mono">{amoLogPage} / {amoTotalPages}</span>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 px-2.5 text-xs"
+                                        disabled={amoLogPage >= amoTotalPages}
+                                        onClick={() => setAmoLogPage((p) => Math.min(amoTotalPages, p + 1))}
+                                    >
+                                        Keyingi »
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}

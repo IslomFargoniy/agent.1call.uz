@@ -68,7 +68,8 @@ class BillingWebController extends Controller
      */
     public function invoices(Request $request): Response
     {
-        $perPage = (int) $request->input('per_page', 10);
+        $perPageInput = $request->input('per_page', 10);
+        $perPage = (strtolower((string) $perPageInput) === 'all') ? 10000 : max(1, min(500, (int) $perPageInput));
         $invoices = Invoice::with('subscription.tariff')
             ->orderByDesc('id')
             ->paginate($perPage)

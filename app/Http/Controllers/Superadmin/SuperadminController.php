@@ -39,7 +39,8 @@ class SuperadminController extends Controller
             $query->where('name', 'like', "%{$search}%")->orWhere('slug', 'like', "%{$search}%");
         }
 
-        $perPage = (int) $request->input('per_page', 10);
+        $perPageInput = $request->input('per_page', 10);
+        $perPage = (strtolower((string) $perPageInput) === 'all') ? 10000 : max(1, min(500, (int) $perPageInput));
         $tenants = $query->orderByDesc('id')->paginate($perPage)->withQueryString();
 
         return Inertia::render('Admin/Tenants', [
@@ -89,7 +90,8 @@ class SuperadminController extends Controller
             $query->where('role', $role);
         }
 
-        $perPage = (int) $request->input('per_page', 10);
+        $perPageInput = $request->input('per_page', 10);
+        $perPage = (strtolower((string) $perPageInput) === 'all') ? 10000 : max(1, min(500, (int) $perPageInput));
         $users = $query->orderByDesc('id')->paginate($perPage)->withQueryString();
         $tenants = Tenant::select('id', 'name')->get();
 
@@ -312,7 +314,8 @@ class SuperadminController extends Controller
      */
     public function invoices(Request $request): Response
     {
-        $perPage = (int) $request->input('per_page', 10);
+        $perPageInput = $request->input('per_page', 10);
+        $perPage = (strtolower((string) $perPageInput) === 'all') ? 10000 : max(1, min(500, (int) $perPageInput));
         $invoices = Invoice::with(['tenant:id,name', 'subscription.tariff', 'approver:id,name'])
             ->orderByDesc('id')
             ->paginate($perPage)

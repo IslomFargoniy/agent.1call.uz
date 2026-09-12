@@ -213,6 +213,7 @@ export default function AdminInvoices({ invoices }: InvoicesProps) {
                     from={invoices.from}
                     to={invoices.to}
                     total={invoices.total}
+                    per_page={invoices.per_page}
                 />
             </div>
 

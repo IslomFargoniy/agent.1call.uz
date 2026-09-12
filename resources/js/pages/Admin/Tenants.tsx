@@ -189,6 +189,7 @@ export default function AdminTenants({ tenants, filters }: TenantsProps) {
                     from={tenants.from}
                     to={tenants.to}
                     total={tenants.total}
+                    per_page={tenants.per_page}
                 />
             </div>
 
