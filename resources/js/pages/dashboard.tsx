@@ -27,6 +27,7 @@ interface CallItem {
     recording_path?: string;
     device?: { id: number; name: string; model?: string };
     user?: { id: number; name: string };
+    tenant?: { id: number; name: string };
 }
 
 interface DashboardProps {
@@ -252,7 +253,12 @@ export default function Dashboard({ tenant, stats, recent_calls }: DashboardProp
                                                 {call.duration_seconds > 0 ? formatDuration(call.duration_seconds) : t('calls.missed', 'Javobsiz')}
                                             </span>
                                         </div>
-                                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
+                                            {call.tenant?.name && (
+                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">
+                                                    {call.tenant.name}
+                                                </span>
+                                            )}
                                             <span>{call.device?.name || t("calls.device", "Telefon")}</span>
                                             {call.user && <span>• {t("calls.operator", "Operator")}: {call.user.name}</span>}
                                             <span>• {formatTime(call.call_timestamp)}</span>

@@ -29,6 +29,7 @@ interface CallRecord {
     call_timestamp: string;
     device?: { id: number; name: string; model?: string; sim_slots_info?: any };
     user?: { id: number; name: string };
+    tenant?: { id: number; name: string };
 }
 
 interface CallsProps {
@@ -47,13 +48,18 @@ interface CallsProps {
         end_date?: string;
         device_id?: string;
         user_id?: string;
+        tenant_id?: string;
     };
-    devices: { id: number; name: string }[];
-    operators: { id: number; name: string }[];
+    devices: { id: number; name: string; tenant?: { id: number; name: string } }[];
+    operators: { id: number; name: string; tenant?: { id: number; name: string } }[];
+    tenants?: { id: number; name: string }[];
     canDownload: boolean;
 }
 
-export default function CallsIndex({ calls, filters, devices, operators, canDownload }: CallsProps) {
+export default function CallsIndex({ calls, filters, devices, operators, tenants = [], canDownload }: CallsProps) {
+    const { auth, superadmin } = usePage<any>().props;
+    const isSuperAdmin = auth?.user?.role === "superadmin";
+    const isAllTenants = isSuperAdmin && !superadmin?.selected_tenant;
     const { t } = useTranslation();
     const [search, setSearch] = useState(filters.search || '');
     const [direction, setDirection] = useState(filters.direction || '');
@@ -73,6 +79,7 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
             user_id: userId || undefined,
             start_date: startDate || undefined,
             end_date: endDate || undefined,
+            tenant_id: tenantId || undefined,
         }, { preserveState: true });
     };
 
@@ -84,6 +91,7 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
         setUserId('');
         setStartDate('');
         setEndDate('');
+        setTenantId('');
         router.get('/calls');
     };
 
@@ -107,7 +115,21 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
             </div>
 
             {/* Filters Bar */}
-            <form onSubmit={applyFilters} className="bg-card p-4 rounded-xl border border-border grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-3 shadow-xs">
+            <form onSubmit={applyFilters} className={`bg-card p-4 rounded-xl border border-border grid grid-cols-1 md:grid-cols-4 ${tenants && tenants.length > 0 ? "lg:grid-cols-8" : "lg:grid-cols-7"} gap-3 shadow-xs`}>
+                {tenants && tenants.length > 0 && (
+                    <div>
+                        <select
+                            value={tenantId}
+                            onChange={(e) => setTenantId(e.target.value)}
+                            className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        >
+                            <option value="">{t("calls.allTenants", "Barcha kompaniyalar")}</option>
+                            {tenants.map((ten) => (
+                                <option key={ten.id} value={ten.id}>{ten.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
                 <div className="lg:col-span-2 relative">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -150,7 +172,7 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                     >
                         <option value="">{t('calls.allDevices', 'Barcha telefonlar')}</option>
                         {devices.map((d) => (
-                            <option key={d.id} value={d.id}>{d.name}</option>
+                            <option key={d.id} value={d.id}>{d.name}{isAllTenants && d.tenant?.name ? ` (${d.tenant.name})` : ""}</option>
                         ))}
                     </select>
                 </div>
@@ -182,6 +204,7 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                             <tr>
                                 <th className="py-3 px-4 w-12 text-center">№</th>
                                 <th className="py-3 px-4">{t('calls.directionNumber', "Yo'nalish / Raqam")}</th>
+                                {isAllTenants && <th className="py-3 px-4">{t('calls.company', 'Kompaniya')}</th>}
                                 <th className="py-3 px-4">{t('calls.deviceSim', 'Qurilma / SIM')}</th>
                                 <th className="py-3 px-4">{t('calls.operator', 'Operator')}</th>
                                 <th className="py-3 px-4">{t('calls.time', 'Vaqti')}</th>
@@ -192,7 +215,7 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                         <tbody className="divide-y divide-border">
                             {calls.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={canDownload ? 7 : 6} className="py-8 text-center text-muted-foreground text-sm">
+                                    <td colSpan={canDownload ? (isAllTenants ? 8 : 7) : (isAllTenants ? 7 : 6)} className="py-8 text-center text-muted-foreground text-sm">
                                         {t('calls.noCallsFound', "Ko'rsatilgan filtrlar bo'yicha hech qanday qo'ng'iroq topilmadi.")}
                                     </td>
                                 </tr>
@@ -223,6 +246,13 @@ export default function CallsIndex({ calls, filters, devices, operators, canDown
                                                 </div>
                                             </div>
                                         </td>
+                                        {isAllTenants && (
+                                            <td className="py-3.5 px-4 text-xs">
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                                                    {call.tenant?.name || "-"}
+                                                </span>
+                                            </td>
+                                        )}
                                         <td className="py-3.5 px-4 text-xs">
                                             <div className="flex flex-col gap-0.5">
                                                 <div className="flex items-center gap-1.5 flex-wrap">

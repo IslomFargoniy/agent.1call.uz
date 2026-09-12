@@ -31,7 +31,9 @@ class BillingWebController extends Controller
      */
     public function index(Request $request, TenantContext $tenantContext): Response
     {
-        $tenant = $tenantContext->getTenant() ?? $request->user()->tenant;
+        $user = $request->user();
+        $isAllTenants = $user->isSuperAdmin() && ! session('superadmin_tenant_id');
+        $tenant = $isAllTenants ? null : ($tenantContext->getTenant() ?? $user->tenant);
 
         $tariffs = Tariff::where('is_active', true)
             ->with(['discounts', 'retentionOptions'])
@@ -71,7 +73,7 @@ class BillingWebController extends Controller
     {
         $perPageInput = $request->input('per_page', 10);
         $perPage = (strtolower((string) $perPageInput) === 'all') ? 10000 : max(1, min(500, (int) $perPageInput));
-        $invoices = Invoice::with('subscription.tariff')
+        $invoices = Invoice::with(['subscription.tariff', 'tenant:id,name'])
             ->orderByDesc('id')
             ->paginate($perPage)
             ->withQueryString();

@@ -28,6 +28,7 @@ interface InvoiceItem {
     receipt_image_path?: string;
     created_at: string;
     admin_notes?: string;
+    tenant?: { id: number; name: string };
 }
 
 interface InvoicesProps {
@@ -45,6 +46,9 @@ interface InvoicesProps {
 
 export default function InvoicesIndex({ invoices }: InvoicesProps) {
     const { t } = useTranslation();
+    const { auth, superadmin } = usePage<any>().props;
+    const isSuperAdmin = auth?.user?.role === "superadmin";
+    const isAllTenants = isSuperAdmin && !superadmin?.selected_tenant;
     const [uploadingInvoice, setUploadingInvoice] = useState<InvoiceItem | null>(null);
     const [viewingReceipt, setViewingReceipt] = useState<InvoiceItem | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -139,6 +143,7 @@ export default function InvoicesIndex({ invoices }: InvoicesProps) {
                         <tr>
                             <th className="py-3 px-4 w-12 text-center">№</th>
                             <th className="py-3 px-4">{t("billing.invoiceNumber", "Invoys raqami")}</th>
+                            {isAllTenants && <th className="py-3 px-4">{t("billing.company", "Kompaniya")}</th>}
                             <th className="py-3 px-4">{t("billing.amount", "Summa")}</th>
                             <th className="py-3 px-4">{t("billing.paymentMethod", "To'lov usuli")}</th>
                             <th className="py-3 px-4">{t("billing.status", "Holati")}</th>
@@ -149,7 +154,7 @@ export default function InvoicesIndex({ invoices }: InvoicesProps) {
                     <tbody className="divide-y divide-border">
                         {invoices.data.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="py-8 text-center text-muted-foreground text-sm">
+                                <td colSpan={isAllTenants ? 8 : 7} className="py-8 text-center text-muted-foreground text-sm">
                                     {t("billing.noInvoices", "Hozircha hech qanday invoys mavjud emas.")}
                                 </td>
                             </tr>
@@ -164,6 +169,13 @@ export default function InvoicesIndex({ invoices }: InvoicesProps) {
                                         <td className="py-3.5 px-4 font-mono font-bold text-xs">
                                             {invoice.invoice_number}
                                         </td>
+                                        {isAllTenants && (
+                                            <td className="py-3.5 px-4 text-xs font-medium">
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                                                    {invoice.tenant?.name || "-"}
+                                                </span>
+                                            </td>
+                                        )}
                                         <td className="py-3.5 px-4">
                                             <span className="font-mono font-bold">
                                                 {Number(invoice.amount).toLocaleString("uz-UZ")} UZS

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Head, useForm, router } from "@inertiajs/react";
+import { Head, useForm, router, usePage } from "@inertiajs/react";
 import {
     Smartphone,
     Plus,
@@ -41,6 +41,7 @@ interface DeviceItem {
     last_seen_at?: string;
     user?: { id: number; name: string };
     user_id?: number;
+    tenant?: { id: number; name: string };
 }
 
 interface PaginatedDevices {
@@ -56,7 +57,7 @@ interface PaginatedDevices {
 
 interface DevicesProps {
     devices: PaginatedDevices | DeviceItem[];
-    operators: { id: number; name: string }[];
+    operators: { id: number; name: string; tenant?: { id: number; name: string } }[];
     quota: {
         allowed: number;
         paired: number;
@@ -66,6 +67,9 @@ interface DevicesProps {
 
 export default function DevicesIndex({ devices, operators, quota, tenant_uuid }: DevicesProps) {
     const { t } = useTranslation();
+    const { auth, superadmin } = usePage<any>().props;
+    const isSuperAdmin = auth?.user?.role === "superadmin";
+    const isAllTenants = isSuperAdmin && !superadmin?.selected_tenant;
     const deviceList: DeviceItem[] = Array.isArray(devices) ? devices : (devices?.data || []);
     const pagination = !Array.isArray(devices) ? (devices as PaginatedDevices) : null;
     const [editingDevice, setEditingDevice] = useState<DeviceItem | null>(null);
@@ -260,6 +264,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                         <tr>
                             <th className="py-3 px-4 w-12 text-center">№</th>
                             <th className="py-3 px-4">{t("devices.name", "Qurilma nomi")}</th>
+                            {isAllTenants && <th className="py-3 px-4">{t("devices.company", "Kompaniya")}</th>}
                             <th className="py-3 px-4">{t("devices.assignedOperator", "Mas\x27ul Operator")}</th>
                             <th className="py-3 px-4">{t("devices.simSlot", "SIM Slot")}</th>
                             <th className="py-3 px-4">Accessibility</th>
@@ -271,7 +276,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                     <tbody className="divide-y divide-border">
                         {deviceList.length === 0 ? (
                             <tr>
-                                <td colSpan={8} className="py-8 text-center text-muted-foreground text-sm">
+                                <td colSpan={isAllTenants ? 9 : 8} className="py-8 text-center text-muted-foreground text-sm">
                                     {t("devices.noDevices", "Hozircha hech qanday telefon ulanmagan. \"Yangi telefon ulash\" tugmasini bosing.")}
                                 </td>
                             </tr>
@@ -287,6 +292,13 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                                         <div className="font-semibold">{device.name}</div>
                                         <div className="text-xs text-muted-foreground font-mono">{device.model || device.device_uid}</div>
                                     </td>
+                                    {isAllTenants && (
+                                        <td className="py-3.5 px-4 text-xs">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                                                {device.tenant?.name || "-"}
+                                            </span>
+                                        </td>
+                                    )}
                                     <td className="py-3.5 px-4 text-xs font-medium">
                                         {device.user?.name || <span className="text-muted-foreground italic">{t("devices.unassigned", "Biriktirilmagan")}</span>}
                                     </td>
@@ -729,7 +741,9 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                             >
                                 <option value="">{t("devices.unassigned", "Biriktirilmagan")}</option>
                                 {operators.map((op) => (
-                                    <option key={op.id} value={op.id}>{op.name}</option>
+                                    <option key={op.id} value={op.id}>
+                                        {op.name}{isAllTenants && op.tenant?.name ? ` (${op.tenant.name})` : ""}
+                                    </option>
                                 ))}
                             </select>
                         </div>

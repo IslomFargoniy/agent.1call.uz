@@ -18,26 +18,17 @@ class DeviceManagementController extends Controller
      */
     protected function resolveTenant(Request $request, TenantContext $tenantContext): ?Tenant
     {
+        if ($request->user()?->isSuperAdmin() && ! session('superadmin_tenant_id')) {
+            return null;
+        }
+
         $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
 
         if (! $tenant && $request->user()?->isSuperAdmin()) {
-            $tenant = Tenant::firstOrCreate(
-                ['slug' => '1call-main'],
-                [
-                    'name' => 'Agent1Call Asosiy Kompaniya',
-                    'allowed_devices_count' => 100,
-                    'audio_retention_days' => 365,
-                    'is_active' => true,
-                    'trial_ends_at' => null,
-                    'subscription_expires_at' => now()->addYears(50),
-                ]
-            );
-
-            if ($request->user() && ! $request->user()->tenant_id) {
-                $request->user()->update(['tenant_id' => $tenant->id]);
+            $selectedTenantId = session('superadmin_tenant_id');
+            if ($selectedTenantId) {
+                $tenant = Tenant::find($selectedTenantId);
             }
-
-            $tenantContext->setTenant($tenant);
         }
 
         return $tenant;
@@ -50,17 +41,23 @@ class DeviceManagementController extends Controller
     {
         $tenant = $this->resolveTenant($request, $tenantContext);
 
-        $devicesQuery = Device::with('user:id,name')->orderByDesc('id');
-        $usersQuery = User::where('role', 'operator')->select('id', 'name');
+        $devicesQuery = Device::with(['user:id,name', 'tenant:id,name'])->orderByDesc('id');
+        $usersQuery = User::where('role', 'operator')->select('id', 'name', 'tenant_id');
 
         if ($tenant) {
             $devicesQuery->where('tenant_id', $tenant->id);
             $usersQuery->where('tenant_id', $tenant->id);
+        } else {
+            $usersQuery->with('tenant:id,name');
         }
 
         $pairedCount = $tenant
             ? Device::where('tenant_id', $tenant->id)->where('is_paired', true)->count()
             : Device::where('is_paired', true)->count();
+
+        $allowedCount = $tenant
+            ? ($tenant->allowed_devices_count ?? 2)
+            : (Tenant::sum('allowed_devices_count') ?: 100);
 
         $perPageInput = $request->input('per_page', 10);
         $perPage = (strtolower((string) $perPageInput) === 'all') ? 10000 : max(1, min(500, (int) $perPageInput));
@@ -71,7 +68,7 @@ class DeviceManagementController extends Controller
             'devices' => $devices,
             'operators' => $users,
             'quota' => [
-                'allowed' => $tenant?->allowed_devices_count ?? 2,
+                'allowed' => $allowedCount,
                 'paired' => $pairedCount,
             ],
             'tenant_uuid' => $tenant?->uuid,
@@ -84,6 +81,25 @@ class DeviceManagementController extends Controller
     public function generatePairingCode(Request $request, TenantContext $tenantContext): RedirectResponse
     {
         $tenant = $this->resolveTenant($request, $tenantContext);
+
+        if (! $tenant && $request->user()?->isSuperAdmin()) {
+            if ($tenantId = $request->input('tenant_id')) {
+                $tenant = Tenant::find($tenantId);
+            }
+            if (! $tenant) {
+                $tenant = Tenant::firstOrCreate(
+                    ['slug' => '1call-main'],
+                    [
+                        'name' => 'Agent1Call Asosiy Kompaniya',
+                        'allowed_devices_count' => 100,
+                        'audio_retention_days' => 365,
+                        'is_active' => true,
+                        'trial_ends_at' => null,
+                        'subscription_expires_at' => now()->addYears(50),
+                    ]
+                );
+            }
+        }
 
         if (! $tenant) {
             return back()->with('error', "Kompaniya ma'lumotlari topilmadi.");

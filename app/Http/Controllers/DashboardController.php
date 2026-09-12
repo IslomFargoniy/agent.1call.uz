@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Call;
 use App\Models\Device;
+use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
 use App\Services\TimezoneService;
 use Illuminate\Http\Request;
@@ -16,7 +17,8 @@ class DashboardController extends Controller
     public function __invoke(Request $request, TenantContext $tenantContext): Response
     {
         $user = $request->user();
-        $tenant = $tenantContext->getTenant() ?? $user->tenant;
+        $isAllTenants = $user->isSuperAdmin() && ! session('superadmin_tenant_id');
+        $tenant = $isAllTenants ? null : ($tenantContext->getTenant() ?? $user->tenant);
 
         $today = TimezoneService::localTodayStartToUtc(TimezoneService::resolveTimezone($request));
 
@@ -31,13 +33,18 @@ class DashboardController extends Controller
         $totalDuration = (clone $callsQuery)->where('call_timestamp', '>=', $today)->sum('duration_seconds');
 
         $recentCalls = (clone $callsQuery)
-            ->with(['device:id,name,model', 'user:id,name'])
+            ->with(['device:id,name,model', 'user:id,name', 'tenant:id,name'])
             ->orderByDesc('call_timestamp')
             ->limit(10)
             ->get();
 
-        $devicesCount = $tenant ? Device::count() : 0;
-        $allowedDevices = $tenant?->allowed_devices_count ?? 2;
+        $devicesCount = $tenant
+            ? Device::where('tenant_id', $tenant->id)->where('is_paired', true)->count()
+            : Device::where('is_paired', true)->count();
+
+        $allowedDevices = $tenant
+            ? ($tenant->allowed_devices_count ?? 2)
+            : (Tenant::sum('allowed_devices_count') ?: 100);
 
         return Inertia::render('dashboard', [
             'tenant' => $tenant ? [
@@ -48,7 +55,17 @@ class DashboardController extends Controller
                 'trial_ends_at' => $tenant->trial_ends_at?->toIso8601String(),
                 'allowed_devices_count' => $allowedDevices,
                 'paired_devices_count' => $devicesCount,
-            ] : null,
+            ] : ($isAllTenants ? [
+                'name' => 'Barcha kompaniyalar (Platforma)',
+                'is_trial' => false,
+                'is_grace_period' => false,
+                'subscription_expires_at' => null,
+                'trial_ends_at' => null,
+                'allowed_devices_count' => $allowedDevices,
+                'paired_devices_count' => $devicesCount,
+                'is_all_tenants' => true,
+                'tenants_count' => Tenant::count(),
+            ] : null),
             'stats' => [
                 'today_calls' => $todayCalls,
                 'answered_calls' => $answeredCalls,

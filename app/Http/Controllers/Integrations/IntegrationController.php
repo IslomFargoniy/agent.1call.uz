@@ -31,26 +31,17 @@ class IntegrationController extends Controller
      */
     protected function resolveTenant(Request $request, TenantContext $tenantContext): ?Tenant
     {
+        if ($request->user()?->isSuperAdmin() && ! session('superadmin_tenant_id')) {
+            return null;
+        }
+
         $tenant = $tenantContext->getTenant() ?? $request->user()?->tenant;
 
         if (! $tenant && $request->user()?->isSuperAdmin()) {
-            $tenant = Tenant::firstOrCreate(
-                ['slug' => '1call-main'],
-                [
-                    'name' => 'Agent1Call Asosiy Kompaniya',
-                    'allowed_devices_count' => 100,
-                    'audio_retention_days' => 365,
-                    'is_active' => true,
-                    'trial_ends_at' => null,
-                    'subscription_expires_at' => now()->addYears(50),
-                ]
-            );
-
-            if ($request->user() && ! $request->user()->tenant_id) {
-                $request->user()->update(['tenant_id' => $tenant->id]);
+            $selectedTenantId = session('superadmin_tenant_id');
+            if ($selectedTenantId) {
+                $tenant = Tenant::find($selectedTenantId);
             }
-
-            $tenantContext->setTenant($tenant);
         }
 
         return $tenant;
@@ -72,6 +63,8 @@ class IntegrationController extends Controller
         $recentLogs = $tenant ? IntegrationSyncLog::where('tenant_id', $tenant->id)->orderByDesc('id')->limit(15)->get() : collect();
 
         return Inertia::render('Integrations/Index', [
+            'isAllTenants' => $tenant === null,
+            'tenant' => $tenant ? ['id' => $tenant->id, 'name' => $tenant->name] : null,
             'amoCrm' => $amoCrm ? [
                 'id' => $amoCrm->id,
                 'is_active' => (bool) $amoCrm->is_active,

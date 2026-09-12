@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Call;
 use App\Models\Device;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Services\TimezoneService;
 use Illuminate\Http\Request;
@@ -22,12 +23,23 @@ class CallController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
+        $isAllTenants = $user->isSuperAdmin() && ! session('superadmin_tenant_id');
 
-        $query = Call::query()->with(['device:id,name,model,sim_slots_info,selected_sim_slot,user_id', 'device.user:id,name', 'user:id,name']);
+        $query = Call::query()->with([
+            'device:id,name,model,sim_slots_info,selected_sim_slot,user_id,tenant_id',
+            'device.user:id,name',
+            'user:id,name',
+            'tenant:id,name',
+        ]);
 
         // Operator only sees their own calls
         if ($user->isOperator()) {
             $query->where('user_id', $user->id);
+        }
+
+        // Tenant filter (for superadmin in all tenants mode)
+        if ($tenantId = $request->input('tenant_id')) {
+            $query->where('tenant_id', $tenantId);
         }
 
         // Phone search
@@ -78,14 +90,27 @@ class CallController extends Controller
         $perPage = (strtolower((string) $perPageInput) === 'all') ? 10000 : max(1, min(500, (int) $perPageInput));
         $calls = $query->orderByDesc('call_timestamp')->paginate($perPage)->withQueryString();
 
-        $devices = Device::select('id', 'name', 'model')->get();
-        $operators = $user->isOperator() ? [] : User::where('role', 'operator')->select('id', 'name')->get();
+        $devices = Device::select('id', 'name', 'model', 'tenant_id')
+            ->when($isAllTenants, fn ($q) => $q->with('tenant:id,name'))
+            ->get();
+
+        $operators = $user->isOperator()
+            ? []
+            : User::where('role', 'operator')
+                ->select('id', 'name', 'tenant_id')
+                ->when($isAllTenants, fn ($q) => $q->with('tenant:id,name'))
+                ->get();
+
+        $tenants = $isAllTenants
+            ? Tenant::select('id', 'name')->orderBy('name')->get()
+            : [];
 
         return Inertia::render('Calls/Index', [
             'calls' => $calls,
-            'filters' => $request->only(['search', 'direction', 'status', 'start_date', 'end_date', 'device_id', 'user_id']),
+            'filters' => $request->only(['search', 'direction', 'status', 'start_date', 'end_date', 'device_id', 'user_id', 'tenant_id']),
             'devices' => $devices,
             'operators' => $operators,
+            'tenants' => $tenants,
             'canDownload' => $user->isSuperAdmin() || $user->isAdmin(),
         ]);
     }
@@ -100,6 +125,10 @@ class CallController extends Controller
         // Operator check
         if ($user->isOperator() && $call->user_id !== $user->id) {
             abort(403, 'Ushbu yozuvni tinglashga ruxsat berilmagan.');
+        }
+
+        if (! $user->isSuperAdmin() && $call->tenant_id !== $user->tenant_id) {
+            abort(403, 'Ushbu yozuv boshqa kompaniyaga tegishli.');
         }
 
         if (! $call->hasRecording()) {
@@ -141,6 +170,10 @@ class CallController extends Controller
 
         if (! $user->isSuperAdmin() && ! $user->isAdmin()) {
             abort(403, 'Operatorlar uchun audio yozuvlarni yuklab olish taqiqlangan.');
+        }
+
+        if (! $user->isSuperAdmin() && $call->tenant_id !== $user->tenant_id) {
+            abort(403, 'Ushbu yozuv boshqa kompaniyaga tegishli.');
         }
 
         if (! $call->hasRecording()) {

@@ -8,11 +8,14 @@ import {
     Trash2,
     Send,
     ExternalLink,
+    Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 interface WorkScheduleProps {
+    isAllTenants?: boolean;
+    tenant?: { id: number; name: string } | null;
     workSchedule?: {
         enabled?: boolean;
         start_time?: string;
@@ -23,7 +26,7 @@ interface WorkScheduleProps {
     telegramChatId?: string;
 }
 
-export default function WorkScheduleSettings({ workSchedule, privacyBlacklist, telegramChatId }: WorkScheduleProps) {
+export default function WorkScheduleSettings({ isAllTenants, tenant, workSchedule, privacyBlacklist, telegramChatId }: WorkScheduleProps) {
     const { t } = useTranslation();
     const [blacklist, setBlacklist] = useState<string[]>(privacyBlacklist || []);
     const [newPhone, setNewPhone] = useState("");
@@ -78,6 +81,18 @@ export default function WorkScheduleSettings({ workSchedule, privacyBlacklist, t
                     {t("workSchedule.subtitle", "Ish vaqtini sozlash va shaxsiy qo'ng'iroqlarni yozib olishdan himoyalash")}
                 </p>
             </div>
+
+            {isAllTenants && (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 flex items-start gap-3">
+                    <Info className="h-5 w-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                    <div className="text-xs space-y-1">
+                        <p className="font-semibold text-sm">Siz "Barcha kompaniyalar" rejimidasiz</p>
+                        <p className="text-muted-foreground">
+                            Ish grafigi va maxfiylik sozlamalari har bir kompaniya uchun alohida belgilanadi. Muayyan kompaniya ish grafigini sozlash uchun yuqoridagi menyudan kerakli kompaniyani tanlang.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">

@@ -32,26 +32,8 @@ class SetTenantContext
                 if ($selectedTenantId) {
                     $tenant = Tenant::find($selectedTenantId);
                 }
-
-                // If not switched or tenant not found, fallback to superadmin's default platform tenant
-                if (! $tenant) {
-                    $tenant = $user->tenant_id ? Tenant::find($user->tenant_id) : null;
-                    if (! $tenant) {
-                        $tenant = Tenant::firstOrCreate(
-                            ['slug' => '1call-main'],
-                            [
-                                'name' => 'Agent1Call Asosiy Kompaniya',
-                                'allowed_devices_count' => 100,
-                                'audio_retention_days' => 365,
-                                'is_active' => true,
-                                'trial_ends_at' => null,
-                                'subscription_expires_at' => now()->addYears(50),
-                            ]
-                        );
-
-                        $user->update(['tenant_id' => $tenant->id]);
-                    }
-                }
+                // When $selectedTenantId is null or empty, Superadmin is viewing "Barcha kompaniyalar".
+                // In this mode, $tenant stays null so TenantScope is not applied, allowing global access!
             } elseif ($user->tenant_id) {
                 $tenant = $user->tenant ?? Tenant::find($user->tenant_id);
             }
@@ -62,9 +44,8 @@ class SetTenantContext
             $tenant = Tenant::where('uuid', $request->header('X-Tenant-UUID'))->first();
         }
 
-        if ($tenant) {
-            $this->tenantContext->setTenant($tenant);
-        }
+        // Explicitly sync tenant with tenant context (if null, resets PG / session scope)
+        $this->tenantContext->setTenant($tenant);
 
         $response = $next($request);
 

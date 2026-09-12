@@ -37,8 +37,8 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
-        $tenant = $user ? (app(TenantContext::class)->getTenant() ?? $user->tenant) : null;
         $isSuperAdmin = $user && $user->role === 'superadmin';
+        $tenant = $user ? (app(TenantContext::class)->getTenant() ?? ($isSuperAdmin ? null : $user->tenant)) : null;
         $selectedTenant = null;
 
         if ($isSuperAdmin) {

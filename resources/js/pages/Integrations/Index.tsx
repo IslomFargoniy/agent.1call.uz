@@ -26,6 +26,8 @@ import { cn } from "@/lib/utils";
 import { formatLogTime } from "@/lib/datetime";
 
 interface IntegrationsProps {
+    isAllTenants?: boolean;
+    tenant?: { id: number; name: string } | null;
     amoCrm?: {
         id?: number;
         is_active: boolean;
@@ -239,6 +241,18 @@ function IntegrationsContent({
                     </p>
                 </div>
             </div>
+
+            {isAllTenants && (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 flex items-start gap-3">
+                    <Info className="h-5 w-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                    <div className="text-xs space-y-1">
+                        <p className="font-semibold text-sm">Siz "Barcha kompaniyalar" rejimidasiz</p>
+                        <p className="text-muted-foreground">
+                            amoCRM yoki MoySklad integratsiyalari har bir kompaniya uchun alohida sozlanadi. Muayyan kompaniya integratsiyasini ulash yoki tahrirlash uchun yuqoridagi menyudan kerakli kompaniyani tanlang.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* 2 Tabs: amoCRM and MoySklad */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/80 pb-4">
