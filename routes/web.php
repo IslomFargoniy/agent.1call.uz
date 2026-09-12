@@ -94,7 +94,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // 4. Superadmin Platform Management Routes (/admin/*)
     Route::middleware(['superadmin.bypass'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/tenants', [SuperadminController::class, 'tenants'])->name('tenants.index');
+        Route::post('/tenants', [SuperadminController::class, 'createTenant'])->name('tenants.store');
         Route::put('/tenants/{tenant}', [SuperadminController::class, 'updateTenant'])->name('tenants.update');
+        Route::delete('/tenants/{tenant}', [SuperadminController::class, 'deleteTenant'])->name('tenants.destroy');
 
         Route::get('/users', [SuperadminController::class, 'users'])->name('users.index');
         Route::put('/users/{user}', [SuperadminController::class, 'updateUser'])->name('users.update');

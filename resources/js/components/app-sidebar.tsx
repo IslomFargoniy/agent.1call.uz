@@ -72,7 +72,7 @@ export function AppSidebar() {
 
     const superadminNavItems: NavItem[] = [
         {
-            title: t('sidebar.tenantsAndUsers', 'Kompaniyalar va Xodimlar'),
+            title: t('sidebar.customers', 'Mijozlar (Kompaniyalar)'),
             href: '/admin/tenants',
             icon: Building2,
         },

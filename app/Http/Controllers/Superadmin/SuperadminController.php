@@ -18,6 +18,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,70 +30,142 @@ class SuperadminController extends Controller
     ) {}
 
     /**
-     * Unified Tenants & Users Management for Superadmin.
+     * Unified Customers (Tenants & Owners) Management for Superadmin.
      */
     public function tenants(Request $request): Response
     {
-        $activeTab = $request->input('tab', 'tenants');
         $perPageInput = $request->input('per_page', 10);
         $perPage = (strtolower((string) $perPageInput) === 'all') ? 10000 : max(1, min(500, (int) $perPageInput));
         $search = $request->input('search');
+        $status = $request->input('status');
 
-        // 1. Tenants query
-        $tenantsQuery = Tenant::withCount(['users', 'devices', 'calls']);
-        if ($activeTab === 'tenants' && $search) {
+        $tenantsQuery = Tenant::with([
+            'users' => function ($q) {
+                $q->select('id', 'tenant_id', 'name', 'email', 'phone_number', 'role', 'is_active', 'created_at')
+                  ->where('role', '!=', 'superadmin')
+                  ->orderBy('id');
+            }
+        ])->withCount(['devices', 'calls']);
+
+        if ($search) {
             $tenantsQuery->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('slug', 'like', "%{$search}%");
+                  ->orWhere('slug', 'like', "%{$search}%")
+                  ->orWhereHas('users', function ($uq) use ($search) {
+                      $uq->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone_number', 'like', "%{$search}%");
+                  });
             });
         }
+
+        if ($status === 'active') {
+            $tenantsQuery->where('is_active', true)
+                ->where('subscription_expires_at', '>', now());
+        } elseif ($status === 'trial') {
+            $tenantsQuery->where('is_active', true)
+                ->where('trial_ends_at', '>', now())
+                ->where(function ($q) {
+                    $q->whereNull('subscription_expires_at')
+                      ->orWhere('subscription_expires_at', '<=', now());
+                });
+        } elseif ($status === 'expired') {
+            $tenantsQuery->where('is_active', true)
+                ->where(function ($q) {
+                    $q->where(function ($sq) {
+                        $sq->whereNotNull('subscription_expires_at')
+                           ->where('subscription_expires_at', '<=', now());
+                    })->orWhere(function ($tq) {
+                        $tq->whereNotNull('trial_ends_at')
+                           ->where('trial_ends_at', '<=', now())
+                           ->whereNull('subscription_expires_at');
+                    });
+                });
+        } elseif ($status === 'inactive') {
+            $tenantsQuery->where('is_active', false);
+        }
+
         $tenants = $tenantsQuery->orderByDesc('id')
-            ->paginate($perPage, ['*'], 'tenants_page')
+            ->paginate($perPage)
             ->withQueryString();
-
-        // 2. Users query
-        $usersQuery = User::with('tenant:id,name');
-        if ($activeTab === 'users' && $search) {
-            $usersQuery->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone_number', 'like', "%{$search}%");
-            });
-        }
-        if ($role = $request->input('role')) {
-            $usersQuery->where('role', $role);
-        }
-        if ($tenantId = $request->input('tenant_id')) {
-            $usersQuery->where('tenant_id', $tenantId);
-        }
-        $users = $usersQuery->orderByDesc('id')
-            ->paginate($perPage, ['*'], 'users_page')
-            ->withQueryString();
-
-        $allTenants = Tenant::select('id', 'name')->orderBy('name')->get();
 
         return Inertia::render('Admin/Tenants', [
-            'activeTab' => $activeTab,
             'tenants' => $tenants,
-            'users' => $users,
-            'allTenants' => $allTenants,
-            'filters' => $request->only(['search', 'role', 'tenant_id', 'tab', 'per_page']),
+            'filters' => $request->only(['search', 'status', 'per_page']),
         ]);
     }
 
     /**
-     * Update Tenant properties (allowed devices, extend subscription).
+     * Create a new Customer (Tenant + Admin User) from Superadmin.
+     */
+    public function createTenant(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'owner_name' => ['required', 'string', 'max:255'],
+            'owner_email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'owner_phone' => ['nullable', 'string', 'max:50'],
+            'password' => ['required', 'string', 'min:8'],
+            'allowed_devices_count' => ['required', 'integer', 'min:1'],
+            'audio_retention_days' => ['required', 'integer', 'in:30,60,90,180,365'],
+            'trial_days' => ['nullable', 'integer', 'min:0', 'max:365'],
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($validated) {
+            $trialDays = isset($validated['trial_days']) ? (int) $validated['trial_days'] : 14;
+
+            $tenant = Tenant::create([
+                'name' => trim($validated['name']),
+                'email' => trim($validated['owner_email']),
+                'slug' => Str::slug(trim($validated['name'])).'-'.Str::lower(Str::random(4)),
+                'allowed_devices_count' => (int) $validated['allowed_devices_count'],
+                'audio_retention_days' => (int) $validated['audio_retention_days'],
+                'trial_ends_at' => $trialDays > 0 ? Carbon::now()->addDays($trialDays) : null,
+                'is_active' => (bool) $validated['is_active'],
+            ]);
+
+            User::create([
+                'name' => trim($validated['owner_name']),
+                'email' => trim($validated['owner_email']),
+                'phone_number' => ! empty($validated['owner_phone']) ? trim($validated['owner_phone']) : null,
+                'password' => bcrypt($validated['password']),
+                'role' => 'admin',
+                'tenant_id' => $tenant->id,
+                'is_active' => (bool) $validated['is_active'],
+            ]);
+        });
+
+        return back()->with('success', "Yangi mijoz muvaffaqiyatli qo'shildi.");
+    }
+
+    /**
+     * Update Customer (Tenant properties & Owner User login/contact).
      */
     public function updateTenant(Tenant $tenant, Request $request): RedirectResponse
     {
-        $validated = $request->validate([
+        /** @var User|null $ownerUser */
+        $ownerUser = $tenant->users()->where('role', '!=', 'superadmin')->first();
+
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'allowed_devices_count' => ['required', 'integer', 'min:1'],
             'audio_retention_days' => ['required', 'integer', 'in:30,60,90,180,365'],
             'subscription_expires_at' => ['nullable', 'date'],
             'trial_ends_at' => ['nullable', 'date'],
             'is_active' => ['required', 'boolean'],
-        ]);
+            'owner_name' => ['nullable', 'string', 'max:255'],
+            'owner_phone' => ['nullable', 'string', 'max:50'],
+            'new_password' => ['nullable', 'string', 'min:8'],
+        ];
+
+        if ($ownerUser) {
+            $rules['owner_email'] = ['nullable', 'email', 'max:255', 'unique:users,email,'.$ownerUser->id];
+        } else {
+            $rules['owner_email'] = ['nullable', 'email', 'max:255', 'unique:users,email'];
+        }
+
+        $validated = $request->validate($rules);
 
         $tenant->update([
             'name' => $validated['name'],
@@ -103,15 +176,45 @@ class SuperadminController extends Controller
             'is_active' => $validated['is_active'],
         ]);
 
-        return back()->with('success', "Tenant #{$tenant->name} ma'lumotlari yangilandi.");
+        if ($ownerUser) {
+            if (! empty($validated['owner_name'])) {
+                $ownerUser->name = trim($validated['owner_name']);
+            }
+            if (! empty($validated['owner_email'])) {
+                $ownerUser->email = trim($validated['owner_email']);
+            }
+            if (array_key_exists('owner_phone', $validated)) {
+                $ownerUser->phone_number = ! empty($validated['owner_phone']) ? trim($validated['owner_phone']) : null;
+            }
+            if (! empty($validated['new_password'])) {
+                $ownerUser->password = bcrypt($validated['new_password']);
+            }
+            $ownerUser->is_active = (bool) $validated['is_active'];
+            $ownerUser->save();
+        }
+
+        return back()->with('success', "Mijoz #{$tenant->name} ma'lumotlari yangilandi.");
     }
 
     /**
-     * Users Management redirect to unified Tenants & Users page.
+     * Delete Customer (Tenant and its associated users and devices).
+     */
+    public function deleteTenant(Tenant $tenant): RedirectResponse
+    {
+        $name = $tenant->name;
+        $tenant->devices()->delete();
+        $tenant->users()->delete();
+        $tenant->delete();
+
+        return back()->with('success', "Mijoz #{$name} o'chirildi.");
+    }
+
+    /**
+     * Users Management redirect to unified Customers page.
      */
     public function users(Request $request): RedirectResponse
     {
-        return redirect()->route('admin.tenants.index', array_merge($request->all(), ['tab' => 'users']));
+        return redirect()->route('admin.tenants.index', $request->all());
     }
 
     /**
