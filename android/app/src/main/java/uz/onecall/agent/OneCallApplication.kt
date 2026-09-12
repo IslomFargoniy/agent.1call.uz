@@ -29,6 +29,7 @@ class OneCallApplication : Application() {
 
         database = AppDatabase.getDatabase(this)
         preferences = PreferenceManager(this)
+        uz.onecall.agent.core.AppLanguageManager.init(preferences.language)
 
         createNotificationChannels()
         scheduleHeartbeatWorker()

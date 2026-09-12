@@ -1,5 +1,8 @@
 package uz.onecall.agent.ui.screens.home
 
+import uz.onecall.agent.core.appStrings
+import uz.onecall.agent.ui.components.LanguageSwitchButton
+
 import android.content.Intent
 import android.provider.Settings
 import android.widget.Toast
@@ -98,6 +101,7 @@ import java.util.Locale
 fun HomeScreen(
     onNavigateToSettings: () -> Unit
 ) {
+    val s = appStrings()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val app = OneCallApplication.instance
@@ -180,7 +184,7 @@ fun HomeScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Operator: ${prefs.operatorName ?: "Faol"}",
+                                text = "${s.homeHeaderOperator}: ${prefs.operatorName ?: s.active}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
@@ -188,8 +192,10 @@ fun HomeScreen(
                     }
                 },
                 actions = {
+                    LanguageSwitchButton()
+                    Spacer(modifier = Modifier.width(4.dp))
                     IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Sozlamalar")
+                        Icon(Icons.Default.Settings, contentDescription = s.settings)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -269,7 +275,7 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Xizmat Ishchi Holatda",
+                                text = s.homeHeaderActive,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -297,7 +303,7 @@ fun HomeScreen(
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "Bugungi qo'ng'iroq",
+                                text = s.statsTodayTitle,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )
@@ -319,7 +325,7 @@ fun HomeScreen(
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "Yuklanish navbatida",
+                                text = s.homeHeaderSyncPending,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )
@@ -456,13 +462,13 @@ fun HomeScreen(
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = "Mijoz ovozini yozib olish:",
+                                            text = s.samsungRecordTitle,
                                             style = MaterialTheme.typography.labelMedium,
                                             fontWeight = FontWeight.SemiBold,
                                             color = PrimaryBlue
                                         )
                                         Text(
-                                            text = "Samsung Telefon > Sozlamalar > 'Qo'ng'iroqlarni avtomatik yozish' yoqilishi shart.",
+                                            text = s.samsungRecordDesc,
                                             style = MaterialTheme.typography.bodySmall,
                                             fontSize = 11.sp,
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
@@ -488,7 +494,7 @@ fun HomeScreen(
                                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                                         modifier = Modifier.height(34.dp)
                                     ) {
-                                        Text("Sozlash", fontSize = 11.sp)
+                                        Text(s.samsungSettingsBtn, fontSize = 11.sp)
                                     }
                                 }
                             }
@@ -511,7 +517,7 @@ fun HomeScreen(
                     ) {
                         Icon(Icons.Default.CloudSync, contentDescription = null)
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Sinxronlash")
+                        Text(s.syncNowBtn)
                     }
 
                     OutlinedButton(
@@ -529,7 +535,7 @@ fun HomeScreen(
             // Recent Calls Header
             item {
                 Text(
-                    text = "So'nggi Qo'ng'iroqlar",
+                    text = s.recentCallsTitle,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -539,7 +545,7 @@ fun HomeScreen(
             if (recentCalls.isEmpty()) {
                 item {
                     Text(
-                        text = "Hozircha qo'ng'iroqlar qayd etilmagan.",
+                        text = s.noCallsTitle,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                         modifier = Modifier.padding(vertical = 16.dp)
@@ -555,7 +561,7 @@ fun HomeScreen(
         if (showEditPhoneDialog) {
             AlertDialog(
                 onDismissRequest = { showEditPhoneDialog = false },
-                title = { Text("Operator Telefon Raqami") },
+                title = { Text(s.editPhoneDialogTitle) },
                 text = {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
@@ -584,12 +590,12 @@ fun HomeScreen(
                             Toast.makeText(context, "Operator raqami saqlandi va serverga yuborildi", Toast.LENGTH_SHORT).show()
                         }
                     ) {
-                        Text("Saqlash")
+                        Text(s.save)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showEditPhoneDialog = false }) {
-                        Text("Bekor qilish")
+                        Text(s.cancel)
                     }
                 }
             )

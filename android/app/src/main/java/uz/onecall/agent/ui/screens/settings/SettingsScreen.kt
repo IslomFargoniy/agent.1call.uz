@@ -65,7 +65,9 @@ import uz.onecall.agent.BuildConfig
 import uz.onecall.agent.OneCallApplication
 import uz.onecall.agent.core.AppUpdateManager
 import uz.onecall.agent.core.UpdateCheckResult
+import uz.onecall.agent.core.appStrings
 import uz.onecall.agent.data.remote.AppVersionResponse
+import uz.onecall.agent.ui.components.LanguageSelectorCard
 import uz.onecall.agent.ui.theme.AccentRed
 import uz.onecall.agent.ui.theme.PrimaryBlue
 
@@ -76,24 +78,26 @@ fun SettingsScreen(
     onUnpaired: () -> Unit
 ) {
     val context = LocalContext.current
-    val app = OneCallApplication.instance
-    val prefs = app.preferences
     val coroutineScope = rememberCoroutineScope()
+    val prefs = OneCallApplication.instance.preferences
+    val s = appStrings()
 
     var showUnpairDialog by remember { mutableStateOf(false) }
     var isCheckingUpdate by remember { mutableStateOf(false) }
     var availableUpdate by remember { mutableStateOf<AppVersionResponse?>(null) }
+    var showUpToDateDialog by remember { mutableStateOf(false) }
     var isDownloading by remember { mutableStateOf(false) }
     var downloadProgress by remember { mutableIntStateOf(0) }
-    var showUpToDateDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     // Unpair Dialog
     if (showUnpairDialog) {
         AlertDialog(
             onDismissRequest = { showUnpairDialog = false },
-            title = { Text("Qurilmani Uzish") },
-            text = { Text("Haqiqatan ham ushbu qurilmani tizimdan uzmoqchimisiz? Yangi qo'ng'iroqlar sinxronlanmaydi.") },
+            title = { Text(s.unpairConfirmTitle, fontWeight = FontWeight.Bold) },
+            text = {
+                Text(s.unpairConfirmDesc)
+            },
             confirmButton = {
                 Button(
                     onClick = {
@@ -103,26 +107,12 @@ fun SettingsScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
                 ) {
-                    Text("Uzish")
+                    Text(s.unpairConfirmAction)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showUnpairDialog = false }) {
-                    Text("Bekor qilish")
-                }
-            }
-        )
-    }
-
-    // Up To Date Dialog
-    if (showUpToDateDialog) {
-        AlertDialog(
-            onDismissRequest = { showUpToDateDialog = false },
-            title = { Text("Dastur Eng So'nggi Versiyada") },
-            text = { Text("Sizda eng oxirgi v${BuildConfig.VERSION_NAME} (Build ${BuildConfig.VERSION_CODE}) versiyasi o'rnatilgan.") },
-            confirmButton = {
-                Button(onClick = { showUpToDateDialog = false }) {
-                    Text("OK")
+                    Text(s.cancel)
                 }
             }
         )
@@ -140,17 +130,12 @@ fun SettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = PrimaryBlue)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Yangi Versiya Mavjud: v${updateInfo.version}")
+                    Text("${s.updateAvailableBanner}: v${updateInfo.version}", fontWeight = FontWeight.Bold)
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (!updateInfo.changelog.isNullOrEmpty()) {
-                        Text(
-                            text = "O'zgarishlar:",
-                            fontWeight = FontWeight.SemiBold,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
                         Text(
                             text = updateInfo.changelog,
                             style = MaterialTheme.typography.bodySmall,
@@ -160,7 +145,7 @@ fun SettingsScreen(
                     if (isDownloading) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Yuklab olinmoqda... $downloadProgress%",
+                            text = "${s.syncing} $downloadProgress%",
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Medium
                         )
@@ -189,35 +174,51 @@ fun SettingsScreen(
                                     availableUpdate = null
                                     AppUpdateManager.promptInstall(context, apkFile)
                                 }.onFailure { e ->
-                                    errorMessage = "Yuklab olishda xatolik: ${e.localizedMessage}"
+                                    errorMessage = "${s.error}: ${e.localizedMessage}"
                                 }
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                     ) {
-                        Text("Yuklab Olish va O'rnatish")
+                        Text(s.updateClickHint)
                     }
                 }
             },
             dismissButton = {
                 if (!isDownloading && !updateInfo.forceUpdate) {
                     TextButton(onClick = { availableUpdate = null }) {
-                        Text("Keyinroq")
+                        Text(s.cancel)
                     }
                 }
             }
         )
     }
 
+    // Up To Date Dialog
+    if (showUpToDateDialog) {
+        AlertDialog(
+            onDismissRequest = { showUpToDateDialog = false },
+            title = { Text(s.success, fontWeight = FontWeight.Bold) },
+            text = {
+                Text(s.currentVersionDesc.format(BuildConfig.VERSION_NAME))
+            },
+            confirmButton = {
+                TextButton(onClick = { showUpToDateDialog = false }) {
+                    Text(s.ok)
+                }
+            }
+        )
+    }
+
     // Error Dialog
-    errorMessage?.let { msg ->
+    if (errorMessage != null) {
         AlertDialog(
             onDismissRequest = { errorMessage = null },
-            title = { Text("Xatolik") },
-            text = { Text(msg) },
+            title = { Text(s.error, fontWeight = FontWeight.Bold) },
+            text = { Text(errorMessage ?: "") },
             confirmButton = {
-                Button(onClick = { errorMessage = null }) {
-                    Text("OK")
+                TextButton(onClick = { errorMessage = null }) {
+                    Text(s.ok)
                 }
             }
         )
@@ -226,10 +227,10 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Sozlamalar", fontWeight = FontWeight.Bold) },
+                title = { Text(s.settingsTitle, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Orqaga")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = s.back)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -244,6 +245,9 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Language Selection Card (UZ / RU / EN)
+            LanguageSelectorCard()
+
             // Device Information Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -261,15 +265,15 @@ fun SettingsScreen(
                                 .clip(RoundedCornerShape(6.dp))
                         )
                         Spacer(modifier = Modifier.width(10.dp))
-                        Text(text = "Qurilma Ma'lumotlari", fontWeight = FontWeight.SemiBold)
+                        Text(text = s.deviceInfoTitle, fontWeight = FontWeight.SemiBold)
                     }
                     Spacer(modifier = Modifier.height(12.dp))
-                    InfoRow(label = "Model:", value = prefs.deviceName)
-                    InfoRow(label = "Kompaniya:", value = prefs.tenantName ?: "Ulanmagan")
-                    InfoRow(label = "Operator:", value = prefs.operatorName ?: "Noma'lum")
-                    InfoRow(label = "Server:", value = prefs.baseUrl)
-                    InfoRow(label = "Versiya:", value = "${BuildConfig.VERSION_NAME} (Build ${BuildConfig.VERSION_CODE})")
-                    InfoRow(label = "Hardware UID:", value = prefs.hardwareUid.take(16) + "...")
+                    InfoRow(label = "${s.model}:", value = prefs.deviceName)
+                    InfoRow(label = "${s.company}:", value = prefs.tenantName ?: s.notPaired)
+                    InfoRow(label = "${s.operator}:", value = prefs.operatorName ?: s.unknown)
+                    InfoRow(label = "${s.server}:", value = prefs.baseUrl)
+                    InfoRow(label = "${s.version}:", value = "${BuildConfig.VERSION_NAME} (Build ${BuildConfig.VERSION_CODE})")
+                    InfoRow(label = "${s.hardwareUid}:", value = prefs.hardwareUid.take(16) + "...")
                 }
             }
 
@@ -284,11 +288,11 @@ fun SettingsScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.CloudDownload, contentDescription = null, tint = PrimaryBlue)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "Dastur Yangilanishi", fontWeight = FontWeight.SemiBold)
+                        Text(text = s.appUpdateTitle, fontWeight = FontWeight.SemiBold)
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = "Joriy versiya: v${BuildConfig.VERSION_NAME}. Yangi imkoniyatlar va barqarorlik uchun yangilanishlarni doimiy tekshirib turing.",
+                        text = s.currentVersionDesc.format(BuildConfig.VERSION_NAME),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
@@ -323,11 +327,11 @@ fun SettingsScreen(
                                 strokeWidth = 2.dp
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Tekshirilmoqda...")
+                            Text(s.checkingUpdate)
                         } else {
                             Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Yangilanishlarni Tekshirish")
+                            Text(s.checkUpdateBtn)
                         }
                     }
                 }
@@ -344,11 +348,11 @@ fun SettingsScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.BatteryAlert, contentDescription = null, tint = PrimaryBlue)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "Ishlab Chiqaruvchi Tavsiyalari", fontWeight = FontWeight.SemiBold)
+                        Text(text = s.batteryTitle, fontWeight = FontWeight.SemiBold)
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Ilova fonda to'xtab qolmasligi uchun telefoningiz sozlamalarida quyidagilarni tekshiring:",
+                        text = s.batteryDesc,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
@@ -383,7 +387,7 @@ fun SettingsScreen(
             ) {
                 Icon(Icons.Default.Info, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Tizim Ilova Sozlamalarini Ochish")
+                Text(s.openSettingsBtn)
             }
 
             // Unpair button
@@ -395,7 +399,7 @@ fun SettingsScreen(
             ) {
                 Icon(Icons.Default.Logout, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Qurilmani Tizimdan Uzish")
+                Text(s.unpairBtn)
             }
         }
     }

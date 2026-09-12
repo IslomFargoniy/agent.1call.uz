@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">1Call Agent</string>
+    <string name="accessibility_service_name">1Call Call Recording Service</string>
+    <string name="accessibility_service_description">This service is required to detect corporate calls, automatically record audio, and sync with CRM in real-time.</string>
+</resources>

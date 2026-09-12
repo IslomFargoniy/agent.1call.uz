@@ -1,5 +1,8 @@
 package uz.onecall.agent.ui.screens.pairing
 
+import uz.onecall.agent.core.appStrings
+import uz.onecall.agent.ui.components.LanguageSwitchButton
+
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import uz.onecall.agent.R
@@ -82,6 +85,7 @@ fun PairingScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val s = appStrings()
     val prefs = OneCallApplication.instance.preferences
 
     fun doPair(code: String) {
@@ -133,6 +137,13 @@ fun PairingScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                LanguageSwitchButton()
+            }
+            Spacer(modifier = Modifier.height(8.dp))
             Image(
                 painter = painterResource(id = R.drawable.ic_1call_logo),
                 contentDescription = "1Call Logo",
@@ -142,13 +153,13 @@ fun PairingScreen(
             )
             Spacer(modifier = Modifier.height(14.dp))
             Text(
-                text = "Qurilmani Ulash",
+                text = s.pairingTitle,
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "Kompaniya boshqaruv panelidagi 'Qurilma ulash' oynasida ko'rsatilgan kodni kiriting yoki QR-kodni skanerlang.",
+                text = s.pairingSubtitle,
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
@@ -163,13 +174,13 @@ fun PairingScreen(
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text("6 xonali kod") },
+                    text = { Text(s.tabCode) },
                     icon = { Icon(Icons.Default.Pin, contentDescription = null) }
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text("QR Skaner") },
+                    text = { Text(s.tabQr) },
                     icon = { Icon(Icons.Default.QrCodeScanner, contentDescription = null) }
                 )
             }
@@ -181,8 +192,8 @@ fun PairingScreen(
                 OutlinedTextField(
                     value = pairCode,
                     onValueChange = { if (it.length <= 6) pairCode = it },
-                    label = { Text("6 xonali ulash kodi") },
-                    placeholder = { Text("Masalan: 482910") },
+                    label = { Text(s.codeInputLabel) },
+                    placeholder = { Text(s.codeInputPlaceholder) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -194,7 +205,7 @@ fun PairingScreen(
                 OutlinedTextField(
                     value = serverUrl,
                     onValueChange = { serverUrl = it },
-                    label = { Text("Server manzili") },
+                    label = { Text(s.serverUrlLabel) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
@@ -224,7 +235,7 @@ fun PairingScreen(
                     if (isLoading) {
                         CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                     } else {
-                        Text(text = "Tizimga Ulash", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(text = s.pairBtn, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             } else {
@@ -277,6 +288,7 @@ fun QrCameraPreview(
     onQrScanned: (String) -> Unit
 ) {
     val context = LocalContext.current
+    val s = appStrings()
     val lifecycleOwner = LocalLifecycleOwner.current
     var isScanned by remember { mutableStateOf(false) }
 

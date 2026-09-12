@@ -79,6 +79,10 @@ class PreferenceManager(context: Context) {
         get() = sharedPreferences.getString(KEY_SIM2_PHONE_NUMBER, null)
         set(value) = sharedPreferences.edit().putString(KEY_SIM2_PHONE_NUMBER, value).apply()
 
+    var language: String
+        get() = sharedPreferences.getString(KEY_LANGUAGE, "uz") ?: "uz"
+        set(value) = sharedPreferences.edit().putString(KEY_LANGUAGE, value).apply()
+
     fun clearAuth() {
         sharedPreferences.edit()
             .remove(KEY_DEVICE_TOKEN)
@@ -101,5 +105,6 @@ class PreferenceManager(context: Context) {
         private const val KEY_PRIVACY_BLACKLIST = "privacy_blacklist"
         private const val KEY_SIM1_PHONE_NUMBER = "sim1_phone_number"
         private const val KEY_SIM2_PHONE_NUMBER = "sim2_phone_number"
+        private const val KEY_LANGUAGE = "app_language"
     }
 }

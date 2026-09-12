@@ -1,8 +1,8 @@
 {
-  "version": "1.0.8",
-  "version_code": 9,
-  "file_size": 24478116,
+  "version": "1.0.9",
+  "version_code": 10,
+  "file_size": 24482212,
   "download_url": "/downloads/1call-agent.apk",
-  "changelog": "1Call Agent v1.0.8:\n- Samsung Galaxy telefonlarida mijoz ovozini (ikkala tomonlama) yozib olish to'liq sozlandi (Android 15 Scoped Storage orqali nusxalash)\n- Telefon raqami tizim va SIM orqali avtomatik aniqlanishi (READ_PHONE_NUMBERS ruxsati) qo'shildi\n- Bosh ekranda Samsung avtomatik qo'ng'iroq yozish sozlamalarini 1 bosish bilan ochish tugmasi qo'shildi\n- Bosh ekranda oxirgi qo'ng'iroqlar jurnali yangilandi",
-  "updated_at": "2026-09-11T15:05:00.000Z"
+  "changelog": "1Call Agent v1.0.9:\n- Ilovaga ko'p tillilik to'liq qo'shildi: O'zbekcha (default), Ruscha va Inglizcha (UZ, RU, EN)\n- Sozlamalar va boshqa sahifalarda tilni 1 bosish orqali tezkor almashtirish imkoniyati\n- Ilova interfeysi qayta yuklanmasdan dinamik ravishda tanlangan tilga moslashadi\n- Tizim bildirishnomalari va xizmatlar uchun ham tillar moslashtirildi",
+  "updated_at": "2026-09-12T01:38:53.427162Z"
 }

@@ -1,5 +1,8 @@
 package uz.onecall.agent.ui.screens.permissions
 
+import uz.onecall.agent.core.appStrings
+import uz.onecall.agent.ui.components.LanguageSwitchButton
+
 import android.Manifest
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
@@ -70,6 +73,7 @@ fun PermissionsScreen(
     onAllGranted: () -> Unit
 ) {
     val context = LocalContext.current
+    val s = appStrings()
     val lifecycleOwner = LocalLifecycleOwner.current
 
     var isPhoneGranted by remember { mutableStateOf(false) }
@@ -176,21 +180,25 @@ fun PermissionsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Tizim Ruxsatnomalari",
+                    text = s.permissionsTitle,
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.primary
                 )
-                IconButton(
-                    onClick = {
-                        checkStatus()
-                        Toast.makeText(context, "Ruxsatlar holati yangilandi", Toast.LENGTH_SHORT).show()
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    LanguageSwitchButton()
+                    Spacer(modifier = Modifier.width(4.dp))
+                    IconButton(
+                        onClick = {
+                            checkStatus()
+                            Toast.makeText(context, s.refresh, Toast.LENGTH_SHORT).show()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = s.refresh,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Yangilash",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
                 }
             }
 
@@ -205,8 +213,8 @@ fun PermissionsScreen(
 
             // 1. Phone state
             PermissionCard(
-                title = "Telefon qo'ng'iroqlari",
-                description = "Kiruvchi va chiquvchi raqamlarni aniqlash",
+                title = s.permPhoneTitle,
+                description = s.permPhoneDesc,
                 icon = Icons.Default.Phone,
                 isGranted = isPhoneGranted,
                 onGrant = {
@@ -225,8 +233,8 @@ fun PermissionsScreen(
 
             // 2. Audio Record
             PermissionCard(
-                title = "Mikrofon va Audio Fayllar",
-                description = "2 tomonlama suhbat audio yozuvlarini yaratish va sinxronlash",
+                title = s.permAudioTitle,
+                description = s.permAudioDesc,
                 icon = Icons.Default.Mic,
                 isGranted = isAudioGranted,
                 onGrant = {
@@ -244,8 +252,8 @@ fun PermissionsScreen(
 
             // 3. Accessibility
             PermissionCard(
-                title = "Qo'ng'iroq Yozuv Xizmati",
-                description = "Maxsus imkoniyatlar (Accessibility) orqali avto-yozish",
+                title = s.permAccessibilityTitle,
+                description = s.permAccessibilityDesc,
                 icon = Icons.Default.SettingsAccessibility,
                 isGranted = isAccessibilityEnabled,
                 onGrant = {
@@ -258,8 +266,8 @@ fun PermissionsScreen(
 
             // 4. Battery Optimization
             PermissionCard(
-                title = "Fondagi Faoliyat (Batareya)",
-                description = "Tizim ilovani to'xtatib qo'ymasligi uchun cheklovni olib tashlash",
+                title = s.permBatteryTitle,
+                description = s.permBatteryDesc,
                 icon = Icons.Default.BatteryChargingFull,
                 isGranted = isBatteryOptimized,
                 onGrant = {
@@ -278,8 +286,8 @@ fun PermissionsScreen(
 
             // 5. In-App APK Install / Update
             PermissionCard(
-                title = "Ilovalarni yangilash (APK o'rnatish)",
-                description = "Ilovaning yangi versiyalari chiqqanda avtomatik o'rnatish uchun",
+                title = s.permInstallTitle,
+                description = s.permInstallDesc,
                 icon = Icons.Default.SystemUpdate,
                 isGranted = isInstallUnknownAppsGranted,
                 onGrant = {
@@ -315,7 +323,7 @@ fun PermissionsScreen(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Ruxsatlar holatini yangilash")
+                Text(text = s.permissionsRefresh)
             }
 
             Spacer(modifier = Modifier.height(20.dp))
