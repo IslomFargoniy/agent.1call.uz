@@ -377,93 +377,98 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                         </div>
                     </div>
 
-                    {/* 4. Payment Method Selection */}
-                    <div className="bg-card p-6 rounded-2xl border border-border space-y-4 shadow-xs">
-                        <h3 className="font-semibold text-base flex items-center gap-2">
-                            <CreditCard className="h-5 w-5 text-primary" /> {t("billing.step5Payment", "4. To'lov tizimini tanlang")}
-                        </h3>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {paymentMethods.map((method) => (
-                                <div
-                                    key={method.code}
-                                    onClick={() => setSelectedPaymentMethod(method.code)}
-                                    className={`p-4 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
-                                        selectedPaymentMethod === method.code
-                                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                                            : "border-border bg-card hover:bg-muted/40"
-                                    }`}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <PaymentMethodLogo code={method.code} className="h-6" />
-                                        <div>
-                                            <span className="font-bold text-sm block">
-                                                {method.code === "card_transfer"
-                                                    ? t("billing.p2pTransfer", method.name)
-                                                    : method.code === "lemonsqueezy"
-                                                        ? t("billing.intlCards", method.name)
-                                                        : method.name}
-                                            </span>
-                                            <span className="text-xs text-muted-foreground">
-                                                {method.code === "lemonsqueezy" ? t("billing.usdCards", "USD (Visa, Mastercard)") : t("billing.uzsCards", "UZS (Humo / Uzcard)")}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                                        selectedPaymentMethod === method.code ? "border-primary bg-primary text-primary-foreground" : "border-border"
-                                    }`}>
-                                        {selectedPaymentMethod === method.code && <Check className="h-3 w-3" />}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
 
-                {/* Order Summary & Checkout Card */}
-                <div className="lg:col-span-1">
-                    <div className="bg-card p-6 rounded-2xl border border-border shadow-md space-y-6 sticky top-6">
-                        <h3 className="font-bold text-lg border-b border-border pb-3">{t("billing.orderSummary", "Buyurtma tafsilotlari")}</h3>
+                {/* Right Column: Payment Method & Order Summary */}
+                <div className="lg:col-span-1 space-y-3 sticky top-6">
+                    {/* Payment Method Selection Card */}
+                    <div className="bg-card p-4 rounded-xl border border-border shadow-xs space-y-2.5">
+                        <h3 className="font-semibold text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                            <CreditCard className="h-3.5 w-3.5 text-primary" /> {t("billing.step5Payment", "To'lov tizimini tanlang")}
+                        </h3>
 
-                        <div className="space-y-3 text-xs">
-                            <div className="flex justify-between">
+                        <div className="space-y-1.5">
+                            {paymentMethods.map((method) => {
+                                const isSelected = selectedPaymentMethod === method.code;
+                                return (
+                                    <div
+                                        key={method.code}
+                                        onClick={() => setSelectedPaymentMethod(method.code)}
+                                        className={`p-2.5 rounded-xl border cursor-pointer flex items-center justify-between transition-all select-none ${
+                                            isSelected
+                                                ? "border-primary bg-primary/5 ring-1 ring-primary shadow-xs"
+                                                : "border-border bg-card hover:bg-muted/40"
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <PaymentMethodLogo code={method.code} className="h-5" />
+                                            <div className="min-w-0">
+                                                <span className="font-bold text-xs block truncate leading-tight">
+                                                    {method.code === "card_transfer"
+                                                        ? t("billing.p2pTransfer", method.name)
+                                                        : method.code === "lemonsqueezy"
+                                                            ? t("billing.intlCards", method.name)
+                                                            : method.name}
+                                                </span>
+                                                <span className="text-[10px] text-muted-foreground block truncate leading-tight">
+                                                    {method.code === "lemonsqueezy" ? t("billing.usdCards", "USD (Visa, Mastercard)") : t("billing.uzsCards", "UZS (Humo / Uzcard)")}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ml-2 transition-colors ${
+                                            isSelected ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/30"
+                                        }`}>
+                                            {isSelected && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Order Summary & Checkout Card */}
+                    <div className="bg-card p-4 rounded-xl border border-border shadow-xs space-y-3">
+                        <h3 className="font-bold text-sm border-b border-border pb-2 text-foreground">{t("billing.orderSummary", "Buyurtma tafsilotlari")}</h3>
+
+                        <div className="space-y-2 text-xs">
+                            <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">{t("billing.devicesCountLabel", "Telefonlar soni:")}</span>
                                 <span className="font-semibold font-mono">{devicesCount} {t("billing.devicesUnit", "ta")}</span>
                             </div>
-                            <div className="flex justify-between">
+                            <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">{t("billing.periodLabel", "Muddat:")}</span>
                                 <span className="font-semibold font-mono">{months} {t("billing.monthsUnit", "oy")}</span>
                             </div>
-                            <div className="flex justify-between">
+                            <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">{t("billing.retentionLabel", "Arxiv saqlash:")}</span>
                                 <span className="font-semibold font-mono">{retentionDays} {t("billing.daysUnit", "kun")}</span>
                             </div>
 
                             {totalDiscount > 0 && (
-                                <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold">
+                                <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-semibold">
                                     <span>{t("billing.totalDiscountLabel", "Jami chegirma:")}</span>
                                     <span>-{totalDiscount}%</span>
                                 </div>
                             )}
 
-                            <div className="border-t border-border pt-3 flex justify-between items-baseline">
-                                <span className="text-sm font-bold">{t("billing.totalPriceLabel", "Jami to'lov:")}</span>
+                            <div className="border-t border-border pt-2.5 flex justify-between items-baseline">
+                                <span className="text-xs font-bold">{t("billing.totalPriceLabel", "Jami to'lov:")}</span>
                                 <div className="text-right">
-                                    <span className="text-2xl font-extrabold font-mono text-primary block">
+                                    <span className="text-xl font-extrabold font-mono text-primary block leading-tight">
                                         {totalUzs.toLocaleString("uz-UZ")} UZS
                                     </span>
-                                    <span className="text-xs text-muted-foreground font-mono">
+                                    <span className="text-[11px] text-muted-foreground font-mono">
                                         (~{totalUsd} USD)
                                     </span>
                                 </div>
                             </div>
                         </div>
 
-                        <Button type="submit" size="lg" className="w-full font-bold shadow-md" disabled={processing}>
+                        <Button type="submit" size="default" className="w-full font-bold shadow-sm h-10 text-sm" disabled={processing}>
                             {processing ? t("billing.loading", "Yuklanmoqda...") : t("billing.proceedToPayment", "To'lovga o'tish")}
                         </Button>
 
-                        <p className="text-[11px] text-muted-foreground text-center">
+                        <p className="text-[10px] text-muted-foreground text-center leading-tight">
                             {t("billing.autoRenewNote", "To'lov tasdiqlangach, obunangiz avtomatik ravishda uzaytiriladi.")}
                         </p>
                     </div>

@@ -2060,7 +2060,7 @@
         "extra20k": "+20,000 UZS",
         "extra35k": "+35,000 UZS",
         "extra50k": "+50,000 UZS",
-        "step5Payment": "4. Select payment method",
+        "step5Payment": "Select payment method",
         "devicesCountLabel": "Number of phones:",
         "periodLabel": "Period:",
         "retentionLabel": "Audio retention:",
