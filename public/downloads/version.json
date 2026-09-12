@@ -1,8 +1,8 @@
 {
-  "version": "1.1.0",
-  "version_code": 11,
-  "file_size": 24503398,
+  "version": "1.1.2",
+  "version_code": 12,
+  "file_size": 24503421,
   "download_url": "/downloads/1call-agent.apk",
-  "changelog": "1Call Agent v1.1.0:\n- Ilovaning o'zida qo'ng'iroqlar audiosini tinglash (Play/Pause, vaqt, progress slayderi) imkoniyati qo'shildi\n- Qo'ng'iroq audiosining haqiqiy davomiyligini aniqlash tizimi yaxshilandi\n- Mahalliy xotirada so'nggi yozuvlar saqlanadi va ularni internetsiz eshitish mumkin",
-  "updated_at": "2026-09-12T06:04:28.638413+00:00"
+  "changelog": "Agent1Call v1.1.2:\\n- Ilova nomi to'liq Agent1Call ga yangilandi\\n- Bildirishnomalar va audio yozish xizmati barqarorlashtirildi\\n- Ichki audio pleyer va so'nggi yozuvlar ro'yxati optimallashtirildi",
+  "updated_at": "2026-09-12T08:08:12.091Z"
 }

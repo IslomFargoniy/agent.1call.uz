@@ -47,7 +47,7 @@ class OneCallApplication : Application() {
 
             val alertsChannel = NotificationChannel(
                 CHANNEL_ALERTS_ID,
-                "1Call Bildirishnomalari",
+                "Agent1Call Bildirishnomalari",
                 NotificationManager.IMPORTANCE_DEFAULT
             )
 

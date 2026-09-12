@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">1Call Agent</string>
-    <string name="accessibility_service_name">1Call Qo\'ng\'iroq Yozuv Xizmati</string>
+    <string name="app_name">Agent1Call</string>
+    <string name="accessibility_service_name">Agent1Call Qo\'ng\'iroq Yozuv Xizmati</string>
     <string name="accessibility_service_description">Ushbu xizmat kiruvchi va chiquvchi korporativ qo\'ng\'iroqlarni aniqlash, audio yozuvni avtomatik boshlash va CRM bilan real-vaqtda sinxronlash uchun zarur.</string>
 </resources>

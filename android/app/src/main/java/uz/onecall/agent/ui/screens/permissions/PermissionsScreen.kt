@@ -167,7 +167,7 @@ fun PermissionsScreen(
         ) {
             Image(
                 painter = painterResource(id = R.drawable.ic_1call_logo),
-                contentDescription = "1Call Logo",
+                contentDescription = "Agent1Call Logo",
                 modifier = Modifier
                     .size(64.dp)
                     .clip(RoundedCornerShape(14.dp))
@@ -204,7 +204,7 @@ fun PermissionsScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "1Call Agent qo'ng'iroqlarni aniqlashi, audio yozishi va yangilanishlarni qabul qilishi uchun quyidagi ruxsatlar zarur:",
+                text = "Agent1Call qo'ng'iroqlarni aniqlashi, audio yozishi va yangilanishlarni qabul qilishi uchun quyidagi ruxsatlar zarur:",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
             )

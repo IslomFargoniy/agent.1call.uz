@@ -149,7 +149,7 @@ object UzStrings : Strings {
     override val langEn = "English (EN)"
 
     override val permissionsTitle = "Kerakli Ruxsatlar"
-    override val permissionsSubtitle = "1Call Agent qo'ng'iroqlarni yozib olishi va CRM bilan sinxronlashi uchun barcha ruxsatlar zarur"
+    override val permissionsSubtitle = "Agent1Call qo'ng'iroqlarni yozib olishi va CRM bilan sinxronlashi uchun barcha ruxsatlar zarur"
     override val permissionsRefresh = "Ruxsatlarni qayta tekshirish"
     override val permissionsGrantAll = "Barcha Ruxsatlarni Berish"
     override val permissionsGranted = "Berilgan"
@@ -369,7 +369,7 @@ object EnStrings : Strings {
     override val langEn = "English (EN)"
 
     override val permissionsTitle = "Required Permissions"
-    override val permissionsSubtitle = "All permissions are required for 1Call Agent to record calls and sync with CRM"
+    override val permissionsSubtitle = "All permissions are required for Agent1Call to record calls and sync with CRM"
     override val permissionsRefresh = "Check permissions again"
     override val permissionsGrantAll = "Grant All Permissions"
     override val permissionsGranted = "Granted"

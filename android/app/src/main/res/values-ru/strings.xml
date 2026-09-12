@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">1Call Agent</string>
-    <string name="accessibility_service_name">1Call Служба записи звонков</string>
+    <string name="app_name">Agent1Call</string>
+    <string name="accessibility_service_name">Agent1Call Служба записи звонков</string>
     <string name="accessibility_service_description">Данная служба необходима для фиксации корпоративных звонков, автоматической записи аудио и синхронизации с CRM в реальном времени.</string>
 </resources>

@@ -188,7 +188,7 @@ fun HomeScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
                             painter = painterResource(id = R.drawable.ic_1call_logo),
-                            contentDescription = "1Call Logo",
+                            contentDescription = "Agent1Call Logo",
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(RoundedCornerShape(8.dp))
@@ -196,7 +196,7 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = prefs.tenantName ?: "1Call Agent",
+                                text = prefs.tenantName ?: "Agent1Call",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )

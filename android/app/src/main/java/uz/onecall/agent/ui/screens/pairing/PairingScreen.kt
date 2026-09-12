@@ -146,7 +146,7 @@ fun PairingScreen(
             Spacer(modifier = Modifier.height(8.dp))
             Image(
                 painter = painterResource(id = R.drawable.ic_1call_logo),
-                contentDescription = "1Call Logo",
+                contentDescription = "Agent1Call Logo",
                 modifier = Modifier
                     .size(72.dp)
                     .clip(RoundedCornerShape(16.dp))

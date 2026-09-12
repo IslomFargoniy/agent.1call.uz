@@ -259,7 +259,7 @@ fun SettingsScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
                             painter = painterResource(id = R.drawable.ic_1call_logo),
-                            contentDescription = "1Call Logo",
+                            contentDescription = "Agent1Call Logo",
                             modifier = Modifier
                                 .size(28.dp)
                                 .clip(RoundedCornerShape(6.dp))
@@ -359,7 +359,7 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(10.dp))
                     GuideBullet(
                         title = "Xiaomi / Redmi / POCO:",
-                        desc = "Sozlamalar -> Ilovalar -> 1Call Agent -> Avto-boshlash (Автозапуск) ni yoqing, Batareya tejash -> Cheklovsiz (Нет ограничений) qiling."
+                        desc = "Sozlamalar -> Ilovalar -> Agent1Call -> Avto-boshlash (Автозапуск) ni yoqing, Batareya tejash -> Cheklovsiz (Нет ограничений) qiling."
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     GuideBullet(
@@ -369,7 +369,7 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     GuideBullet(
                         title = "Huawei / Honor:",
-                        desc = "Sozlamalar -> Ilovalar -> 1Call Agent -> Ishga tushirish -> Qo'lda boshqarish (Hammasini yoqing)."
+                        desc = "Sozlamalar -> Ilovalar -> Agent1Call -> Ishga tushirish -> Qo'lda boshqarish (Hammasini yoqing)."
                     )
                 }
             }
