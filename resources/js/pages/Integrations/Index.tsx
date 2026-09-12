@@ -95,6 +95,7 @@ class IntegrationsErrorBoundary extends Component<{ children: ReactNode }, { has
 }
 
 function IntegrationsContent({
+    isAllTenants = false,
     amoCrm = null,
     moySklad = null,
     operators = [],

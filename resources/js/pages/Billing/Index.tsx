@@ -25,7 +25,7 @@ interface Tariff {
     code: string;
     base_price_monthly: number;
     price_usd_monthly: number;
-    discounts: { type: string; min_value: number; discount_percent: number }[];
+    discounts: { type: string; min_value: number; max_value?: number | null; discount_percent: number }[];
     retention_options: { retention_days: number; additional_price_monthly: number; additional_price_usd_monthly: number }[];
 }
 

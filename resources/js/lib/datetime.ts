@@ -151,7 +151,7 @@ export function formatLogTime(value: string | number | Date | null | undefined):
     try {
         const timePart = formatTime(d, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const datePart = formatDate(d, { day: '2-digit', month: 'short' });
-        return ;
+        return `${timePart} ${datePart}`;
     } catch {
         return formatDateTime(d);
     }

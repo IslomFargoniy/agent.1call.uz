@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     PhoneCall,
     PhoneIncoming,
@@ -38,6 +38,9 @@ interface CallsProps {
         total: number;
         current_page: number;
         last_page: number;
+        per_page?: number;
+        from?: number | null;
+        to?: number | null;
     };
     filters: {
         search?: string;
@@ -62,6 +65,7 @@ export default function CallsIndex({ calls, filters, devices, tenants = [], canD
     const [direction, setDirection] = useState(filters.direction || '');
     const [status, setStatus] = useState(filters.status || '');
     const [deviceId, setDeviceId] = useState(filters.device_id || '');
+    const [tenantId, setTenantId] = useState(filters.tenant_id || '');
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
 
