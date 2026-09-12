@@ -20,28 +20,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 0. Platform Default Tenant for Superadmin
-        $mainTenant = \App\Models\Tenant::firstOrCreate(
-            ['slug' => '1call-main'],
-            [
-                'name' => '1Call Asosiy Kompaniya',
-                'allowed_devices_count' => 100,
-                'audio_retention_days' => 365,
-                'is_active' => true,
-                'trial_ends_at' => null,
-                'subscription_expires_at' => now()->addYears(50),
-            ]
-        );
 
         // 1. Superadmin User
         User::firstOrCreate(
-            ['email' => 'admin@1call.uz'],
+            ['email' => 'abdurahmanislam304@gmail.com'],
             [
-                'name' => '1Call Superadmin',
-                'password' => Hash::make('admin1call'),
+                'name' => 'Superadmin',
+                'password' => Hash::make('N9782543121s'),
                 'role' => 'superadmin',
-                'tenant_id' => $mainTenant->id,
-                'phone_number' => '+998901234567',
+                'phone_number' => '+998911157709',
                 'is_active' => true,
                 'email_verified_at' => now(),
             ]
@@ -60,7 +47,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => '1Call Standart',
                 'code' => 'standard',
-                'base_price_monthly' => 50000,
+                'base_price_monthly' => 20000,
                 'price_usd_monthly' => 3.89,
                 'min_devices' => 1,
                 'default_retention_days' => 30,
