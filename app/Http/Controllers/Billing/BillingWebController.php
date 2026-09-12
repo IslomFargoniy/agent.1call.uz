@@ -101,16 +101,33 @@ class BillingWebController extends Controller
 
         $actionType = $request->input('action_type', 'renewal');
 
-        if ($actionType === 'upgrade_devices') {
+        if (in_array($actionType, ['upgrade_devices', 'upgrade'])) {
             $currentAllowed = (int) ($tenant->allowed_devices_count ?: 1);
+            $currentRetention = (int) ($tenant->audio_retention_days ?: 30);
 
             $validated = $request->validate([
                 'tariff_id' => ['required', 'exists:tariffs,id'],
-                'devices_count' => ['required', 'integer', 'min:'.($currentAllowed + 1), 'max:500'],
+                'devices_count' => ['required', 'integer', 'min:'.$currentAllowed, 'max:500'],
+                'retention_days' => ['required', 'integer', 'in:30,60,90,180,365'],
                 'payment_method' => ['required', 'in:click,payme,card_transfer,lemonsqueezy'],
             ], [
-                'devices_count.min' => "Yangi telefonlar soni hozirgi litsenziyadagidan ({$currentAllowed} ta) ko'p bo'lishi kerak.",
+                'devices_count.min' => "Telefonlar soni hozirgi litsenziyadagidan ({$currentAllowed} ta) kam bo'lishi mumkin emas.",
             ]);
+
+            $targetDevices = (int) $validated['devices_count'];
+            $targetRetention = (int) $validated['retention_days'];
+
+            if ($targetRetention < $currentRetention) {
+                return back()->withErrors([
+                    'retention_days' => "Arxiv saqlash muddati hozirgi litsenziyadagidan ({$currentRetention} kun) kam bo'lishi mumkin emas.",
+                ]);
+            }
+
+            if ($targetDevices === $currentAllowed && $targetRetention === $currentRetention) {
+                return back()->withErrors([
+                    'devices_count' => "Qurilmalar soni yoki arxiv saqlash muddatidan kamida bittasini oshirishingiz kerak.",
+                ]);
+            }
 
             /** @var Tariff $tariff */
             $tariff = Tariff::query()->findOrFail((int) $validated['tariff_id']);
@@ -118,7 +135,8 @@ class BillingWebController extends Controller
             $invoice = $this->subscriptionService->createProrataInvoice(
                 $tenant,
                 $tariff,
-                (int) $validated['devices_count'],
+                $targetDevices,
+                $targetRetention,
                 $validated['payment_method']
             );
         } else {

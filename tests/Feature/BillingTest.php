@@ -86,8 +86,8 @@ test('Prorata upgrade calculates and activates correctly without extending expir
 
     $service = app(SubscriptionService::class);
 
-    // Upgrade from 2 to 5 devices (3 additional devices)
-    $invoice = $service->createProrataInvoice($this->tenant, $this->tariff, 5, 'payme');
+    // Upgrade from 2 to 5 devices (3 additional devices) with 30 retention
+    $invoice = $service->createProrataInvoice($this->tenant, $this->tariff, 5, 30, 'payme');
 
     expect($invoice)->not->toBeNull();
     expect($invoice->subscription->type)->toBe('upgrade_prorata');
@@ -160,6 +160,7 @@ test('BillingWebController checkout handles upgrade_devices action', function ()
         'action_type' => 'upgrade_devices',
         'tariff_id' => $this->tariff->id,
         'devices_count' => 5,
+        'retention_days' => 30,
         'payment_method' => 'card_transfer',
     ]);
 
@@ -169,4 +170,39 @@ test('BillingWebController checkout handles upgrade_devices action', function ()
         'type' => 'upgrade_prorata',
         'devices_count' => 5,
     ]);
+});
+
+
+test('Prorata retention upgrade calculates and activates correctly', function () {
+    $expiry = now()->addDays(15);
+    $this->tenant->update([
+        'allowed_devices_count' => 2,
+        'audio_retention_days' => 30,
+        'subscription_expires_at' => $expiry,
+    ]);
+
+    // Create 60 days retention option for tariff
+    $this->tariff->retentionOptions()->create([
+        'retention_days' => 60,
+        'additional_price_monthly' => 10000,
+        'additional_price_usd_monthly' => 1.0,
+        'is_active' => true,
+    ]);
+
+    $service = app(SubscriptionService::class);
+
+    // Keep 2 devices, upgrade retention to 60 days
+    $invoice = $service->createProrataInvoice($this->tenant, $this->tariff, 2, 60, 'payme');
+
+    expect($invoice->subscription->type)->toBe('upgrade_prorata');
+    expect($invoice->subscription->retention_days)->toBe(60);
+    expect($invoice->subscription->devices_count)->toBe(2);
+    expect($invoice->amount)->toBeGreaterThan(0);
+
+    $service->activateSubscription($invoice, 'trans-upg-ret-1');
+
+    $this->tenant->refresh();
+    expect($this->tenant->audio_retention_days)->toBe(60);
+    expect($this->tenant->allowed_devices_count)->toBe(2);
+    expect($this->tenant->subscription_expires_at->toDateTimeString())->toBe($expiry->toDateTimeString());
 });

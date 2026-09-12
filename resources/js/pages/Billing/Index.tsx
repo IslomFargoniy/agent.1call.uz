@@ -18,6 +18,7 @@ import {
     Clock,
     Info,
     CheckCircle2,
+    Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PaymentMethodLogo } from "@/components/brand-logos";
@@ -117,23 +118,32 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
     const hasActivePaid = Boolean(tenant?.has_active_paid && tenant?.subscription_expires_at);
     const remainingDays = Math.max(1, tenant?.remaining_days || 1);
     const currentAllowed = Math.max(1, tenant?.allowed_devices_count || 2);
+    const currentRetention = Math.max(30, tenant?.audio_retention_days || 30);
 
-    // Active mode: 'upgrade' (Add devices pro-rata) or 'renewal' (Extend subscription)
+    // Active mode: 'upgrade' (Add devices / upgrade retention pro-rata) or 'renewal' (Extend subscription)
     const [activeMode, setActiveMode] = useState<'upgrade' | 'renewal'>(
         hasActivePaid && remainingDays <= 10 ? 'renewal' : hasActivePaid ? 'upgrade' : 'renewal'
     );
 
-    // Upgrade target devices (always > currentAllowed)
-    const [upgradeTargetDevices, setUpgradeTargetDevices] = useState<number>(
-        Math.min(50, currentAllowed + 1)
-    );
+    // Upgrade target devices (>= currentAllowed)
+    const [upgradeTargetDevices, setUpgradeTargetDevices] = useState<number>(currentAllowed);
 
-    // Renewal devices count (always >= currentAllowed when active)
+    // Upgrade target retention (>= currentRetention)
+    const [upgradeRetentionDays, setUpgradeRetentionDays] = useState<number>(currentRetention);
+
+    // Renewal devices count (>= currentAllowed when active)
     const [renewalDevicesCount, setRenewalDevicesCount] = useState<number>(currentAllowed);
 
     // Standard devices count (for trial / expired)
     const [standardDevicesCount, setStandardDevicesCount] = useState<number>(currentAllowed || 2);
 
+    const [selectedTariff, setSelectedTariff] = useState<Tariff | null>(defaultTariff);
+    const [renewalRetentionDays, setRenewalRetentionDays] = useState<number>(currentRetention);
+    const [months, setMonths] = useState(1);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(paymentMethods[0]?.code || "payme");
+    const [processing, setProcessing] = useState(false);
+
+    // Memoized slider marks and percentages
     const renewalMarks = useMemo(() => {
         return getMarks(hasActivePaid ? currentAllowed : 1, 50);
     }, [hasActivePaid, currentAllowed]);
@@ -143,49 +153,61 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
     }, [hasActivePaid, renewalDevicesCount, standardDevicesCount, renewalMarks]);
 
     const upgradeMarks = useMemo(() => {
-        return getMarks(currentAllowed + 1, 50);
+        return getMarks(currentAllowed, 50);
     }, [currentAllowed]);
 
     const upgradePercent = useMemo(() => {
         return countToSliderPercent(upgradeTargetDevices, upgradeMarks);
     }, [upgradeTargetDevices, upgradeMarks]);
 
-    const [selectedTariff, setSelectedTariff] = useState<Tariff | null>(defaultTariff);
-    const [retentionDays, setRetentionDays] = useState(tenant?.audio_retention_days || 30);
-    const [months, setMonths] = useState(1);
-    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(paymentMethods[0]?.code || "payme");
-    const [processing, setProcessing] = useState(false);
-
-    // Common Pricing Rates
+    // Base Pricing Rates
     const baseUzs = selectedTariff ? Number(selectedTariff.base_price_monthly) : 0;
     const baseUsd = selectedTariff ? Number(selectedTariff.price_usd_monthly) : 0;
 
-    let retentionAddonUzs = 0;
-    let retentionAddonUsd = 0;
-    if (retentionDays > 30 && selectedTariff) {
-        const opt = selectedTariff.retention_options?.find((o) => o.retention_days === retentionDays);
-        if (opt) {
-            retentionAddonUzs = Number(opt.additional_price_monthly);
-            retentionAddonUsd = Number(opt.additional_price_usd_monthly);
-        }
-    }
-
-    const deviceRateMonthlyUzs = baseUzs + retentionAddonUzs;
-    const deviceRateMonthlyUsd = baseUsd + retentionAddonUsd;
+    // Helper for retention addon
+    const getRetentionAddon = (days: number) => {
+        if (days <= 30 || !selectedTariff) return { uzs: 0, usd: 0 };
+        const opt = selectedTariff.retention_options?.find((o) => o.retention_days === days);
+        return {
+            uzs: opt ? Number(opt.additional_price_monthly) : 0,
+            usd: opt ? Number(opt.additional_price_usd_monthly) : 0,
+        };
+    };
 
     // === UPGRADE (PRO-RATA) CALCULATION ===
-    const additionalDevices = Math.max(1, upgradeTargetDevices - currentAllowed);
-    const dailyRateUzs = deviceRateMonthlyUzs / 30.0;
-    const dailyRateUsd = deviceRateMonthlyUsd / 30.0;
-    const proratedTotalUzs = Math.ceil(dailyRateUzs * remainingDays * additionalDevices);
-    const proratedTotalUsd = Math.round(dailyRateUsd * remainingDays * additionalDevices * 100) / 100;
+    const isDevicesChanged = upgradeTargetDevices > currentAllowed;
+    const isRetentionChanged = upgradeRetentionDays > currentRetention;
+    const isUpgradeChanged = isDevicesChanged || isRetentionChanged;
+    const additionalDevices = Math.max(0, upgradeTargetDevices - currentAllowed);
+
+    // Current monthly cost for current devices with current retention
+    const currentRetAddon = getRetentionAddon(currentRetention);
+    const currentMonthlyUzs = (baseUzs + currentRetAddon.uzs) * currentAllowed;
+    const currentMonthlyUsd = (baseUsd + currentRetAddon.usd) * currentAllowed;
+
+    // Target monthly cost for upgrade target devices with upgrade retention
+    const targetRetAddon = getRetentionAddon(upgradeRetentionDays);
+    const targetMonthlyUzs = (baseUzs + targetRetAddon.uzs) * upgradeTargetDevices;
+    const targetMonthlyUsd = (baseUsd + targetRetAddon.usd) * upgradeTargetDevices;
+
+    // Monthly difference
+    const monthlyDiffUzs = Math.max(0, targetMonthlyUzs - currentMonthlyUzs);
+    const monthlyDiffUsd = Math.max(0, targetMonthlyUsd - currentMonthlyUsd);
+
+    // Prorated cost for remaining days
+    const proratedTotalUzs = Math.ceil((monthlyDiffUzs / 30.0) * remainingDays);
+    const proratedTotalUsd = Math.round((monthlyDiffUsd / 30.0) * remainingDays * 100) / 100;
 
     // === RENEWAL & STANDARD CALCULATION ===
     const activeRenewalDevices = hasActivePaid ? renewalDevicesCount : standardDevicesCount;
+    const renewalRetAddon = getRetentionAddon(renewalRetentionDays);
+    const deviceRateMonthlyUzs = baseUzs + renewalRetAddon.uzs;
+    const deviceRateMonthlyUsd = baseUsd + renewalRetAddon.usd;
+
     const subtotalUzs = deviceRateMonthlyUzs * activeRenewalDevices * months;
     const subtotalUsd = deviceRateMonthlyUsd * activeRenewalDevices * months;
 
-    // Dynamic Discounts
+    // Dynamic Discounts for Renewal
     let periodDiscount = 0;
     const dbPeriod = selectedTariff?.discounts
         ?.filter((d) => d.type === 'period' && months >= d.min_value && (!d.max_value || months <= d.max_value))
@@ -248,10 +270,15 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
         setProcessing(true);
 
         if (hasActivePaid && activeMode === 'upgrade') {
+            if (!isUpgradeChanged) {
+                setProcessing(false);
+                return;
+            }
             router.post("/billing/checkout", {
                 action_type: 'upgrade_devices',
                 tariff_id: selectedTariff.id,
                 devices_count: upgradeTargetDevices,
+                retention_days: upgradeRetentionDays,
                 payment_method: selectedPaymentMethod,
             }, {
                 onFinish: () => setProcessing(false),
@@ -261,7 +288,7 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                 action_type: 'renewal',
                 tariff_id: selectedTariff.id,
                 devices_count: hasActivePaid ? renewalDevicesCount : standardDevicesCount,
-                retention_days: retentionDays,
+                retention_days: renewalRetentionDays,
                 months: months,
                 payment_method: selectedPaymentMethod,
             }, {
@@ -367,10 +394,10 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                             </div>
                             <div className="space-y-1">
                                 <span className="font-bold text-sm block text-foreground">
-                                    {t("billing.upgradeTab", "Qurilmalar sonini oshirish (Pro-rata)")}
+                                    {t("billing.upgradeTab", "Qurilmalar va Arxivni oshirish (Pro-rata)")}
                                 </span>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    {t("billing.upgradeDesc", "Hozirgi faol obuna tugaguniga qadar qo'shimcha telefonlar qo'shish. To'lov qolgan kunlar uchun hisoblanadi.")}
+                                    {t("billing.upgradeDesc", "Hozirgi faol obuna tugaguniga qadar qo'shimcha telefonlar qo'shish yoki audio arxiv muddatini oshirish. To'lov qolgan kunlar uchun hisoblanadi.")}
                                 </p>
                             </div>
                         </button>
@@ -405,14 +432,15 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
             <form onSubmit={handleCheckout} className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                 <div className="lg:col-span-2 space-y-6">
 
-                    {/* === UPGRADE MODE: ADD DEVICES PRO-RATA === */}
+                    {/* === UPGRADE MODE: ADD DEVICES & UPGRADE RETENTION PRO-RATA === */}
                     {hasActivePaid && activeMode === 'upgrade' && (
                         <>
+                            {/* 1. Devices Slider for Upgrade */}
                             <div className="bg-card p-6 rounded-2xl border border-border space-y-5 shadow-xs">
                                 <div className="flex justify-between items-center">
                                     <div>
                                         <h3 className="font-semibold text-base flex items-center gap-2">
-                                            <Smartphone className="h-5 w-5 text-primary" /> {t("billing.targetDevices", "Yangi umumiy miqdor")}
+                                            <Smartphone className="h-5 w-5 text-primary" /> {t("billing.targetDevices", "Yangi umumiy telefonlar miqdori")}
                                         </h3>
                                         <p className="text-xs text-muted-foreground">
                                             {t("billing.currentDevices", "Hozirgi telefonlar")}: <span className="font-semibold text-foreground">{currentAllowed} ta</span>
@@ -424,8 +452,8 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                                             variant="outline"
                                             size="icon"
                                             className="h-8 w-8 rounded-md"
-                                            onClick={() => setUpgradeTargetDevices((prev) => Math.max(currentAllowed + 1, prev - 1))}
-                                            disabled={upgradeTargetDevices <= currentAllowed + 1}
+                                            onClick={() => setUpgradeTargetDevices((prev) => Math.max(currentAllowed, prev - 1))}
+                                            disabled={upgradeTargetDevices <= currentAllowed}
                                         >
                                             <Minus className="h-3.5 w-3.5" />
                                         </Button>
@@ -493,19 +521,83 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                                         ))}
                                     </div>
                                 </div>
+                            </div>
 
-                                <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 font-medium space-y-1">
-                                    <div className="flex items-center gap-1.5 font-bold">
-                                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                                        <span>+{additionalDevices} ta qo'shimcha telefon qo'shilmoqda</span>
-                                    </div>
-                                    <p className="text-muted-foreground text-[11px] leading-relaxed">
-                                        {t("billing.proratedExplanation", {
-                                            date: tenant.subscription_expires_at ? formatDate(tenant.subscription_expires_at) : "",
-                                            defaultValue: `To'lov amalga oshirilgach, telefonlar soni darhol ${upgradeTargetDevices} taga oshadi. Obunaning umumiy amal qilish muddati o'zgarmaydi.`
-                                        })}
+                            {/* 2. Audio Archive Retention for Upgrade */}
+                            <div className="bg-card p-6 rounded-2xl border border-border space-y-4 shadow-xs">
+                                <div>
+                                    <h3 className="font-semibold text-base flex items-center gap-2">
+                                        <ShieldCheck className="h-5 w-5 text-primary" /> {t("billing.upgradeStepRetention", "Audio arxiv saqlash muddati")}
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground">
+                                        {t("billing.currentRetentionLabel", "Hozirgi arxiv muddati")}: <span className="font-semibold text-foreground">{currentRetention} kun</span>
                                     </p>
                                 </div>
+
+                                <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5">
+                                    {retentionItems.map((item) => {
+                                        const isLower = item.days < currentRetention;
+                                        const isSelected = upgradeRetentionDays === item.days;
+
+                                        return (
+                                            <div
+                                                key={item.days}
+                                                onClick={() => {
+                                                    if (!isLower) {
+                                                        setUpgradeRetentionDays(item.days);
+                                                    }
+                                                }}
+                                                className={`p-3 rounded-xl border text-center text-xs transition-all select-none ${
+                                                    isLower
+                                                        ? "opacity-40 bg-muted/20 border-border cursor-not-allowed"
+                                                        : isSelected
+                                                            ? "border-primary bg-primary/5 ring-1 ring-primary cursor-pointer shadow-xs"
+                                                            : "border-border bg-card hover:bg-muted/40 cursor-pointer"
+                                                }`}
+                                            >
+                                                <div className="flex items-center justify-center gap-1 font-bold">
+                                                    {isLower && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
+                                                    <span>{item.label}</span>
+                                                </div>
+                                                <span className="text-[10px] text-muted-foreground block mt-0.5">
+                                                    {isLower ? t("billing.cannotLowerRetention", "Kamaytirib bo'lmaydi") : item.extra}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* 3. Upgrade Summary Notice Box */}
+                            <div className={`p-4 rounded-xl text-xs font-medium space-y-1.5 transition-all ${
+                                isUpgradeChanged
+                                    ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-900 dark:text-emerald-300"
+                                    : "bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-300"
+                            }`}>
+                                <div className="flex items-center gap-2 font-bold">
+                                    {isUpgradeChanged ? (
+                                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                    ) : (
+                                        <Info className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                    )}
+                                    <span>
+                                        {isUpgradeChanged ? (
+                                            <>
+                                                {isDevicesChanged && `+${additionalDevices} ta telefon qo'shilmoqda`}
+                                                {isDevicesChanged && isRetentionChanged && ", "}
+                                                {isRetentionChanged && `arxiv muddati ${currentRetention} dan ${upgradeRetentionDays} kunga oshirilmoqda`}
+                                            </>
+                                        ) : (
+                                            t("billing.upgradeNoChange", "Kamida bitta parametrni oshiring (Telefonlar soni yoki Arxiv muddati)")
+                                        )}
+                                    </span>
+                                </div>
+                                <p className="text-muted-foreground text-[11px] leading-relaxed">
+                                    {t("billing.proratedExplanation", {
+                                        date: tenant.subscription_expires_at ? formatDate(tenant.subscription_expires_at) : "",
+                                        defaultValue: `To'lov amalga oshirilgach, yangi parametrlar darhol kuchga kiradi. Obunaning umumiy amal qilish muddati o'zgarmaydi.`
+                                    })}
+                                </p>
                             </div>
                         </>
                     )}
@@ -690,9 +782,9 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                                     {retentionItems.map((item) => (
                                         <div
                                             key={item.days}
-                                            onClick={() => setRetentionDays(item.days)}
+                                            onClick={() => setRenewalRetentionDays(item.days)}
                                             className={`p-3 rounded-xl border cursor-pointer text-center text-xs transition-all ${
-                                                retentionDays === item.days
+                                                renewalRetentionDays === item.days
                                                     ? "border-primary bg-primary/5 ring-1 ring-primary"
                                                     : "border-border bg-card hover:bg-muted/40"
                                             }`}
@@ -775,19 +867,21 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-muted-foreground">{t("billing.targetDevices", "Yangi miqdor:")}</span>
-                                    <span className="font-bold font-mono text-primary">{upgradeTargetDevices} {t("billing.devicesUnit", "ta")}</span>
+                                    <span className="font-bold font-mono text-primary">
+                                        {upgradeTargetDevices} {t("billing.devicesUnit", "ta")}
+                                        {isDevicesChanged && ` (+${additionalDevices})`}
+                                    </span>
                                 </div>
-                                <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-semibold">
-                                    <span>{t("billing.additionalDevices", "Qo'shimcha:")}</span>
-                                    <span>+{additionalDevices} {t("billing.devicesUnit", "ta")}</span>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">{t("billing.retentionLabel", "Arxiv saqlash:")}</span>
+                                    <span className={`font-semibold font-mono ${isRetentionChanged ? "text-emerald-600 dark:text-emerald-400 font-bold" : ""}`}>
+                                        {upgradeRetentionDays} {t("billing.daysUnit", "kun")}
+                                        {isRetentionChanged && ` (+${upgradeRetentionDays - currentRetention})`}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-muted-foreground">{t("billing.remainingDaysLabel", "Qolgan muddat:")}</span>
                                     <span className="font-semibold font-mono">{remainingDays} {t("billing.daysUnit", "kun")}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">{t("billing.dailyProrataRate", "Kunlik 1 ta qurilma narxi:")}</span>
-                                    <span className="font-semibold font-mono">{Math.round(dailyRateUzs).toLocaleString("uz-UZ")} so'm</span>
                                 </div>
 
                                 <div className="border-t border-border pt-2.5 flex justify-between items-baseline">
@@ -815,7 +909,7 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-muted-foreground">{t("billing.retentionLabel", "Arxiv saqlash:")}</span>
-                                    <span className="font-semibold font-mono">{retentionDays} {t("billing.daysUnit", "kun")}</span>
+                                    <span className="font-semibold font-mono">{renewalRetentionDays} {t("billing.daysUnit", "kun")}</span>
                                 </div>
 
                                 {totalDiscount > 0 && (
@@ -839,17 +933,24 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                             </div>
                         )}
 
-                        <Button type="submit" size="default" className="w-full font-bold shadow-sm h-10 text-sm cursor-pointer" disabled={processing}>
+                        <Button
+                            type="submit"
+                            size="default"
+                            className="w-full font-bold shadow-sm h-10 text-sm cursor-pointer"
+                            disabled={processing || (hasActivePaid && activeMode === 'upgrade' && !isUpgradeChanged)}
+                        >
                             {processing
                                 ? t("billing.loading", "Yuklanmoqda...")
                                 : hasActivePaid && activeMode === 'upgrade'
-                                    ? t("billing.upgradeProceed", "Qurilmalar sonini oshirish va to'lash")
+                                    ? isUpgradeChanged
+                                        ? t("billing.upgradeProceed", "Tarifni oshirish va to'lash")
+                                        : t("billing.upgradeNoChange", "Kamida bittasini oshiring")
                                     : t("billing.proceedToPayment", "To'lovga o'tish")}
                         </Button>
 
                         <p className="text-[10px] text-muted-foreground text-center leading-tight">
                             {hasActivePaid && activeMode === 'upgrade'
-                                ? t("billing.upgradeNote", "To'lov tasdiqlangach, telefonlar limiti darhol oshiriladi.")
+                                ? t("billing.upgradeNote", "To'lov tasdiqlangach, yangi parametrlar darhol faollashadi.")
                                 : t("billing.autoRenewNote", "To'lov tasdiqlangach, obunangiz avtomatik ravishda faollashtiriladi.")}
                         </p>
                     </div>

@@ -78,25 +78,39 @@ class SubscriptionService
     }
 
     /**
-     * Create a pro-rata invoice for adding devices to an active subscription.
+     * Create a pro-rata invoice for adding devices or upgrading retention in an active subscription.
      */
     public function createProrataInvoice(
         Tenant $tenant,
         Tariff $tariff,
         int $newTotalDevices,
+        int $newRetentionDays,
         string $paymentMethod
     ): Invoice {
         if (! $tenant->subscription_expires_at || $tenant->subscription_expires_at->isPast()) {
             throw new \InvalidArgumentException("Faol obuna muddati mavjud emas. Yangi obuna rasmiylashtiring.");
         }
 
-        if ($newTotalDevices <= (int) $tenant->allowed_devices_count) {
+        $currentDevices = (int) ($tenant->allowed_devices_count ?: 1);
+        $currentRetention = (int) ($tenant->audio_retention_days ?: 30);
+
+        if ($newTotalDevices < $currentDevices) {
             throw new \InvalidArgumentException(
-                "Yangi telefonlar soni hozirgi litsenziyadagi telefonlar sonidan ({$tenant->allowed_devices_count} ta) ko'p bo'lishi kerak."
+                "Telefonlar soni hozirgi litsenziyadagidan ({$currentDevices} ta) kam bo'lishi mumkin emas."
             );
         }
 
-        $calculation = $this->calculator->calculateProrata($tenant, $tariff, $newTotalDevices);
+        if ($newRetentionDays < $currentRetention) {
+            throw new \InvalidArgumentException(
+                "Arxiv saqlash muddati hozirgi litsenziyadagidan ({$currentRetention} kun) kam bo'lishi mumkin emas."
+            );
+        }
+
+        if ($newTotalDevices === $currentDevices && $newRetentionDays === $currentRetention) {
+            throw new \InvalidArgumentException("Kamida bitta parametrni oshirishingiz kerak.");
+        }
+
+        $calculation = $this->calculator->calculateProrata($tenant, $tariff, $newTotalDevices, $newRetentionDays);
 
         $now = Carbon::now();
         $startsAt = $now;
@@ -109,7 +123,7 @@ class SubscriptionService
             'tariff_id' => $tariff->id,
             'type' => 'upgrade_prorata',
             'devices_count' => $newTotalDevices,
-            'retention_days' => $tenant->audio_retention_days ?: 30,
+            'retention_days' => $newRetentionDays,
             'billing_period_months' => 0,
             'starts_at' => $startsAt,
             'expires_at' => $expiresAt,
@@ -155,7 +169,8 @@ class SubscriptionService
             if ($tenant) {
                 if ($subscription->type === 'upgrade_prorata' || $subscription->billing_period_months === 0) {
                     $tenant->update([
-                        'allowed_devices_count' => $subscription->devices_count,
+                        'allowed_devices_count' => max((int) $tenant->allowed_devices_count, (int) $subscription->devices_count),
+                        'audio_retention_days' => max((int) $tenant->audio_retention_days, (int) $subscription->retention_days),
                         'is_active' => true,
                     ]);
                 } else {

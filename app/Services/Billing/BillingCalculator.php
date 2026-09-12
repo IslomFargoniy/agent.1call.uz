@@ -134,57 +134,82 @@ class BillingCalculator
     }
 
     /**
-     * Calculate Pro-rata (Co-terming) cost when adding new devices during active billing cycle.
+     * Calculate Pro-rata (Co-terming) cost when adding new devices or upgrading audio retention during active billing cycle.
      *
      * @return array{
      *     current_devices: int,
      *     new_total_devices: int,
      *     additional_devices: int,
+     *     current_retention_days: int,
+     *     new_retention_days: int,
      *     remaining_days: int,
-     *     daily_rate_uzs: float,
-     *     daily_rate_usd: float,
+     *     daily_diff_uzs: float,
+     *     daily_diff_usd: float,
      *     prorated_uzs: int,
      *     prorated_usd: float,
      *     expires_at: string|null
      * }
      */
-    public function calculateProrata(Tenant $tenant, Tariff $tariff, int $newTotalDevices): array
-    {
+    public function calculateProrata(
+        Tenant $tenant,
+        Tariff $tariff,
+        int $newTotalDevices,
+        ?int $newRetentionDays = null
+    ): array {
         $currentDevices = (int) ($tenant->allowed_devices_count ?: 1);
-        $additionalDevices = max(1, $newTotalDevices - $currentDevices);
+        $currentRetention = (int) ($tenant->audio_retention_days ?: 30);
+        $targetDevices = max($currentDevices, $newTotalDevices);
+        $targetRetention = max($currentRetention, $newRetentionDays ?? $currentRetention);
 
-        if (! $tenant->subscription_expires_at || $tenant->subscription_expires_at->isPast()) {
-            $pricing = $this->calculate($tariff, $additionalDevices, $tenant->audio_retention_days ?: 30, 1);
+        $now = Carbon::now();
+        $hasActive = (bool) ($tenant->subscription_expires_at && $tenant->subscription_expires_at->isFuture());
+        $remainingDays = $hasActive ? max(1, (int) $now->diffInDays($tenant->subscription_expires_at)) : 30;
+
+        // Current monthly rate for active devices and active retention
+        $currentPricing = $this->calculate($tariff, $currentDevices, $currentRetention, 1);
+        $currentMonthlyUzs = $currentPricing['total_uzs'];
+        $currentMonthlyUsd = $currentPricing['total_usd'];
+
+        // Target new monthly rate
+        $newPricing = $this->calculate($tariff, $targetDevices, $targetRetention, 1);
+        $newMonthlyUzs = $newPricing['total_uzs'];
+        $newMonthlyUsd = $newPricing['total_usd'];
+
+        // Difference between new total monthly cost and current monthly cost
+        $diffUzs = max(0, $newMonthlyUzs - $currentMonthlyUzs);
+        $diffUsd = max(0.0, $newMonthlyUsd - $currentMonthlyUsd);
+
+        if (! $hasActive) {
             return [
                 'current_devices' => $currentDevices,
-                'new_total_devices' => $newTotalDevices,
-                'additional_devices' => $additionalDevices,
+                'new_total_devices' => $targetDevices,
+                'additional_devices' => max(0, $targetDevices - $currentDevices),
+                'current_retention_days' => $currentRetention,
+                'new_retention_days' => $targetRetention,
                 'remaining_days' => 30,
-                'daily_rate_uzs' => round($pricing['total_uzs'] / 30.0, 2),
-                'daily_rate_usd' => round($pricing['total_usd'] / 30.0, 2),
-                'prorated_uzs' => $pricing['total_uzs'],
-                'prorated_usd' => $pricing['total_usd'],
+                'daily_diff_uzs' => round($diffUzs / 30.0, 2),
+                'daily_diff_usd' => round($diffUsd / 30.0, 2),
+                'prorated_uzs' => $diffUzs ?: $newMonthlyUzs,
+                'prorated_usd' => $diffUsd ?: $newMonthlyUsd,
                 'expires_at' => null,
             ];
         }
 
-        $now = Carbon::now();
-        $remainingDays = max(1, (int) $now->diffInDays($tenant->subscription_expires_at));
+        $dailyDiffUzs = $diffUzs / 30.0;
+        $dailyDiffUsd = $diffUsd / 30.0;
 
-        $pricing = $this->calculate($tariff, 1, $tenant->audio_retention_days ?: 30, 1);
-        $dailyRateUzs = $pricing['total_uzs'] / 30.0;
-        $dailyRateUsd = $pricing['total_usd'] / 30.0;
-
-        $proratedUzs = (int) ceil($dailyRateUzs * $remainingDays * $additionalDevices);
-        $proratedUsd = round($dailyRateUsd * $remainingDays * $additionalDevices, 2);
+        $proratedUzs = (int) ceil($dailyDiffUzs * $remainingDays);
+        $proratedUsd = round($dailyDiffUsd * $remainingDays, 2);
 
         return [
             'current_devices' => $currentDevices,
-            'new_total_devices' => $newTotalDevices,
-            'additional_devices' => $additionalDevices,
+            'new_total_devices' => $targetDevices,
+            'additional_devices' => max(0, $targetDevices - $currentDevices),
+            'current_retention_days' => $currentRetention,
+            'new_retention_days' => $targetRetention,
             'remaining_days' => $remainingDays,
-            'daily_rate_uzs' => round($dailyRateUzs, 2),
-            'daily_rate_usd' => round($dailyRateUsd, 2),
+            'daily_diff_uzs' => round($dailyDiffUzs, 2),
+            'daily_diff_usd' => round($dailyDiffUsd, 2),
             'prorated_uzs' => $proratedUzs,
             'prorated_usd' => $proratedUsd,
             'expires_at' => $tenant->subscription_expires_at->toIso8601String(),
