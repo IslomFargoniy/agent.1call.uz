@@ -6,6 +6,9 @@ use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use App\Listeners\ActivateSubscriptionOnPaymentPaid;
+use Goodoneuz\PayUz\Payments\Events\PaymentPaid;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -29,6 +32,11 @@ class AppServiceProvider extends ServiceProvider
         if (app()->isProduction()) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
+
+        Event::listen(
+            PaymentPaid::class,
+            ActivateSubscriptionOnPaymentPaid::class
+        );
 
         $this->configureDefaults();
     }

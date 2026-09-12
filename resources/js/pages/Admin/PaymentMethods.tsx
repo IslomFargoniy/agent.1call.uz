@@ -2,16 +2,15 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Head, useForm, Link } from '@inertiajs/react';
 import {
-    CreditCard,
     Edit3,
     CheckCircle2,
     XCircle,
     Shield,
+    ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PaymentMethodLogo } from '@/components/brand-logos';
-
 
 interface PaymentMethodItem {
     id: number;
@@ -59,11 +58,25 @@ export default function AdminPaymentMethods({ methods, usdRate = 12850 }: Paymen
         <div className="p-6 space-y-6 max-w-6xl mx-auto">
             <Head title={t('admin.paymentMethods.title', "Superadmin — To'lov Tizimlari")} />
 
-            <div>
-                <h2 className="text-2xl font-bold tracking-tight">{t('admin.paymentMethods.title', "To'lov Tizimlari Sozlamalari")}</h2>
-                <p className="text-sm text-muted-foreground">
-                    Click, Payme, P2P Karta rekvizitlari va Lemon Squeezy integratsiya kalitlari
-                </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight">{t('admin.paymentMethods.title', "To'lov Tizimlari Sozlamalari")}</h2>
+                    <p className="text-sm text-muted-foreground">
+                        Click, Payme, P2P Karta rekvizitlari va Lemon Squeezy integratsiya kalitlari
+                    </p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <a
+                        href="/payment/dashboard"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs bg-primary/10 text-primary hover:bg-primary/20 px-3.5 py-2 rounded-xl font-semibold transition-colors border border-primary/20"
+                    >
+                        <Shield className="h-4 w-4" />
+                        Pay-Uz Boshqaruv Paneli
+                        <ExternalLink className="h-3 w-3" />
+                    </a>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -87,6 +100,18 @@ export default function AdminPaymentMethods({ methods, usdRate = 12850 }: Paymen
                                 <>
                                     <p>Karta: <b>{method.settings?.card_number || 'Kiritilmagan'}</b></p>
                                     <p>Egasi: <b>{method.settings?.card_holder || 'Kiritilmagan'}</b></p>
+                                </>
+                            ) : method.code === 'click' ? (
+                                <>
+                                    <p>Service ID: <b>{method.settings?.service_id || 'Kiritilmagan'}</b></p>
+                                    <p>Merchant ID: <b>{method.settings?.merchant_id || 'Kiritilmagan'}</b></p>
+                                    <p className="text-[11px] opacity-75">Webhook: <code>/handle/click</code></p>
+                                </>
+                            ) : method.code === 'payme' ? (
+                                <>
+                                    <p>Merchant ID: <b>{method.settings?.merchant_id || 'Kiritilmagan'}</b></p>
+                                    <p>Account Key: <b>{method.settings?.key || 'order_id'}</b></p>
+                                    <p className="text-[11px] opacity-75">Webhook: <code>/handle/payme</code></p>
                                 </>
                             ) : method.code === 'lemonsqueezy' ? (
                                 <>
@@ -125,7 +150,7 @@ export default function AdminPaymentMethods({ methods, usdRate = 12850 }: Paymen
             {/* Edit Modal */}
             {editingMethod && (
                 <div className="fixed inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-                    <form onSubmit={handleSave} className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4">
+                    <form onSubmit={handleSave} className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
                         <h3 className="text-lg font-bold">{t("admin.configurePaymentMethod", "To'lov tizimini sozlash")}: {editingMethod.name}</h3>
 
                         <div className="flex items-center gap-2 pb-2 border-b border-border">
@@ -160,6 +185,80 @@ export default function AdminPaymentMethods({ methods, usdRate = 12850 }: Paymen
                                         placeholder="FALONCHI PISTONCHIYEV"
                                         required
                                     />
+                                </div>
+                            </>
+                        )}
+
+                        {editingMethod.code === 'click' && (
+                            <>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold">Service ID (Click):</label>
+                                    <Input
+                                        value={data.settings?.service_id || ''}
+                                        onChange={(e) => setData('settings', { ...data.settings, service_id: e.target.value })}
+                                        placeholder="masalan, 12345"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold">Merchant ID:</label>
+                                    <Input
+                                        value={data.settings?.merchant_id || ''}
+                                        onChange={(e) => setData('settings', { ...data.settings, merchant_id: e.target.value })}
+                                        placeholder="masalan, 1234"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold">Secret Key (Maxfiy kalit):</label>
+                                    <Input
+                                        type="password"
+                                        value={data.settings?.secret_key || ''}
+                                        onChange={(e) => setData('settings', { ...data.settings, secret_key: e.target.value })}
+                                        placeholder="••••••••••••••••"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold">Merchant User ID (ixtiyoriy):</label>
+                                    <Input
+                                        value={data.settings?.merchant_user_id || ''}
+                                        onChange={(e) => setData('settings', { ...data.settings, merchant_user_id: e.target.value })}
+                                        placeholder="0000"
+                                    />
+                                </div>
+                            </>
+                        )}
+
+                        {editingMethod.code === 'payme' && (
+                            <>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold">Merchant ID (Payme):</label>
+                                    <Input
+                                        value={data.settings?.merchant_id || ''}
+                                        onChange={(e) => setData('settings', { ...data.settings, merchant_id: e.target.value })}
+                                        placeholder="masalan, 6080... (Paycom ID)"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold">Secret Key (Parol / Maxfiy kalit):</label>
+                                    <Input
+                                        type="password"
+                                        value={data.settings?.secret_key || ''}
+                                        onChange={(e) => setData('settings', { ...data.settings, secret_key: e.target.value })}
+                                        placeholder="••••••••••••••••"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold">Account Param Key (Kabinetdagi hisob parametri):</label>
+                                    <Input
+                                        value={data.settings?.key || ''}
+                                        onChange={(e) => setData('settings', { ...data.settings, key: e.target.value })}
+                                        placeholder="order_id"
+                                    />
+                                    <p className="text-[11px] text-muted-foreground">Payme merchant cabinet sozlamalaridagi maydon nomi (odatda <code>order_id</code> yoki <code>id</code>)</p>
                                 </div>
                             </>
                         )}

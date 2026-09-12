@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state', 'locale']);
 
         $middleware->validateCsrfTokens(except: [
+            'handle/*',
             'payment/*',
             'api/*',
         ]);

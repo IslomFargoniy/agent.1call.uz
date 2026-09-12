@@ -146,5 +146,8 @@ class DatabaseSeeder extends Seeder
         foreach ($paymentMethods as $method) {
             PaymentMethod::updateOrCreate(['code' => $method['code']], $method);
         }
+
+        // 4. PayUz Payment Systems & Params
+        $this->call(\Goodoneuz\PayUz\Database\Seeds\PayUzSeeder::class);
     }
 }

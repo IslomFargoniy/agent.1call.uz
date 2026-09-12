@@ -12,6 +12,7 @@ import {
     Eye,
     X,
     ExternalLink,
+    CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PaginationNav, PaginationLink } from "@/components/ui/pagination-nav";
@@ -215,6 +216,16 @@ export default function InvoicesIndex({ invoices }: InvoicesProps) {
                                                         </div>
                                                     </button>
                                                 ) : null}
+
+                                                {['click', 'payme'].includes(invoice.payment_method) && invoice.status === "pending" && (
+                                                    <a
+                                                        href={`/pay/${invoice.payment_method}/${invoice.id}`}
+                                                        className="inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground h-8 px-3 text-xs gap-1.5"
+                                                    >
+                                                        <CreditCard className="h-3.5 w-3.5 text-primary" />
+                                                        {t("billing.payNow", "To\x27lash")}
+                                                    </a>
+                                                )}
 
                                                 {invoice.payment_method === "card_transfer" && invoice.status === "pending" && (
                                                     <Button

@@ -284,7 +284,30 @@ class SuperadminController extends Controller
      */
     public function paymentMethods(): Response
     {
-        $methods = PaymentMethod::orderBy('sort_order')->get();
+        $methods = PaymentMethod::orderBy('sort_order')->get()->map(function ($method) {
+            $settings = $method->settings ?? [];
+
+            if ($method->code === 'click') {
+                $params = \Goodoneuz\PayUz\Models\PaymentSystemParam::where('system', 'click')->pluck('value', 'name');
+                $settings = array_merge([
+                    'service_id' => $params['service_id'] ?? '',
+                    'merchant_id' => $params['merchant_id'] ?? '',
+                    'secret_key' => $params['secret_key'] ?? '',
+                    'merchant_user_id' => $params['merchant_user_id'] ?? '',
+                ], $settings);
+            } elseif ($method->code === 'payme') {
+                $params = \Goodoneuz\PayUz\Models\PaymentSystemParam::where('system', 'payme')->pluck('value', 'name');
+                $settings = array_merge([
+                    'merchant_id' => $params['merchant_id'] ?? '',
+                    'secret_key' => $params['password'] ?? '',
+                    'key' => $params['key'] ?? 'order_id',
+                ], $settings);
+            }
+
+            $method->settings = $settings;
+            return $method;
+        });
+
         $usdRate = (float) SystemSetting::get('usd_exchange_rate', 12850);
 
         return Inertia::render('Admin/PaymentMethods', [
@@ -305,6 +328,39 @@ class SuperadminController extends Controller
         ]);
 
         $method->update($validated);
+
+        $statusStr = $validated['is_active'] ? \Goodoneuz\PayUz\Models\PaymentSystem::ACTIVE : \Goodoneuz\PayUz\Models\PaymentSystem::NOT_ACTIVE;
+
+        if ($method->code === 'click') {
+            \Goodoneuz\PayUz\Models\PaymentSystem::where('system', 'click')->update(['status' => $statusStr]);
+            if (isset($validated['settings'])) {
+                foreach ([
+                    'service_id' => $validated['settings']['service_id'] ?? '',
+                    'merchant_id' => $validated['settings']['merchant_id'] ?? '',
+                    'secret_key' => $validated['settings']['secret_key'] ?? '',
+                    'merchant_user_id' => $validated['settings']['merchant_user_id'] ?? '',
+                ] as $pName => $pVal) {
+                    \Goodoneuz\PayUz\Models\PaymentSystemParam::updateOrCreate(
+                        ['system' => 'click', 'name' => $pName],
+                        ['value' => (string) $pVal, 'label' => ucwords(str_replace('_', ' ', $pName))]
+                    );
+                }
+            }
+        } elseif ($method->code === 'payme') {
+            \Goodoneuz\PayUz\Models\PaymentSystem::where('system', 'payme')->update(['status' => $statusStr]);
+            if (isset($validated['settings'])) {
+                foreach ([
+                    'merchant_id' => $validated['settings']['merchant_id'] ?? '',
+                    'password' => $validated['settings']['secret_key'] ?? ($validated['settings']['password'] ?? ''),
+                    'key' => !empty($validated['settings']['key']) ? $validated['settings']['key'] : 'order_id',
+                ] as $pName => $pVal) {
+                    \Goodoneuz\PayUz\Models\PaymentSystemParam::updateOrCreate(
+                        ['system' => 'payme', 'name' => $pName],
+                        ['value' => (string) $pVal, 'label' => ucwords(str_replace('_', ' ', $pName))]
+                    );
+                }
+            }
+        }
 
         return back()->with('success', "{$method->name} to'lov tizimi sozlamalari saqlandi.");
     }

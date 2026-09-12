@@ -3,7 +3,7 @@
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Billing\BillingWebController;
 use App\Http\Controllers\Billing\LemonSqueezyController;
-use App\Http\Controllers\Billing\LocalPaymentController;
+use App\Http\Controllers\Billing\PaymentWebhookController;
 use App\Http\Controllers\CallController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceManagementController;
@@ -30,12 +30,19 @@ Route::get('/downloads/app', function () {
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 
-// 1. Payment Webhooks (CSRF-exempt)
+// 1. Payment Webhooks (CSRF-exempt) & PayUz Gateways
+Route::any('/handle/{paysys}', [PaymentWebhookController::class, 'handle'])->name('payment.handle');
+Route::post('/handle/uzum/{operation}', [PaymentWebhookController::class, 'handleUzum'])->name('payment.uzum');
+
 Route::prefix('payment')->group(function () {
-    Route::post('/payme', [LocalPaymentController::class, 'payme'])->name('payment.payme');
-    Route::post('/click', [LocalPaymentController::class, 'click'])->name('payment.click');
+    Route::any('/payme', [PaymentWebhookController::class, 'handle'])->name('payment.payme');
+    Route::any('/click', [PaymentWebhookController::class, 'handle'])->name('payment.click');
+    Route::any('/{paysys}', [PaymentWebhookController::class, 'handle']);
     Route::post('/lemonsqueezy', [LemonSqueezyController::class, 'handleWebhook'])->name('payment.lemonsqueezy');
 });
+
+// Payment Gateway Direct Redirection Checkout Form (/pay/{paysys}/{invoice})
+Route::get('/pay/{paysys}/{invoice}', [PaymentWebhookController::class, 'pay'])->name('payment.pay');
 
 // 2. Integration Callbacks (Public)
 Route::get('/api/v1/integrations/amocrm/callback', [IntegrationController::class, 'amoCrmCallback'])->name('integrations.amocrm.callback');

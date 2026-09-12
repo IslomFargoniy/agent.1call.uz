@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class BillingWebController extends Controller
 {
@@ -83,7 +84,7 @@ class BillingWebController extends Controller
     /**
      * Checkout creation endpoint.
      */
-    public function checkout(Request $request, TenantContext $tenantContext): RedirectResponse
+    public function checkout(Request $request, TenantContext $tenantContext): SymfonyResponse|RedirectResponse
     {
         $tenant = $tenantContext->getTenant() ?? $request->user()->tenant;
 
@@ -105,6 +106,14 @@ class BillingWebController extends Controller
             (int) $validated['months'],
             $validated['payment_method']
         );
+
+        // Pay-uz direct redirect for Click & Payme
+        if (in_array($validated['payment_method'], ['click', 'payme'])) {
+            return Inertia::location(route('payment.pay', [
+                'paysys' => $validated['payment_method'],
+                'invoice' => $invoice->id,
+            ]));
+        }
 
         // Lemon Squeezy direct redirect
         if ($validated['payment_method'] === 'lemonsqueezy') {
