@@ -54,6 +54,43 @@ interface Tariff {
 
 const SIM_DEVICE_STEPS = [1, 2, 5, 10, 20, 30, 50];
 
+function simCountToPercent(count: number): number {
+    if (count <= 1) return 0;
+    if (count >= 50) return 100;
+
+    const intervals = [
+        { minC: 1, maxC: 2, minP: 0, maxP: 100 / 6 },
+        { minC: 2, maxC: 5, minP: 100 / 6, maxP: (100 / 6) * 2 },
+        { minC: 5, maxC: 10, minP: (100 / 6) * 2, maxP: (100 / 6) * 3 },
+        { minC: 10, maxC: 20, minP: (100 / 6) * 3, maxP: (100 / 6) * 4 },
+        { minC: 20, maxC: 30, minP: (100 / 6) * 4, maxP: (100 / 6) * 5 },
+        { minC: 30, maxC: 50, minP: (100 / 6) * 5, maxP: 100 },
+    ];
+
+    const interval = intervals.find((int) => count >= int.minC && count <= int.maxC) || intervals[intervals.length - 1];
+    const fraction = (count - interval.minC) / (interval.maxC - interval.minC);
+    return interval.minP + fraction * (interval.maxP - interval.minP);
+}
+
+function simPercentToCount(percent: number): number {
+    if (percent <= 0) return 1;
+    if (percent >= 100) return 50;
+
+    const intervals = [
+        { minC: 1, maxC: 2, minP: 0, maxP: 100 / 6 },
+        { minC: 2, maxC: 5, minP: 100 / 6, maxP: (100 / 6) * 2 },
+        { minC: 5, maxC: 10, minP: (100 / 6) * 2, maxP: (100 / 6) * 3 },
+        { minC: 10, maxC: 20, minP: (100 / 6) * 3, maxP: (100 / 6) * 4 },
+        { minC: 20, maxC: 30, minP: (100 / 6) * 4, maxP: (100 / 6) * 5 },
+        { minC: 30, maxC: 50, minP: (100 / 6) * 5, maxP: 100 },
+    ];
+
+    const interval = intervals.find((int) => percent >= int.minP && percent <= int.maxP) || intervals[intervals.length - 1];
+    const fraction = (percent - interval.minP) / (interval.maxP - interval.minP);
+    const rawCount = interval.minC + fraction * (interval.maxC - interval.minC);
+    return Math.max(1, Math.min(50, Math.round(rawCount)));
+}
+
 interface TariffsProps {
     tariff?: Tariff;
     tariffs?: Tariff[];
@@ -91,15 +128,7 @@ export default function AdminTariffs({ tariff: singleTariff, tariffs = [], usdRa
     const [simMonths, setSimMonths] = useState(3);
     const [simRetention, setSimRetention] = useState(60);
 
-    const simStepIndex = useMemo(() => {
-        const exactIndex = SIM_DEVICE_STEPS.indexOf(simDevices);
-        if (exactIndex !== -1) return exactIndex;
-        return SIM_DEVICE_STEPS.reduce((closestIdx, val, idx) =>
-            Math.abs(val - simDevices) < Math.abs(SIM_DEVICE_STEPS[closestIdx] - simDevices) ? idx : closestIdx, 0
-        );
-    }, [simDevices]);
-
-    const simProgressPercent = (simStepIndex / (SIM_DEVICE_STEPS.length - 1)) * 100;
+    const simProgressPercent = useMemo(() => simCountToPercent(simDevices), [simDevices]);
 
     // Exchange Rate: Fetch CBU
     const handleFetchCbuRate = async () => {
@@ -743,11 +772,8 @@ export default function AdminTariffs({ tariff: singleTariff, tariffs = [], usdRa
                                     <button
                                         type="button"
                                         className="h-5 w-5 rounded inline-flex items-center justify-center border hover:bg-muted text-muted-foreground disabled:opacity-40"
-                                        onClick={() => {
-                                            const nextIdx = Math.max(0, simStepIndex - 1);
-                                            setSimDevices(SIM_DEVICE_STEPS[nextIdx]);
-                                        }}
-                                        disabled={simStepIndex <= 0}
+                                        onClick={() => setSimDevices((prev) => Math.max(1, prev - 1))}
+                                        disabled={simDevices <= 1}
                                     >
                                         <Minus className="h-3 w-3" />
                                     </button>
@@ -755,30 +781,41 @@ export default function AdminTariffs({ tariff: singleTariff, tariffs = [], usdRa
                                     <button
                                         type="button"
                                         className="h-5 w-5 rounded inline-flex items-center justify-center border hover:bg-muted text-muted-foreground disabled:opacity-40"
-                                        onClick={() => {
-                                            const nextIdx = Math.min(SIM_DEVICE_STEPS.length - 1, simStepIndex + 1);
-                                            setSimDevices(SIM_DEVICE_STEPS[nextIdx]);
-                                        }}
-                                        disabled={simStepIndex >= SIM_DEVICE_STEPS.length - 1}
+                                        onClick={() => setSimDevices((prev) => Math.min(50, prev + 1))}
+                                        disabled={simDevices >= 50}
                                     >
                                         <Plus className="h-3 w-3" />
                                     </button>
                                     <span className="font-semibold text-muted-foreground text-[11px]">ta</span>
                                 </div>
                             </div>
-                            <input
-                                type="range"
-                                min={0}
-                                max={SIM_DEVICE_STEPS.length - 1}
-                                step={1}
-                                value={simStepIndex}
-                                onChange={(e) => setSimDevices(SIM_DEVICE_STEPS[Number(e.target.value)])}
-                                style={{
-                                    background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${simProgressPercent}%, hsl(var(--secondary)) ${simProgressPercent}%, hsl(var(--secondary)) 100%)`,
-                                }}
-                                className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-primary"
-                            />
-                            <div className="flex justify-between text-[11px] text-muted-foreground font-mono pt-1">
+                            <div className="relative w-full h-6 flex items-center select-none touch-none">
+                                <div className="w-full h-2 bg-secondary rounded-full overflow-hidden relative">
+                                    <div
+                                        className="h-full bg-primary transition-all duration-75"
+                                        style={{ width: `${simProgressPercent}%` }}
+                                    />
+                                </div>
+                                <div
+                                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4.5 h-4.5 bg-background border-2 border-primary rounded-full shadow-md pointer-events-none transition-all duration-75 flex items-center justify-center ring-2 ring-primary/20"
+                                    style={{
+                                        left: `calc(9px + (100% - 18px) * ${simProgressPercent / 100})`,
+                                    }}
+                                >
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                </div>
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={100}
+                                    step={0.1}
+                                    value={simProgressPercent}
+                                    onChange={(e) => setSimDevices(simPercentToCount(Number(e.target.value)))}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    aria-label="Telefonlar soni"
+                                />
+                            </div>
+                            <div className="flex justify-between text-[11px] text-muted-foreground font-mono pt-0.5">
                                 {SIM_DEVICE_STEPS.map((n) => (
                                     <button
                                         type="button"

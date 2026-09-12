@@ -53,7 +53,44 @@ interface BillingProps {
     paymentMethods: PaymentMethod[];
 }
 
-const DEVICE_STEPS = [1, 2, 5, 10, 20, 30, 50];
+const DEVICE_MARKS = [1, 2, 5, 10, 20, 30, 50];
+
+function countToPercent(count: number): number {
+    if (count <= 1) return 0;
+    if (count >= 50) return 100;
+
+    const intervals = [
+        { minC: 1, maxC: 2, minP: 0, maxP: 100 / 6 },
+        { minC: 2, maxC: 5, minP: 100 / 6, maxP: (100 / 6) * 2 },
+        { minC: 5, maxC: 10, minP: (100 / 6) * 2, maxP: (100 / 6) * 3 },
+        { minC: 10, maxC: 20, minP: (100 / 6) * 3, maxP: (100 / 6) * 4 },
+        { minC: 20, maxC: 30, minP: (100 / 6) * 4, maxP: (100 / 6) * 5 },
+        { minC: 30, maxC: 50, minP: (100 / 6) * 5, maxP: 100 },
+    ];
+
+    const interval = intervals.find((int) => count >= int.minC && count <= int.maxC) || intervals[intervals.length - 1];
+    const fraction = (count - interval.minC) / (interval.maxC - interval.minC);
+    return interval.minP + fraction * (interval.maxP - interval.minP);
+}
+
+function percentToCount(percent: number): number {
+    if (percent <= 0) return 1;
+    if (percent >= 100) return 50;
+
+    const intervals = [
+        { minC: 1, maxC: 2, minP: 0, maxP: 100 / 6 },
+        { minC: 2, maxC: 5, minP: 100 / 6, maxP: (100 / 6) * 2 },
+        { minC: 5, maxC: 10, minP: (100 / 6) * 2, maxP: (100 / 6) * 3 },
+        { minC: 10, maxC: 20, minP: (100 / 6) * 3, maxP: (100 / 6) * 4 },
+        { minC: 20, maxC: 30, minP: (100 / 6) * 4, maxP: (100 / 6) * 5 },
+        { minC: 30, maxC: 50, minP: (100 / 6) * 5, maxP: 100 },
+    ];
+
+    const interval = intervals.find((int) => percent >= int.minP && percent <= int.maxP) || intervals[intervals.length - 1];
+    const fraction = (percent - interval.minP) / (interval.maxP - interval.minP);
+    const rawCount = interval.minC + fraction * (interval.maxC - interval.minC);
+    return Math.max(1, Math.min(50, Math.round(rawCount)));
+}
 
 export default function BillingIndex({ tenant, tariffs, paymentMethods }: BillingProps) {
     const { t } = useTranslation();
@@ -62,15 +99,7 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
     const [selectedTariff, setSelectedTariff] = useState<Tariff | null>(defaultTariff);
     const [devicesCount, setDevicesCount] = useState(tenant?.allowed_devices_count || 2);
 
-    const currentStepIndex = useMemo(() => {
-        const exactIndex = DEVICE_STEPS.indexOf(devicesCount);
-        if (exactIndex !== -1) return exactIndex;
-        return DEVICE_STEPS.reduce((closestIdx, val, idx) =>
-            Math.abs(val - devicesCount) < Math.abs(DEVICE_STEPS[closestIdx] - devicesCount) ? idx : closestIdx, 0
-        );
-    }, [devicesCount]);
-
-    const progressPercent = (currentStepIndex / (DEVICE_STEPS.length - 1)) * 100;
+    const progressPercent = useMemo(() => countToPercent(devicesCount), [devicesCount]);
     const [retentionDays, setRetentionDays] = useState(tenant?.audio_retention_days || 30);
     const [months, setMonths] = useState(1);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(paymentMethods[0]?.code || "payme");
@@ -255,11 +284,8 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                                     variant="outline"
                                     size="icon"
                                     className="h-7 w-7 rounded-md"
-                                    onClick={() => {
-                                        const nextIdx = Math.max(0, currentStepIndex - 1);
-                                        setDevicesCount(DEVICE_STEPS[nextIdx]);
-                                    }}
-                                    disabled={currentStepIndex <= 0}
+                                    onClick={() => setDevicesCount((prev) => Math.max(1, prev - 1))}
+                                    disabled={devicesCount <= 1}
                                 >
                                     <Minus className="h-3.5 w-3.5" />
                                 </Button>
@@ -271,11 +297,8 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                                     variant="outline"
                                     size="icon"
                                     className="h-7 w-7 rounded-md"
-                                    onClick={() => {
-                                        const nextIdx = Math.min(DEVICE_STEPS.length - 1, currentStepIndex + 1);
-                                        setDevicesCount(DEVICE_STEPS[nextIdx]);
-                                    }}
-                                    disabled={currentStepIndex >= DEVICE_STEPS.length - 1}
+                                    onClick={() => setDevicesCount((prev) => Math.min(50, prev + 1))}
+                                    disabled={devicesCount >= 50}
                                 >
                                     <Plus className="h-3.5 w-3.5" />
                                 </Button>
@@ -284,25 +307,50 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                         </div>
 
                         <div className="space-y-3">
-                            <input
-                                type="range"
-                                min={0}
-                                max={DEVICE_STEPS.length - 1}
-                                step={1}
-                                value={currentStepIndex}
-                                onChange={(e) => setDevicesCount(DEVICE_STEPS[Number(e.target.value)])}
-                                style={{
-                                    background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${progressPercent}%, hsl(var(--secondary)) ${progressPercent}%, hsl(var(--secondary)) 100%)`,
-                                }}
-                                className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-primary"
-                            />
-                            <div className="flex justify-between text-xs text-muted-foreground font-mono pt-1">
-                                {DEVICE_STEPS.map((num) => (
+                            <div className="relative w-full h-8 flex items-center select-none touch-none">
+                                {/* Base Track */}
+                                <div className="w-full h-2 bg-secondary rounded-full overflow-hidden relative">
+                                    {/* Filled Progress */}
+                                    <div
+                                        className="h-full bg-primary transition-all duration-75"
+                                        style={{ width: `${progressPercent}%` }}
+                                    />
+                                </div>
+
+                                {/* Custom Styled Thumb with 100% precise alignment */}
+                                <div
+                                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 bg-background border-2 border-primary rounded-full shadow-md pointer-events-none transition-all duration-75 flex items-center justify-center ring-2 ring-primary/20"
+                                    style={{
+                                        left: `calc(10px + (100% - 20px) * ${progressPercent / 100})`,
+                                    }}
+                                >
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                </div>
+
+                                {/* Accessible full range input for dragging */}
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={100}
+                                    step={0.1}
+                                    value={progressPercent}
+                                    onChange={(e) => setDevicesCount(percentToCount(Number(e.target.value)))}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    aria-label="Telefonlar soni"
+                                />
+                            </div>
+
+                            <div className="flex justify-between text-xs text-muted-foreground font-mono pt-0.5">
+                                {DEVICE_MARKS.map((num) => (
                                     <button
                                         type="button"
                                         key={num}
                                         onClick={() => setDevicesCount(num)}
-                                        className={`px-2 py-0.5 rounded transition-colors ${devicesCount === num ? "bg-primary text-primary-foreground font-bold shadow-xs" : "hover:bg-muted"}`}
+                                        className={`min-w-[1.75rem] py-0.5 px-1 rounded text-center transition-all ${
+                                            devicesCount === num
+                                                ? "bg-primary text-primary-foreground font-bold shadow-xs scale-105"
+                                                : "hover:bg-muted"
+                                        }`}
                                     >
                                         {num}
                                     </button>
