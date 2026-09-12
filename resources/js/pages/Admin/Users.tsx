@@ -47,7 +47,7 @@ export default function AdminUsers({ users, tenants, filters }: UsersProps) {
     const [editingUser, setEditingUser] = useState<UserItem | null>(null);
 
     const { data, setData, put, processing } = useForm({
-        role: 'operator',
+        role: 'admin',
         tenant_id: '',
         is_active: true,
         password: '',
@@ -103,8 +103,7 @@ export default function AdminUsers({ users, tenants, filters }: UsersProps) {
                         <option value="">{t("admin.allRoles", "Barcha rollar")}</option>
                         <option value="superadmin">Superadmin</option>
                         <option value="admin">Admin</option>
-                        <option value="operator">Operator</option>
-                    </select>
+                                            </select>
                     <Button type="submit" size="sm" className="h-9">
                         <Search className="h-3.5 w-3.5" />
                     </Button>
@@ -196,8 +195,7 @@ export default function AdminUsers({ users, tenants, filters }: UsersProps) {
                                 onChange={(e) => setData('role', e.target.value)}
                                 className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-xs"
                             >
-                                <option value="operator">{t("admin.roleOperator", "Operator (Faqat o'z qo'ng'iroqlari)")}</option>
-                                <option value="admin">{t("admin.roleAdmin", "Admin (Kompaniya rahbari)")}</option>
+                                                                <option value="admin">{t("admin.roleAdmin", "Admin (Kompaniya rahbari)")}</option>
                                 <option value="superadmin">{t("admin.roleSuperadmin", "Superadmin (Platforma egasi)")}</option>
                             </select>
                         </div>

@@ -23,9 +23,6 @@ class DashboardController extends Controller
         $today = TimezoneService::localTodayStartToUtc(TimezoneService::resolveTimezone($request));
 
         $callsQuery = Call::query();
-        if ($user->isOperator()) {
-            $callsQuery->where('user_id', $user->id);
-        }
 
         $todayCalls = (clone $callsQuery)->where('call_timestamp', '>=', $today)->count();
         $answeredCalls = (clone $callsQuery)->where('call_timestamp', '>=', $today)->where('duration_seconds', '>', 0)->count();
@@ -33,7 +30,7 @@ class DashboardController extends Controller
         $totalDuration = (clone $callsQuery)->where('call_timestamp', '>=', $today)->sum('duration_seconds');
 
         $recentCalls = (clone $callsQuery)
-            ->with(['device:id,name,model', 'user:id,name', 'tenant:id,name'])
+            ->with(['device:id,name,model', 'tenant:id,name'])
             ->orderByDesc('call_timestamp')
             ->limit(10)
             ->get();

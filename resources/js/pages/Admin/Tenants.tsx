@@ -112,7 +112,7 @@ export default function AdminTenantsAndUsers({
 
     // Form for User Edit
     const userForm = useForm({
-        role: 'operator',
+        role: 'admin',
         tenant_id: '',
         is_active: true,
         password: '',
@@ -420,8 +420,7 @@ export default function AdminTenantsAndUsers({
                                 <option value="">{t('admin.allRoles', 'Barcha rollar')}</option>
                                 <option value="superadmin">Superadmin</option>
                                 <option value="admin">Admin</option>
-                                <option value="operator">Operator</option>
-                            </select>
+                                                            </select>
 
                             {/* Tenant Filter */}
                             <select

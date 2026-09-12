@@ -26,7 +26,6 @@ interface CallItem {
     recording_status: string;
     recording_path?: string;
     device?: { id: number; name: string; model?: string };
-    user?: { id: number; name: string };
     tenant?: { id: number; name: string };
 }
 
@@ -260,7 +259,6 @@ export default function Dashboard({ tenant, stats, recent_calls }: DashboardProp
                                                 </span>
                                             )}
                                             <span>{call.device?.name || t("calls.device", "Telefon")}</span>
-                                            {call.user && <span>• {t("calls.operator", "Operator")}: {call.user.name}</span>}
                                             <span>• {formatTime(call.call_timestamp)}</span>
                                         </div>
                                     </div>

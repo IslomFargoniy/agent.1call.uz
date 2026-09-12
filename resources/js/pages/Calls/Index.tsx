@@ -28,7 +28,6 @@ interface CallRecord {
     recording_path?: string;
     call_timestamp: string;
     device?: { id: number; name: string; model?: string; sim_slots_info?: any };
-    user?: { id: number; name: string };
     tenant?: { id: number; name: string };
 }
 
@@ -47,16 +46,14 @@ interface CallsProps {
         start_date?: string;
         end_date?: string;
         device_id?: string;
-        user_id?: string;
         tenant_id?: string;
     };
     devices: { id: number; name: string; tenant?: { id: number; name: string } }[];
-    operators: { id: number; name: string; tenant?: { id: number; name: string } }[];
     tenants?: { id: number; name: string }[];
     canDownload: boolean;
 }
 
-export default function CallsIndex({ calls, filters, devices, operators, tenants = [], canDownload }: CallsProps) {
+export default function CallsIndex({ calls, filters, devices, tenants = [], canDownload }: CallsProps) {
     const { auth, superadmin } = usePage<any>().props;
     const isSuperAdmin = auth?.user?.role === "superadmin";
     const isAllTenants = isSuperAdmin && !superadmin?.selected_tenant;
@@ -65,7 +62,6 @@ export default function CallsIndex({ calls, filters, devices, operators, tenants
     const [direction, setDirection] = useState(filters.direction || '');
     const [status, setStatus] = useState(filters.status || '');
     const [deviceId, setDeviceId] = useState(filters.device_id || '');
-    const [userId, setUserId] = useState(filters.user_id || '');
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
 
@@ -76,7 +72,6 @@ export default function CallsIndex({ calls, filters, devices, operators, tenants
             direction: direction || undefined,
             status: status || undefined,
             device_id: deviceId || undefined,
-            user_id: userId || undefined,
             start_date: startDate || undefined,
             end_date: endDate || undefined,
             tenant_id: tenantId || undefined,
@@ -88,7 +83,6 @@ export default function CallsIndex({ calls, filters, devices, operators, tenants
         setDirection('');
         setStatus('');
         setDeviceId('');
-        setUserId('');
         setStartDate('');
         setEndDate('');
         setTenantId('');
@@ -206,7 +200,6 @@ export default function CallsIndex({ calls, filters, devices, operators, tenants
                                 <th className="py-3 px-4">{t('calls.directionNumber', "Yo'nalish / Raqam")}</th>
                                 {isAllTenants && <th className="py-3 px-4">{t('calls.company', 'Kompaniya')}</th>}
                                 <th className="py-3 px-4">{t('calls.deviceSim', 'Qurilma / SIM')}</th>
-                                <th className="py-3 px-4">{t('calls.operator', 'Operator')}</th>
                                 <th className="py-3 px-4">{t('calls.time', 'Vaqti')}</th>
                                 <th className="py-3 px-4">{t('calls.audioRecording', 'Audio yozuv')}</th>
                                 {canDownload && <th className="py-3 px-4 text-right">{t('calls.download', 'Yuklab olish')}</th>}
@@ -215,7 +208,7 @@ export default function CallsIndex({ calls, filters, devices, operators, tenants
                         <tbody className="divide-y divide-border">
                             {calls.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={canDownload ? (isAllTenants ? 8 : 7) : (isAllTenants ? 7 : 6)} className="py-8 text-center text-muted-foreground text-sm">
+                                    <td colSpan={canDownload ? (isAllTenants ? 7 : 6) : (isAllTenants ? 6 : 5)} className="py-8 text-center text-muted-foreground text-sm">
                                         {t('calls.noCallsFound', "Ko'rsatilgan filtrlar bo'yicha hech qanday qo'ng'iroq topilmadi.")}
                                     </td>
                                 </tr>
@@ -286,9 +279,6 @@ export default function CallsIndex({ calls, filters, devices, operators, tenants
                                                     </a>
                                                 )}
                                             </div>
-                                        </td>
-                                        <td className="py-3.5 px-4 text-xs font-medium">
-                                            {call.user?.name || call.device?.user?.name || '—'}
                                         </td>
                                         <td className="py-3.5 px-4 text-xs text-muted-foreground font-mono">
                                             {formatDateTime(call.call_timestamp)}

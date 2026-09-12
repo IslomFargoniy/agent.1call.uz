@@ -120,7 +120,7 @@ class SuperadminController extends Controller
     public function updateUser(User $user, Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'role' => ['required', 'in:superadmin,admin,operator'],
+            'role' => ['required', 'in:superadmin,admin'],
             'tenant_id' => ['nullable', 'exists:tenants,id'],
             'is_active' => ['required', 'boolean'],
             'password' => ['nullable', 'string', 'min:8'],

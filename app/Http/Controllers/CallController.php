@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Call;
 use App\Models\Device;
 use App\Models\Tenant;
-use App\Models\User;
 use App\Services\TimezoneService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -26,16 +25,9 @@ class CallController extends Controller
         $isAllTenants = $user->isSuperAdmin() && ! session('superadmin_tenant_id');
 
         $query = Call::query()->with([
-            'device:id,name,model,sim_slots_info,selected_sim_slot,user_id,tenant_id',
-            'device.user:id,name',
-            'user:id,name',
+            'device:id,name,model,sim_slots_info,selected_sim_slot,tenant_id',
             'tenant:id,name',
         ]);
-
-        // Operator only sees their own calls
-        if ($user->isOperator()) {
-            $query->where('user_id', $user->id);
-        }
 
         // Tenant filter (for superadmin in all tenants mode)
         if ($tenantId = $request->input('tenant_id')) {
@@ -81,11 +73,6 @@ class CallController extends Controller
             $query->where('device_id', $deviceId);
         }
 
-        // User/Operator filter
-        if ($userId = $request->input('user_id')) {
-            $query->where('user_id', $userId);
-        }
-
         $perPageInput = $request->input('per_page', 10);
         $perPage = (strtolower((string) $perPageInput) === 'all') ? 10000 : max(1, min(500, (int) $perPageInput));
         $calls = $query->orderByDesc('call_timestamp')->paginate($perPage)->withQueryString();
@@ -94,24 +81,16 @@ class CallController extends Controller
             ->when($isAllTenants, fn ($q) => $q->with('tenant:id,name'))
             ->get();
 
-        $operators = $user->isOperator()
-            ? []
-            : User::where('role', 'operator')
-                ->select('id', 'name', 'tenant_id')
-                ->when($isAllTenants, fn ($q) => $q->with('tenant:id,name'))
-                ->get();
-
         $tenants = $isAllTenants
             ? Tenant::select('id', 'name')->orderBy('name')->get()
             : [];
 
         return Inertia::render('Calls/Index', [
             'calls' => $calls,
-            'filters' => $request->only(['search', 'direction', 'status', 'start_date', 'end_date', 'device_id', 'user_id', 'tenant_id']),
+            'filters' => $request->only(['search', 'direction', 'status', 'start_date', 'end_date', 'device_id', 'tenant_id']),
             'devices' => $devices,
-            'operators' => $operators,
             'tenants' => $tenants,
-            'canDownload' => $user->isSuperAdmin() || $user->isAdmin(),
+            'canDownload' => true,
         ]);
     }
 
@@ -121,11 +100,6 @@ class CallController extends Controller
     public function stream(Call $call, Request $request): StreamedResponse|BinaryFileResponse
     {
         $user = $request->user();
-
-        // Operator check
-        if ($user->isOperator() && $call->user_id !== $user->id) {
-            abort(403, 'Ushbu yozuvni tinglashga ruxsat berilmagan.');
-        }
 
         if (! $user->isSuperAdmin() && $call->tenant_id !== $user->tenant_id) {
             abort(403, 'Ushbu yozuv boshqa kompaniyaga tegishli.');
@@ -162,15 +136,11 @@ class CallController extends Controller
     }
 
     /**
-     * Download audio file (Restricted to Superadmin and Admin).
+     * Download audio file.
      */
     public function download(Call $call, Request $request): StreamedResponse
     {
         $user = $request->user();
-
-        if (! $user->isSuperAdmin() && ! $user->isAdmin()) {
-            abort(403, 'Operatorlar uchun audio yozuvlarni yuklab olish taqiqlangan.');
-        }
 
         if (! $user->isSuperAdmin() && $call->tenant_id !== $user->tenant_id) {
             abort(403, 'Ushbu yozuv boshqa kompaniyaga tegishli.');

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Device;
 use App\Models\Tenant;
-use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,14 +40,10 @@ class DeviceManagementController extends Controller
     {
         $tenant = $this->resolveTenant($request, $tenantContext);
 
-        $devicesQuery = Device::with(['user:id,name', 'tenant:id,name'])->orderByDesc('id');
-        $usersQuery = User::where('role', 'operator')->select('id', 'name', 'tenant_id');
+        $devicesQuery = Device::with(['tenant:id,name'])->orderByDesc('id');
 
         if ($tenant) {
             $devicesQuery->where('tenant_id', $tenant->id);
-            $usersQuery->where('tenant_id', $tenant->id);
-        } else {
-            $usersQuery->with('tenant:id,name');
         }
 
         $pairedCount = $tenant
@@ -62,11 +57,9 @@ class DeviceManagementController extends Controller
         $perPageInput = $request->input('per_page', 10);
         $perPage = (strtolower((string) $perPageInput) === 'all') ? 10000 : max(1, min(500, (int) $perPageInput));
         $devices = $devicesQuery->paginate($perPage)->withQueryString();
-        $users = $usersQuery->get();
 
         return Inertia::render('Devices/Index', [
             'devices' => $devices,
-            'operators' => $users,
             'quota' => [
                 'allowed' => $allowedCount,
                 'paired' => $pairedCount,
@@ -129,13 +122,12 @@ class DeviceManagementController extends Controller
     }
 
     /**
-     * Update device properties (name, assigned user, corporate SIM slot).
+     * Update device properties (name, corporate SIM slot).
      */
     public function update(Device $device, Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:150'],
-            'user_id' => ['nullable', 'exists:users,id'],
             'selected_sim_slot' => ['nullable', 'in:1,2'],
             'sim1_number' => ['nullable', 'string', 'max:32'],
             'sim1_carrier' => ['nullable', 'string', 'max:50'],
@@ -162,7 +154,6 @@ class DeviceManagementController extends Controller
 
         $device->update([
             'name' => $validated['name'],
-            'user_id' => $validated['user_id'] ?? null,
             'selected_sim_slot' => $validated['selected_sim_slot'] ?? null,
             'sim_slots_info' => $simSlotsInfo,
         ]);

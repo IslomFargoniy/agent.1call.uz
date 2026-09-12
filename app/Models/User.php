@@ -72,7 +72,7 @@ class User extends Authenticatable implements PasskeyUser
 
     public function isOperator(): bool
     {
-        return $this->role === 'operator';
+        return false;
     }
 
     public function tenant(): BelongsTo

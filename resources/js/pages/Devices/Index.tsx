@@ -39,8 +39,6 @@ interface DeviceItem {
     pairing_code?: string;
     is_paired: boolean;
     last_seen_at?: string;
-    user?: { id: number; name: string };
-    user_id?: number;
     tenant?: { id: number; name: string };
 }
 
@@ -57,7 +55,6 @@ interface PaginatedDevices {
 
 interface DevicesProps {
     devices: PaginatedDevices | DeviceItem[];
-    operators: { id: number; name: string; tenant?: { id: number; name: string } }[];
     quota: {
         allowed: number;
         paired: number;
@@ -65,7 +62,7 @@ interface DevicesProps {
     tenant_uuid?: string;
 }
 
-export default function DevicesIndex({ devices, operators, quota, tenant_uuid }: DevicesProps) {
+export default function DevicesIndex({ devices, quota, tenant_uuid }: DevicesProps) {
     const { t } = useTranslation();
     const { auth, superadmin } = usePage<any>().props;
     const isSuperAdmin = auth?.user?.role === "superadmin";
@@ -81,7 +78,6 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
 
     const { data, setData, put, processing, reset } = useForm({
         name: "",
-        user_id: "",
         selected_sim_slot: "",
         sim1_number: "",
         sim1_carrier: "",
@@ -130,7 +126,6 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
         const slots = device.sim_slots_info || {};
         setData({
             name: device.name,
-            user_id: device.user_id ? String(device.user_id) : "",
             selected_sim_slot: device.selected_sim_slot ? String(device.selected_sim_slot) : "",
             sim1_number: slots?.sim1?.phone_number || (Array.isArray(slots) ? slots.find((s: any) => s.slot === 1)?.phone_number : "") || "",
             sim1_carrier: slots?.sim1?.carrier || (Array.isArray(slots) ? slots.find((s: any) => s.slot === 1)?.carrier : "") || "",
@@ -265,7 +260,6 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                             <th className="py-3 px-4 w-12 text-center">№</th>
                             <th className="py-3 px-4">{t("devices.name", "Qurilma nomi")}</th>
                             {isAllTenants && <th className="py-3 px-4">{t("devices.company", "Kompaniya")}</th>}
-                            <th className="py-3 px-4">{t("devices.assignedOperator", "Mas\x27ul Operator")}</th>
                             <th className="py-3 px-4">{t("devices.simSlot", "SIM Slot")}</th>
                             <th className="py-3 px-4">Accessibility</th>
                             <th className="py-3 px-4">{t("devices.batteryLevel", "Batareya")}</th>
@@ -276,7 +270,7 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                     <tbody className="divide-y divide-border">
                         {deviceList.length === 0 ? (
                             <tr>
-                                <td colSpan={isAllTenants ? 9 : 8} className="py-8 text-center text-muted-foreground text-sm">
+                                <td colSpan={isAllTenants ? 8 : 7} className="py-8 text-center text-muted-foreground text-sm">
                                     {t("devices.noDevices", "Hozircha hech qanday telefon ulanmagan. \"Yangi telefon ulash\" tugmasini bosing.")}
                                 </td>
                             </tr>
@@ -299,9 +293,6 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                                             </span>
                                         </td>
                                     )}
-                                    <td className="py-3.5 px-4 text-xs font-medium">
-                                        {device.user?.name || <span className="text-muted-foreground italic">{t("devices.unassigned", "Biriktirilmagan")}</span>}
-                                    </td>
                                     <td className="py-3.5 px-4 text-xs">
                                         <div className="flex flex-col gap-1">
                                             <span className="bg-secondary px-2 py-0.5 rounded text-secondary-foreground font-medium inline-block w-fit">
@@ -730,22 +721,6 @@ export default function DevicesIndex({ devices, operators, quota, tenant_uuid }:
                                 onChange={(e) => setData("name", e.target.value)}
                                 required
                             />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-semibold">{t("devices.assignedOperator", "Biriktirilgan Operator")}</label>
-                            <select
-                                value={data.user_id}
-                                onChange={(e) => setData("user_id", e.target.value)}
-                                className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-xs"
-                            >
-                                <option value="">{t("devices.unassigned", "Biriktirilmagan")}</option>
-                                {operators.map((op) => (
-                                    <option key={op.id} value={op.id}>
-                                        {op.name}{isAllTenants && op.tenant?.name ? ` (${op.tenant.name})` : ""}
-                                    </option>
-                                ))}
-                            </select>
                         </div>
 
                         <div className="space-y-1.5">
