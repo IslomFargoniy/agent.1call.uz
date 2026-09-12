@@ -26,9 +26,10 @@ class PaymentWebhookController extends Controller
 
         try {
             $driver = (new PayUz)->driver($paysys);
+
             return $driver->handle();
         } catch (\Throwable $e) {
-            Log::error("PayUz webhook error for [{$paysys}]: " . $e->getMessage(), [
+            Log::error("PayUz webhook error for [{$paysys}]: ".$e->getMessage(), [
                 'exception' => $e,
             ]);
 
@@ -45,7 +46,7 @@ class PaymentWebhookController extends Controller
             if ($paysys === 'click') {
                 return response()->json([
                     'error' => -8,
-                    'error_note' => 'Error in request from click: ' . $e->getMessage(),
+                    'error_note' => 'Error in request from click: '.$e->getMessage(),
                 ]);
             }
 
@@ -65,11 +66,13 @@ class PaymentWebhookController extends Controller
 
         try {
             $driver = (new PayUz)->driver('uzum');
+
             return $driver->handle();
         } catch (\Throwable $e) {
-            Log::error("PayUz Uzum webhook error: " . $e->getMessage(), [
+            Log::error('PayUz Uzum webhook error: '.$e->getMessage(), [
                 'exception' => $e,
             ]);
+
             return response()->json(['status' => 'FAILED', 'error' => $e->getMessage()], 500);
         }
     }
@@ -104,12 +107,12 @@ class PaymentWebhookController extends Controller
 
             return response($html, 200, ['Content-Type' => 'text/html; charset=UTF-8']);
         } catch (\Throwable $e) {
-            Log::error("Payment redirect failed for {$paysys} on invoice #{$invoice->id}: " . $e->getMessage(), [
+            Log::error("Payment redirect failed for {$paysys} on invoice #{$invoice->id}: ".$e->getMessage(), [
                 'exception' => $e,
             ]);
 
             return redirect()->route('billing.invoices')
-                ->with('error', "To'lov tizimiga yo'naltirishda xatolik yuz berdi: " . $e->getMessage());
+                ->with('error', "To'lov tizimiga yo'naltirishda xatolik yuz berdi: ".$e->getMessage());
         }
     }
 }

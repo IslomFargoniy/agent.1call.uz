@@ -2,13 +2,14 @@
 
 namespace App\Providers;
 
+use App\Listeners\ActivateSubscriptionOnPaymentPaid;
 use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
+use Goodoneuz\PayUz\Payments\Events\PaymentPaid;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
-use App\Listeners\ActivateSubscriptionOnPaymentPaid;
-use Goodoneuz\PayUz\Payments\Events\PaymentPaid;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -30,7 +31,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if (app()->isProduction()) {
-            \Illuminate\Support\Facades\URL::forceScheme('https');
+            URL::forceScheme('https');
         }
 
         Event::listen(

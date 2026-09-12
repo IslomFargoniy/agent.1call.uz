@@ -88,7 +88,7 @@ class SubscriptionService
         string $paymentMethod
     ): Invoice {
         if (! $tenant->subscription_expires_at || $tenant->subscription_expires_at->isPast()) {
-            throw new \InvalidArgumentException("Faol obuna muddati mavjud emas. Yangi obuna rasmiylashtiring.");
+            throw new \InvalidArgumentException('Faol obuna muddati mavjud emas. Yangi obuna rasmiylashtiring.');
         }
 
         $currentDevices = (int) ($tenant->allowed_devices_count ?: 1);
@@ -107,7 +107,7 @@ class SubscriptionService
         }
 
         if ($newTotalDevices === $currentDevices && $newRetentionDays === $currentRetention) {
-            throw new \InvalidArgumentException("Kamida bitta parametrni oshirishingiz kerak.");
+            throw new \InvalidArgumentException('Kamida bitta parametrni oshirishingiz kerak.');
         }
 
         $calculation = $this->calculator->calculateProrata($tenant, $tariff, $newTotalDevices, $newRetentionDays);

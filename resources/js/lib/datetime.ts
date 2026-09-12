@@ -6,7 +6,9 @@ import i18n from '@/i18n';
  */
 export function getUserTimezone(): string {
     try {
-        return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tashkent';
+        return (
+            Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tashkent'
+        );
     } catch {
         return 'Asia/Tashkent';
     }
@@ -33,7 +35,9 @@ export function getActiveLocale(customLocale?: string): string {
  * Parses any incoming timestamp (ISO string with or without Z, unix timestamp in seconds or ms, SQL timestamp)
  * ensuring it is treated as UTC (0 timezone).
  */
-export function parseUtcDate(value: string | number | Date | null | undefined): Date | null {
+export function parseUtcDate(
+    value: string | number | Date | null | undefined,
+): Date | null {
     if (!value) return null;
     if (value instanceof Date) {
         return isNaN(value.getTime()) ? null : value;
@@ -64,7 +68,7 @@ export function parseUtcDate(value: string | number | Date | null | undefined): 
 export function formatDateTime(
     value: string | number | Date | null | undefined,
     options?: Intl.DateTimeFormatOptions,
-    locale?: string
+    locale?: string,
 ): string {
     const d = parseUtcDate(value);
     if (!d) return '—';
@@ -81,7 +85,10 @@ export function formatDateTime(
     };
 
     try {
-        return new Intl.DateTimeFormat(getActiveLocale(locale), defaultOptions).format(d);
+        return new Intl.DateTimeFormat(
+            getActiveLocale(locale),
+            defaultOptions,
+        ).format(d);
     } catch {
         return d.toLocaleString();
     }
@@ -94,7 +101,7 @@ export function formatDateTime(
 export function formatDate(
     value: string | number | Date | null | undefined,
     options?: Intl.DateTimeFormatOptions,
-    locale?: string
+    locale?: string,
 ): string {
     const d = parseUtcDate(value);
     if (!d) return '—';
@@ -108,7 +115,10 @@ export function formatDate(
     };
 
     try {
-        return new Intl.DateTimeFormat(getActiveLocale(locale), defaultOptions).format(d);
+        return new Intl.DateTimeFormat(
+            getActiveLocale(locale),
+            defaultOptions,
+        ).format(d);
     } catch {
         return d.toLocaleDateString();
     }
@@ -121,7 +131,7 @@ export function formatDate(
 export function formatTime(
     value: string | number | Date | null | undefined,
     options?: Intl.DateTimeFormatOptions,
-    locale?: string
+    locale?: string,
 ): string {
     const d = parseUtcDate(value);
     if (!d) return '—';
@@ -134,7 +144,10 @@ export function formatTime(
     };
 
     try {
-        return new Intl.DateTimeFormat(getActiveLocale(locale), defaultOptions).format(d);
+        return new Intl.DateTimeFormat(
+            getActiveLocale(locale),
+            defaultOptions,
+        ).format(d);
     } catch {
         return d.toLocaleTimeString();
     }
@@ -144,12 +157,18 @@ export function formatTime(
  * Formats log timestamp with time and short date.
  * Example: "15:30:45 12 sent."
  */
-export function formatLogTime(value: string | number | Date | null | undefined): string {
+export function formatLogTime(
+    value: string | number | Date | null | undefined,
+): string {
     const d = parseUtcDate(value);
     if (!d) return '—';
 
     try {
-        const timePart = formatTime(d, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const timePart = formatTime(d, {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+        });
         const datePart = formatDate(d, { day: '2-digit', month: 'short' });
         return `${timePart} ${datePart}`;
     } catch {

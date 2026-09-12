@@ -1,5 +1,7 @@
 <?php
 
+use App\Payments\InvoicePaymentResolver;
+
 /*
  * You can place your custom package configuration in here.
  */
@@ -37,7 +39,7 @@ return [
      * events now — subscribe to Goodoneuz\PayUz\Payments\Events\* instead.
      */
     'payments' => [
-        'resolver' => \App\Payments\InvoicePaymentResolver::class,
+        'resolver' => InvoicePaymentResolver::class,
     ],
 
     /*
@@ -60,8 +62,8 @@ return [
             // Generic OFD / virtual-kassa HTTP gateway (soliq fiscal-receipt shape).
             // Point `endpoint` at your provider's register-receipt URL.
             'ofd' => [
-                'endpoint'    => env('OFD_ENDPOINT'),
-                'token'       => env('OFD_TOKEN'),
+                'endpoint' => env('OFD_ENDPOINT'),
+                'token' => env('OFD_TOKEN'),
                 'terminal_id' => env('OFD_TERMINAL_ID'),
             ],
             'null' => [
@@ -85,19 +87,19 @@ return [
         'drivers' => [
             'payme' => [
                 'merchant_id' => env('PAYME_SUBSCRIBE_MERCHANT_ID', env('PAYME_MERCHANT_ID')),
-                'key'         => env('PAYME_SUBSCRIBE_KEY'),
-                'test'        => env('PAYME_SUBSCRIBE_TEST', false),
+                'key' => env('PAYME_SUBSCRIBE_KEY'),
+                'test' => env('PAYME_SUBSCRIBE_TEST', false),
             ],
             // ATMOS — card vault + OTP over OAuth2. Amounts are tiyin (no
             // conversion). `api_key` is used only for callback signatures.
             'atmos' => [
-                'consumer_key'    => env('ATMOS_CONSUMER_KEY'),
+                'consumer_key' => env('ATMOS_CONSUMER_KEY'),
                 'consumer_secret' => env('ATMOS_CONSUMER_SECRET'),
-                'store_id'        => env('ATMOS_STORE_ID'),
-                'api_key'         => env('ATMOS_API_KEY'),
-                'terminal_id'     => env('ATMOS_TERMINAL_ID'),
-                'lang'            => env('ATMOS_LANG', 'uz'),
-                'test'            => env('ATMOS_TEST', false),
+                'store_id' => env('ATMOS_STORE_ID'),
+                'api_key' => env('ATMOS_API_KEY'),
+                'terminal_id' => env('ATMOS_TERMINAL_ID'),
+                'lang' => env('ATMOS_LANG', 'uz'),
+                'test' => env('ATMOS_TEST', false),
             ],
             'null' => [],
         ],
@@ -114,19 +116,19 @@ return [
 
         'drivers' => [
             'octo' => [
-                'shop_id'    => env('OCTO_SHOP_ID'),
-                'secret'     => env('OCTO_SECRET'),
+                'shop_id' => env('OCTO_SHOP_ID'),
+                'secret' => env('OCTO_SECRET'),
                 // Secret used to verify inbound webhook signatures (issued by Octo,
                 // may differ from `secret`). Webhooks are rejected without it.
                 'unique_key' => env('OCTO_UNIQUE_KEY'),
                 // Test mode unless explicitly disabled — a misconfigured deploy must not
                 // start taking real money.
-                'test'       => env('OCTO_TEST', true),
+                'test' => env('OCTO_TEST', true),
                 'return_url' => env('OCTO_RETURN_URL'),
                 'notify_url' => env('OCTO_NOTIFY_URL'),
                 // Where Octo delivers the card token after a successful binding.
                 'bind_notify_url' => env('OCTO_BIND_NOTIFY_URL'),
-                'language'   => env('OCTO_LANGUAGE', 'uz'),
+                'language' => env('OCTO_LANGUAGE', 'uz'),
                 // Octo requires an email on /pay; used when the customer has none.
                 'receipt_email' => env('OCTO_RECEIPT_EMAIL'),
                 // Octo documents card binding for Humo and Uzcard only. Widen once
@@ -136,12 +138,12 @@ return [
             // Multicard — amounts are tiyin (no conversion). `base_url` is the
             // prod/sandbox switch (https://mesh.multicard.uz | https://dev-mesh.multicard.uz).
             'multicard' => [
-                'base_url'        => env('MULTICARD_BASE_URL', 'https://mesh.multicard.uz'),
-                'application_id'  => env('MULTICARD_APPLICATION_ID'),
-                'secret'          => env('MULTICARD_SECRET'),
-                'store_id'        => env('MULTICARD_STORE_ID'),
-                'callback_url'    => env('MULTICARD_CALLBACK_URL'),
-                'language'        => env('MULTICARD_LANGUAGE', 'uz'),
+                'base_url' => env('MULTICARD_BASE_URL', 'https://mesh.multicard.uz'),
+                'application_id' => env('MULTICARD_APPLICATION_ID'),
+                'secret' => env('MULTICARD_SECRET'),
+                'store_id' => env('MULTICARD_STORE_ID'),
+                'callback_url' => env('MULTICARD_CALLBACK_URL'),
+                'language' => env('MULTICARD_LANGUAGE', 'uz'),
                 'callback_scheme' => env('MULTICARD_CALLBACK_SCHEME', 'webhooks'), // 'webhooks' | 'success'
             ],
             'null' => [],
@@ -161,7 +163,7 @@ return [
         'drivers' => [
             'uzum_nasiya' => [
                 'base_url' => env('UZUM_NASIYA_BASE_URL', 'https://merchants-api.uzumnasiya.uz'),
-                'token'    => env('UZUM_NASIYA_TOKEN'),                 // partner Bearer JWT
+                'token' => env('UZUM_NASIYA_TOKEN'),                 // partner Bearer JWT
                 'otp_mode' => env('UZUM_NASIYA_OTP_MODE', 'webview'),   // 'webview' | 'sms'
             ],
             'null' => [],
@@ -180,11 +182,11 @@ return [
 
         'drivers' => [
             'didox' => [
-                'base_url'       => env('DIDOX_BASE_URL', 'https://api-partners.didox.uz'), // sandbox: https://testapi3.didox.uz
-                'partner_token'  => env('DIDOX_PARTNER_TOKEN'),
+                'base_url' => env('DIDOX_BASE_URL', 'https://api-partners.didox.uz'), // sandbox: https://testapi3.didox.uz
+                'partner_token' => env('DIDOX_PARTNER_TOKEN'),
                 'partner_header' => env('DIDOX_PARTNER_HEADER', 'Partner-Authorization'),
-                'user_key'       => env('DIDOX_USER_KEY'),   // or obtain via login()
-                'locale'         => env('DIDOX_LOCALE', 'ru'),
+                'user_key' => env('DIDOX_USER_KEY'),   // or obtain via login()
+                'locale' => env('DIDOX_LOCALE', 'ru'),
             ],
             'null' => [],
         ],

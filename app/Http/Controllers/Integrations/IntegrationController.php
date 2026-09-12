@@ -190,10 +190,12 @@ class IntegrationController extends Controller
 
         if ($res['success']) {
             $integration->update(['is_active' => true]);
+
             return back()->with('success', 'MoySklad muvaffaqiyatli ulandi va faollashtirildi.');
         }
 
         $integration->update(['is_active' => false]);
+
         return back()->with('error', $res['error'] ?? 'MoySklad ulanishda xatolik.');
     }
 

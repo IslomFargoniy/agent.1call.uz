@@ -1,0 +1,757 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method App\\Events\\CallRingingEvent\:\:__construct\(\) has parameter \$callData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Events/CallRingingEvent.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$allowed_devices_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/v1/DeviceController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Api/v1/DeviceController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/v1/DeviceController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$privacy_blacklist\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/v1/DeviceController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$work_schedule\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/v1/DeviceController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:devices\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Http/Controllers/Api/v1/DeviceController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:isSubscriptionActive\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Api/v1/DeviceController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Api/v1/DeviceController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Api\\v1\\TelegramBotController\:\:handleMessage\(\) has parameter \$message with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/Api/v1/TelegramBotController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Api\\v1\\TelegramBotController\:\:handleMyChatMember\(\) has parameter \$memberUpdate with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/Api/v1/TelegramBotController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Controllers/Api/v1/TelemetryController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$privacy_blacklist\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/v1/TelemetryController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$work_schedule\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/v1/TelemetryController.php
+
+		-
+			message: '#^Call to function method_exists\(\) with Illuminate\\Filesystem\\FilesystemAdapter and ''path'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: app/Http/Controllers/Api/v1/TelemetryController.php
+
+		-
+			message: '#^Parameter \#1 \$string of function trim expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Http/Controllers/Api/v1/TelemetryController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>privacy_blacklist" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Api/v1/TelemetryController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Auth\\GoogleAuthController\:\:redirect\(\) should return Illuminate\\Http\\RedirectResponse but returns Symfony\\Component\\HttpFoundation\\RedirectResponse\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Auth/GoogleAuthController.php
+
+		-
+			message: '#^Property App\\Models\\User\:\:\$email_verified_at \(Illuminate\\Support\\Carbon\|null\) does not accept Carbon\\CarbonImmutable\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Http/Controllers/Auth/GoogleAuthController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Invoice\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Invoice\>\:\:\$tenant\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Billing/LemonSqueezyController.php
+
+		-
+			message: '#^Call to an undefined method App\\Models\\Invoice\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Invoice\>\:\:update\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Billing/LemonSqueezyController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Invoice\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Invoice\>\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Billing/LocalPaymentController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Invoice\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Invoice\>\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Billing/LocalPaymentController.php
+
+		-
+			message: '#^Parameter \#1 \$invoice of method App\\Services\\Billing\\SubscriptionService\:\:activateSubscription\(\) expects App\\Models\\Invoice, App\\Models\\Invoice\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Invoice\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Billing/LocalPaymentController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Billing\\PaymentWebhookController\:\:handle\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/Billing/PaymentWebhookController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Billing\\PaymentWebhookController\:\:handleUzum\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/Billing/PaymentWebhookController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Billing\\PaymentWebhookController\:\:pay\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/Billing/PaymentWebhookController.php
+
+		-
+			message: '#^Parameter \#1 \$content of function response expects array\|Illuminate\\Contracts\\View\\View\|string\|null, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Billing/PaymentWebhookController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Tenant\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Tenant\>\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/HandleInertiaRequests.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Tenant\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Tenant\>\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/HandleInertiaRequests.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Tenant\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Tenant\>\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/HandleInertiaRequests.php
+
+		-
+			message: '#^Parameter \#1 \$locale of static method Illuminate\\Support\\Facades\\App\:\:setLocale\(\) expects string, array\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Middleware/SetLocale.php
+
+		-
+			message: '#^Instanceof between App\\Models\\User and App\\Models\\Device will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: app/Http/Middleware/SetTenantContext.php
+
+		-
+			message: '#^Parameter \#1 \$tenant of method App\\Services\\Tenancy\\TenantContext\:\:setTenant\(\) expects App\\Models\\Tenant\|null, App\\Models\\Tenant\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Tenant\>\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Middleware/SetTenantContext.php
+
+		-
+			message: '#^Parameter \#1 \$tenant of method App\\Services\\Telegram\\TelegramNotificationService\:\:sendMissedCallAlert\(\) expects App\\Models\\Tenant, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Jobs/SendTelegramAlertJob.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Invoice\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Invoice\>\:\:\$invoice_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/ActivateSubscriptionOnPaymentPaid.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Invoice\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Invoice\>\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/ActivateSubscriptionOnPaymentPaid.php
+
+		-
+			message: '#^Parameter \#1 \$invoice of method App\\Services\\Billing\\SubscriptionService\:\:activateSubscription\(\) expects App\\Models\\Invoice, App\\Models\\Invoice\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Invoice\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Listeners/ActivateSubscriptionOnPaymentPaid.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Listeners/ActivateSubscriptionOnPaymentPaid.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>system_transaction_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Listeners/ActivateSubscriptionOnPaymentPaid.php
+
+		-
+			message: '#^Class App\\Models\\Call uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Call.php
+
+		-
+			message: '#^Method App\\Models\\Call\:\:device\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Call.php
+
+		-
+			message: '#^Method App\\Models\\Call\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Call.php
+
+		-
+			message: '#^Method App\\Models\\Call\:\:user\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Call.php
+
+		-
+			message: '#^Class App\\Models\\Device uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Device.php
+
+		-
+			message: '#^Method App\\Models\\Device\:\:calls\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Device.php
+
+		-
+			message: '#^Method App\\Models\\Device\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Device.php
+
+		-
+			message: '#^Method App\\Models\\Device\:\:user\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Device.php
+
+		-
+			message: '#^Class App\\Models\\IntegrationSyncLog uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/IntegrationSyncLog.php
+
+		-
+			message: '#^Method App\\Models\\IntegrationSyncLog\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/IntegrationSyncLog.php
+
+		-
+			message: '#^Class App\\Models\\IntegrationUserMapping uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/IntegrationUserMapping.php
+
+		-
+			message: '#^Method App\\Models\\IntegrationUserMapping\:\:integration\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/IntegrationUserMapping.php
+
+		-
+			message: '#^Method App\\Models\\IntegrationUserMapping\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/IntegrationUserMapping.php
+
+		-
+			message: '#^Method App\\Models\\IntegrationUserMapping\:\:user\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/IntegrationUserMapping.php
+
+		-
+			message: '#^Class App\\Models\\Invoice uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Invoice.php
+
+		-
+			message: '#^Method App\\Models\\Invoice\:\:approver\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Invoice.php
+
+		-
+			message: '#^Method App\\Models\\Invoice\:\:subscription\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Invoice.php
+
+		-
+			message: '#^Method App\\Models\\Invoice\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Invoice.php
+
+		-
+			message: '#^Class App\\Models\\PaymentMethod uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/PaymentMethod.php
+
+		-
+			message: '#^Class App\\Models\\Subscription uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Subscription.php
+
+		-
+			message: '#^Method App\\Models\\Subscription\:\:invoices\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Subscription.php
+
+		-
+			message: '#^Method App\\Models\\Subscription\:\:tariff\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Subscription.php
+
+		-
+			message: '#^Method App\\Models\\Subscription\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Subscription.php
+
+		-
+			message: '#^Method App\\Models\\SystemSetting\:\:set\(\) should return static\(App\\Models\\SystemSetting\) but returns App\\Models\\SystemSetting\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/SystemSetting.php
+
+		-
+			message: '#^Class App\\Models\\Tariff uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Tariff.php
+
+		-
+			message: '#^Method App\\Models\\Tariff\:\:discounts\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Tariff.php
+
+		-
+			message: '#^Method App\\Models\\Tariff\:\:retentionOptions\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Tariff.php
+
+		-
+			message: '#^Method App\\Models\\Tariff\:\:subscriptions\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Tariff.php
+
+		-
+			message: '#^Class App\\Models\\TariffDiscount uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/TariffDiscount.php
+
+		-
+			message: '#^Method App\\Models\\TariffDiscount\:\:tariff\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/TariffDiscount.php
+
+		-
+			message: '#^Class App\\Models\\TariffRetentionOption uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/TariffRetentionOption.php
+
+		-
+			message: '#^Method App\\Models\\TariffRetentionOption\:\:tariff\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/TariffRetentionOption.php
+
+		-
+			message: '#^Class App\\Models\\Tenant has PHPDoc tag @property for property \$privacy_blacklist with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/Tenant.php
+
+		-
+			message: '#^Class App\\Models\\Tenant has PHPDoc tag @property for property \$work_schedule with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/Tenant.php
+
+		-
+			message: '#^Class App\\Models\\Tenant uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Tenant.php
+
+		-
+			message: '#^Method App\\Models\\Tenant\:\:calls\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Tenant.php
+
+		-
+			message: '#^Method App\\Models\\Tenant\:\:devices\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Tenant.php
+
+		-
+			message: '#^Method App\\Models\\Tenant\:\:integrations\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Tenant.php
+
+		-
+			message: '#^Method App\\Models\\Tenant\:\:invoices\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Tenant.php
+
+		-
+			message: '#^Method App\\Models\\Tenant\:\:subscriptions\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Tenant.php
+
+		-
+			message: '#^Method App\\Models\\Tenant\:\:users\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Tenant.php
+
+		-
+			message: '#^Class App\\Models\\TenantIntegration uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/TenantIntegration.php
+
+		-
+			message: '#^Method App\\Models\\TenantIntegration\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/TenantIntegration.php
+
+		-
+			message: '#^Method App\\Models\\TenantIntegration\:\:userMappings\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/TenantIntegration.php
+
+		-
+			message: '#^Method App\\Models\\User\:\:calls\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Method App\\Models\\User\:\:devices\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Method App\\Models\\User\:\:tenant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Method App\\Payments\\InvoicePaymentResolver\:\:beforeResponse\(\) has parameter \$response with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Payments/InvoicePaymentResolver.php
+
+		-
+			message: '#^Method App\\Payments\\InvoicePaymentResolver\:\:beforeResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Payments/InvoicePaymentResolver.php
+
+		-
+			message: '#^Class App\\Scopes\\TenantScope implements generic interface Illuminate\\Database\\Eloquent\\Scope but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Scopes/TenantScope.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$additional_price_monthly\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Billing/BillingCalculator.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$additional_price_usd_monthly\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Billing/BillingCalculator.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Billing/LemonSqueezyService.php
+
+		-
+			message: '#^Method App\\Services\\Billing\\LemonSqueezyService\:\:getSettings\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Billing/LemonSqueezyService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>settings" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Billing/LemonSqueezyService.php
+
+		-
+			message: '#^Cannot access property \$timestamp on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Services/Integrations/AmoCrm/AmoCrmService.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\AmoCrm\\AmoCrmService\:\:authorize\(\) has parameter \$params with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Integrations/AmoCrm/AmoCrmService.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\AmoCrm\\AmoCrmService\:\:authorize\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Integrations/AmoCrm/AmoCrmService.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\AmoCrm\\AmoCrmService\:\:findContact\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Integrations/AmoCrm/AmoCrmService.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\AmoCrm\\AmoCrmService\:\:notifyRinging\(\) has parameter \$callData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Integrations/AmoCrm/AmoCrmService.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\AmoCrm\\AmoCrmService\:\:syncCall\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Integrations/AmoCrm/AmoCrmService.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\CrmDriverInterface\:\:authorize\(\) has parameter \$params with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Integrations/CrmDriverInterface.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\CrmDriverInterface\:\:authorize\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Integrations/CrmDriverInterface.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\CrmDriverInterface\:\:findContact\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Integrations/CrmDriverInterface.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\CrmDriverInterface\:\:notifyRinging\(\) has parameter \$callData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Integrations/CrmDriverInterface.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\CrmDriverInterface\:\:syncCall\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Integrations/CrmDriverInterface.php
+
+		-
+			message: '#^Cannot call method copy\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/Integrations/MoySklad/MoySkladService.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\MoySklad\\MoySkladService\:\:authorize\(\) has parameter \$params with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Integrations/MoySklad/MoySkladService.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\MoySklad\\MoySkladService\:\:authorize\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Integrations/MoySklad/MoySkladService.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\MoySklad\\MoySkladService\:\:client\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Services/Integrations/MoySklad/MoySkladService.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\MoySklad\\MoySkladService\:\:findContact\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Integrations/MoySklad/MoySkladService.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\MoySklad\\MoySkladService\:\:getEmployees\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Integrations/MoySklad/MoySkladService.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\MoySklad\\MoySkladService\:\:notifyRinging\(\) has parameter \$callData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Integrations/MoySklad/MoySkladService.php
+
+		-
+			message: '#^Method App\\Services\\Integrations\\MoySklad\\MoySkladService\:\:syncCall\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Integrations/MoySklad/MoySkladService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Telegram/TelegramNotificationService.php
+
+		-
+			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
+			identifier: larastan.noEnvCallsOutsideOfConfig
+			count: 3
+			path: app/Services/Telegram/TelegramNotificationService.php
+
+		-
+			message: '#^Cannot call method format\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/Telegram/TelegramNotificationService.php
+
+		-
+			message: '#^Method App\\Services\\Telegram\\TelegramNotificationService\:\:getMe\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Telegram/TelegramNotificationService.php
+
+		-
+			message: '#^Method App\\Services\\Telegram\\TelegramNotificationService\:\:getWebhookInfo\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Telegram/TelegramNotificationService.php
+
+		-
+			message: '#^Method App\\Services\\Telegram\\TelegramNotificationService\:\:setWebhook\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Telegram/TelegramNotificationService.php
+
+		-
+			message: '#^Parameter \#1 \$chatId of method App\\Services\\Telegram\\TelegramNotificationService\:\:sendMessage\(\) expects string, string\|true given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Telegram/TelegramNotificationService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/Telegram/TelegramNotificationService.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: app/Services/TimezoneService.php
+
+		-
+			message: '#^Parameter \#2 \$string of function explode expects string, bool\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: config/sanctum.php
+
+		-
+			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
+			identifier: larastan.noEnvCallsOutsideOfConfig
+			count: 2
+			path: database/seeders/DatabaseSeeder.php
+
+		-
+			message: '#^Parameter \#1 \$json of function json_decode expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: routes/api.php

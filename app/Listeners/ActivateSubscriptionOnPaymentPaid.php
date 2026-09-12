@@ -40,6 +40,7 @@ class ActivateSubscriptionOnPaymentPaid
             Log::error('ActivateSubscriptionOnPaymentPaid: Unable to locate Invoice for transaction', [
                 'transaction_id' => $transaction?->id,
             ]);
+
             return;
         }
 

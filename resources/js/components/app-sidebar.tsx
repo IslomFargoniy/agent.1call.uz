@@ -29,7 +29,12 @@ import type { NavItem } from '@/types';
 
 export function AppSidebar() {
     const { t } = useTranslation();
-    const { auth } = usePage<{ auth: { user: { role: string; name: string } | null; tenant?: { name: string } | null } }>().props;
+    const { auth } = usePage<{
+        auth: {
+            user: { role: string; name: string } | null;
+            tenant?: { name: string } | null;
+        };
+    }>().props;
     const role = auth?.user?.role || 'operator';
     const isSuperAdmin = role === 'superadmin';
     const isAdmin = role === 'admin' || isSuperAdmin;
@@ -41,7 +46,7 @@ export function AppSidebar() {
             icon: LayoutGrid,
         },
         {
-            title: t('sidebar.calls', 'Qo\'ng\'iroqlar jurnali'),
+            title: t('sidebar.calls', "Qo'ng'iroqlar jurnali"),
             href: '/calls',
             icon: PhoneCall,
         },
@@ -64,7 +69,7 @@ export function AppSidebar() {
             icon: Clock,
         },
         {
-            title: t('sidebar.billing', 'To\'lovlar & Obuna'),
+            title: t('sidebar.billing', "To'lovlar & Obuna"),
             href: '/billing',
             icon: CreditCard,
         },
@@ -82,7 +87,7 @@ export function AppSidebar() {
             icon: Coins,
         },
         {
-            title: t('sidebar.paymentMethods', 'To\'lov tizimlari'),
+            title: t('sidebar.paymentMethods', "To'lov tizimlari"),
             href: '/admin/payment-methods',
             icon: CreditCard,
         },
@@ -113,14 +118,29 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} label={t('sidebar.platform', 'Platforma')} />
+                <NavMain
+                    items={mainNavItems}
+                    label={t('sidebar.platform', 'Platforma')}
+                />
 
                 {isAdmin && (
-                    <NavMain items={adminNavItems} label={t('sidebar.companyManagement', 'Kompaniya Boshqaruvi')} />
+                    <NavMain
+                        items={adminNavItems}
+                        label={t(
+                            'sidebar.companyManagement',
+                            'Kompaniya Boshqaruvi',
+                        )}
+                    />
                 )}
 
                 {isSuperAdmin && (
-                    <NavMain items={superadminNavItems} label={t('sidebar.superadminPanel', 'Superadmin Paneli')} />
+                    <NavMain
+                        items={superadminNavItems}
+                        label={t(
+                            'sidebar.superadminPanel',
+                            'Superadmin Paneli',
+                        )}
+                    />
                 )}
             </SidebarContent>
 

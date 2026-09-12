@@ -105,6 +105,7 @@ class TelegramNotificationService
             return $response->json() ?: ['ok' => false, 'description' => 'Javob qabul qilinmadi.'];
         } catch (\Throwable $e) {
             Log::error('Telegram setWebhook failed: '.$e->getMessage());
+
             return ['ok' => false, 'description' => $e->getMessage()];
         }
     }

@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\Call;
 use App\Models\Device;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 
 test('tenant data is isolated via TenantScope', function () {
@@ -68,7 +70,7 @@ test('auto-populates tenant_id on model creation using BelongsToTenant', functio
 });
 
 test('superadmin in all tenants mode can view devices from all tenants on /devices', function () {
-    $superadmin = \App\Models\User::factory()->create([
+    $superadmin = User::factory()->create([
         'role' => 'superadmin',
         'tenant_id' => null,
     ]);
@@ -123,7 +125,7 @@ test('superadmin in all tenants mode can view devices from all tenants on /devic
 });
 
 test('superadmin in all tenants mode can view calls from all tenants on /calls', function () {
-    $superadmin = \App\Models\User::factory()->create([
+    $superadmin = User::factory()->create([
         'role' => 'superadmin',
         'tenant_id' => null,
     ]);
@@ -150,7 +152,7 @@ test('superadmin in all tenants mode can view calls from all tenants on /calls',
         'name' => 'Phone Call B',
     ]);
 
-    \App\Models\Call::create([
+    Call::create([
         'tenant_id' => $tenantA->id,
         'device_id' => $devA->id,
         'phone_number' => '+998901112233',
@@ -160,7 +162,7 @@ test('superadmin in all tenants mode can view calls from all tenants on /calls',
         'call_timestamp' => now(),
     ]);
 
-    \App\Models\Call::create([
+    Call::create([
         'tenant_id' => $tenantB->id,
         'device_id' => $devB->id,
         'phone_number' => '+998904445566',

@@ -70,16 +70,19 @@ class InvoicePaymentResolver implements PaymentResolver
             Log::warning('InvoicePaymentResolver: Model is not an instance of Invoice', [
                 'model' => is_object($model) ? get_class($model) : $model,
             ]);
+
             return false;
         }
 
         if ($model->status === 'paid') {
             Log::info("InvoicePaymentResolver: Invoice #{$model->id} is already paid.");
+
             return true;
         }
 
         if ($model->status === 'rejected' || $model->status === 'cancelled') {
             Log::warning("InvoicePaymentResolver: Invoice #{$model->id} has status {$model->status}.");
+
             return false;
         }
 
@@ -95,6 +98,7 @@ class InvoicePaymentResolver implements PaymentResolver
                 'invoice_amount' => $invAmount,
                 'request_amount' => $reqAmount,
             ]);
+
             return false;
         }
 

@@ -50,10 +50,10 @@ export default function PasskeyVerify({
                     type="button"
                     onClick={verify}
                     disabled={isLoading}
-                    className="group relative flex w-full items-center justify-between rounded-xl border border-border bg-background p-3.5 text-sm font-medium transition-all duration-200 hover:border-primary/50 hover:bg-accent/50 hover:shadow-md disabled:opacity-60 cursor-pointer text-left"
+                    className="group border-border bg-background hover:border-primary/50 hover:bg-accent/50 relative flex w-full cursor-pointer items-center justify-between rounded-xl border p-3.5 text-left text-sm font-medium transition-all duration-200 hover:shadow-md disabled:opacity-60"
                 >
                     <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/60 bg-muted text-primary shadow-xs transition-colors group-hover:bg-primary/10">
+                        <div className="border-border/60 bg-muted text-primary group-hover:bg-primary/10 flex h-9 w-9 items-center justify-center rounded-lg border shadow-xs transition-colors">
                             {isLoading ? (
                                 <Spinner className="h-5 w-5" />
                             ) : (
@@ -61,23 +61,26 @@ export default function PasskeyVerify({
                             )}
                         </div>
                         <div className="flex flex-col">
-                            <span className="font-semibold text-foreground">
+                            <span className="text-foreground font-semibold">
                                 {label ?? 'Passkey (Biometriya)'}
                             </span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-muted-foreground text-xs">
                                 Touch ID, Face ID yoki Windows Hello
                             </span>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="hidden sm:inline-flex rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        <span className="hidden rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 sm:inline-flex dark:text-emerald-400">
                             Xavfsiz
                         </span>
-                        <KeyRound className="h-4 w-4 text-muted-foreground transition-transform group-hover:scale-110 group-hover:text-primary" />
+                        <KeyRound className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-transform group-hover:scale-110" />
                     </div>
                 </button>
                 {error && (
-                    <InputError message={error} className="mt-2 text-center text-xs" />
+                    <InputError
+                        message={error}
+                        className="mt-2 text-center text-xs"
+                    />
                 )}
             </div>
         );

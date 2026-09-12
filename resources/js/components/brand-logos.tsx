@@ -3,11 +3,18 @@ import React from 'react';
 /**
  * Official amoCRM Circle Icon (dialogue/contact emblem)
  */
-export function AmoCrmIcon({ className = "h-6 w-6" }: { className?: string }) {
+export function AmoCrmIcon({ className = 'h-6 w-6' }: { className?: string }) {
     return (
-        <svg viewBox="0 0 36 36" fill="none" className={`flex-shrink-0 ${className}`}>
+        <svg
+            viewBox="0 0 36 36"
+            fill="none"
+            className={`flex-shrink-0 ${className}`}
+        >
             <circle cx="18" cy="18" r="18" fill="#167FFB" />
-            <path d="M11 18c0-3.866 3.134-7 7-7s7 3.134 7 7-3.134 7-7 7-7-3.134-7-7zm7-3.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7z" fill="#FFFFFF" />
+            <path
+                d="M11 18c0-3.866 3.134-7 7-7s7 3.134 7 7-3.134 7-7 7-7-3.134-7-7zm7-3.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7z"
+                fill="#FFFFFF"
+            />
         </svg>
     );
 }
@@ -15,11 +22,13 @@ export function AmoCrmIcon({ className = "h-6 w-6" }: { className?: string }) {
 /**
  * Official amoCRM Brand Logo
  */
-export function AmoCrmLogo({ className = "h-7" }: { className?: string }) {
+export function AmoCrmLogo({ className = 'h-7' }: { className?: string }) {
     return (
-        <div className={`inline-flex items-center gap-2.5 font-bold tracking-tight text-[#167FFB] ${className}`}>
-            <AmoCrmIcon className="h-full aspect-square flex-shrink-0" />
-            <span className="text-xl font-black text-slate-900 dark:text-white leading-none">
+        <div
+            className={`inline-flex items-center gap-2.5 font-bold tracking-tight text-[#167FFB] ${className}`}
+        >
+            <AmoCrmIcon className="aspect-square h-full flex-shrink-0" />
+            <span className="text-xl leading-none font-black text-slate-900 dark:text-white">
                 amo<span className="text-[#167FFB]">CRM</span>
             </span>
         </div>
@@ -29,9 +38,17 @@ export function AmoCrmLogo({ className = "h-7" }: { className?: string }) {
 /**
  * Official MoySklad Dual-Color Ribbon Icon (from moysklad.ru)
  */
-export function MoySkladIcon({ className = "h-6 w-6" }: { className?: string }) {
+export function MoySkladIcon({
+    className = 'h-6 w-6',
+}: {
+    className?: string;
+}) {
     return (
-        <svg viewBox="0 0 120 120" fill="none" className={`flex-shrink-0 ${className}`}>
+        <svg
+            viewBox="0 0 120 120"
+            fill="none"
+            className={`flex-shrink-0 ${className}`}
+        >
             <path
                 fillRule="evenodd"
                 clipRule="evenodd"
@@ -51,12 +68,15 @@ export function MoySkladIcon({ className = "h-6 w-6" }: { className?: string }) 
 /**
  * Official MoySklad Horizontal Logo (from moysklad.ru)
  */
-export function MoySkladLogo({ className = "h-7" }: { className?: string }) {
+export function MoySkladLogo({ className = 'h-7' }: { className?: string }) {
     return (
         <div className={`inline-flex items-center gap-2 ${className}`}>
-            <MoySkladIcon className="h-full aspect-square flex-shrink-0" />
-            <span className="text-lg font-bold tracking-tight text-[#2855AF] dark:text-[#64CDFF] leading-none">
-                Мой<span className="font-extrabold text-slate-900 dark:text-white">Склад</span>
+            <MoySkladIcon className="aspect-square h-full flex-shrink-0" />
+            <span className="text-lg leading-none font-bold tracking-tight text-[#2855AF] dark:text-[#64CDFF]">
+                Мой
+                <span className="font-extrabold text-slate-900 dark:text-white">
+                    Склад
+                </span>
             </span>
         </div>
     );
@@ -65,9 +85,13 @@ export function MoySkladLogo({ className = "h-7" }: { className?: string }) {
 /**
  * Official Click.uz Oval Emblem (from click.uz)
  */
-export function ClickIcon({ className = "h-6 w-6" }: { className?: string }) {
+export function ClickIcon({ className = 'h-6 w-6' }: { className?: string }) {
     return (
-        <svg viewBox="0 0 40 40" fill="none" className={`flex-shrink-0 ${className}`}>
+        <svg
+            viewBox="0 0 40 40"
+            fill="none"
+            className={`flex-shrink-0 ${className}`}
+        >
             <path
                 fillRule="evenodd"
                 clipRule="evenodd"
@@ -81,10 +105,16 @@ export function ClickIcon({ className = "h-6 w-6" }: { className?: string }) {
 /**
  * Official Click.uz Vector Logo (from click.uz)
  */
-export function ClickLogo({ className = "h-7" }: { className?: string }) {
+export function ClickLogo({ className = 'h-7' }: { className?: string }) {
     return (
-        <div className={`inline-flex items-center justify-center flex-shrink-0 ${className}`}>
-            <svg viewBox="0 0 157 40" fill="none" className="h-full w-auto aspect-[157/40] block">
+        <div
+            className={`inline-flex flex-shrink-0 items-center justify-center ${className}`}
+        >
+            <svg
+                viewBox="0 0 157 40"
+                fill="none"
+                className="block aspect-[157/40] h-full w-auto"
+            >
                 <path
                     fillRule="evenodd"
                     clipRule="evenodd"
@@ -104,10 +134,16 @@ export function ClickLogo({ className = "h-7" }: { className?: string }) {
 /**
  * Official Payme.uz Cyan Card Logo (from cdn.payme.uz)
  */
-export function PaymeLogo({ className = "h-7" }: { className?: string }) {
+export function PaymeLogo({ className = 'h-7' }: { className?: string }) {
     return (
-        <div className={`inline-flex items-center justify-center flex-shrink-0 ${className}`}>
-            <svg viewBox="0 0 58 20" fill="none" className="h-full w-auto aspect-[58/20] block">
+        <div
+            className={`inline-flex flex-shrink-0 items-center justify-center ${className}`}
+        >
+            <svg
+                viewBox="0 0 58 20"
+                fill="none"
+                className="block aspect-[58/20] h-full w-auto"
+            >
                 <path
                     d="M3.71606 0.0010583H51.5962C52.1477 0.0010583 52.6347 0.229062 52.9105 0.669159L57.7641 8.57076C58.137 9.19007 58.0726 9.93878 57.5368 10.5581L50.7036 18.4597C50.3305 18.8828 49.8435 19.1437 49.2909 19.1437H1.55448C0.597303 19.1437 -0.101038 18.3939 0.012006 17.4491L1.81544 1.69464C1.92954 0.733847 2.75677 0 3.715 0L3.71606 0.0010583Z"
                     fill="#25E8FF"
@@ -124,10 +160,18 @@ export function PaymeLogo({ className = "h-7" }: { className?: string }) {
 /**
  * Official Lemon Squeezy Logo (from lemonsqueezy.com)
  */
-export function LemonSqueezyLogo({ className = "h-7" }: { className?: string }) {
+export function LemonSqueezyLogo({
+    className = 'h-7',
+}: {
+    className?: string;
+}) {
     return (
         <div className={`inline-flex items-center gap-2.5 ${className}`}>
-            <svg viewBox="0 0 24 28" fill="none" className="h-full aspect-square flex-shrink-0">
+            <svg
+                viewBox="0 0 24 28"
+                fill="none"
+                className="aspect-square h-full flex-shrink-0"
+            >
                 <path
                     fillRule="evenodd"
                     clipRule="evenodd"
@@ -153,7 +197,7 @@ export function LemonSqueezyLogo({ className = "h-7" }: { className?: string }) 
                     fill="#FFC233"
                 />
             </svg>
-            <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white leading-none">
+            <span className="text-base leading-none font-extrabold tracking-tight text-slate-900 dark:text-white">
                 Lemon <span className="text-[#FFC233]">Squeezy</span>
             </span>
         </div>
@@ -163,10 +207,12 @@ export function LemonSqueezyLogo({ className = "h-7" }: { className?: string }) 
 /**
  * Official UZCARD Logo (from uzcard.uz)
  */
-export function UzcardLogo({ className = "h-6" }: { className?: string }) {
+export function UzcardLogo({ className = 'h-6' }: { className?: string }) {
     return (
-        <div className={`inline-flex items-center px-2.5 py-1 rounded-md bg-[#0f244a] text-white font-bold text-xs ${className}`}>
-            <span className="w-2.5 h-2.5 rounded-full bg-[#ff5c00] mr-1.5 flex-shrink-0"></span>
+        <div
+            className={`inline-flex items-center rounded-md bg-[#0f244a] px-2.5 py-1 text-xs font-bold text-white ${className}`}
+        >
+            <span className="mr-1.5 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-[#ff5c00]"></span>
             <span className="tracking-wider">UZCARD</span>
         </div>
     );
@@ -175,10 +221,12 @@ export function UzcardLogo({ className = "h-6" }: { className?: string }) {
 /**
  * Official HUMO Logo (from humocard.uz)
  */
-export function HumoLogo({ className = "h-6" }: { className?: string }) {
+export function HumoLogo({ className = 'h-6' }: { className?: string }) {
     return (
-        <div className={`inline-flex items-center px-2.5 py-1 rounded-md bg-[#f57c00] text-white font-bold text-xs ${className}`}>
-            <span className="w-2.5 h-2.5 rounded-full bg-white mr-1.5 flex-shrink-0"></span>
+        <div
+            className={`inline-flex items-center rounded-md bg-[#f57c00] px-2.5 py-1 text-xs font-bold text-white ${className}`}
+        >
+            <span className="mr-1.5 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-white"></span>
             <span className="tracking-wider">HUMO</span>
         </div>
     );
@@ -187,7 +235,13 @@ export function HumoLogo({ className = "h-6" }: { className?: string }) {
 /**
  * Unified Payment Method Logo Resolver
  */
-export function PaymentMethodLogo({ code, className = "h-6" }: { code: string; className?: string }) {
+export function PaymentMethodLogo({
+    code,
+    className = 'h-6',
+}: {
+    code: string;
+    className?: string;
+}) {
     switch (code) {
         case 'click':
             return <ClickLogo className={className} />;
@@ -197,14 +251,16 @@ export function PaymentMethodLogo({ code, className = "h-6" }: { code: string; c
             return <LemonSqueezyLogo className={className} />;
         case 'card_transfer':
             return (
-                <div className="flex flex-col gap-1 items-start shrink-0">
-                    <UzcardLogo className="!h-5 !py-0.5 !px-2 !text-[10px]" />
-                    <HumoLogo className="!h-5 !py-0.5 !px-2 !text-[10px]" />
+                <div className="flex shrink-0 flex-col items-start gap-1">
+                    <UzcardLogo className="!h-5 !px-2 !py-0.5 !text-[10px]" />
+                    <HumoLogo className="!h-5 !px-2 !py-0.5 !text-[10px]" />
                 </div>
             );
         default:
             return (
-                <div className={`font-semibold text-xs uppercase px-2 py-1 bg-secondary rounded ${className}`}>
+                <div
+                    className={`bg-secondary rounded px-2 py-1 text-xs font-semibold uppercase ${className}`}
+                >
                     {code}
                 </div>
             );
@@ -214,7 +270,7 @@ export function PaymentMethodLogo({ code, className = "h-6" }: { code: string; c
 /**
  * Official Google G Logo
  */
-export function GoogleGLogo({ className = "h-5 w-5" }: { className?: string }) {
+export function GoogleGLogo({ className = 'h-5 w-5' }: { className?: string }) {
     return (
         <svg className={className} viewBox="0 0 24 24">
             <path

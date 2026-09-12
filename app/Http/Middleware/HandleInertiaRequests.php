@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
+use App\Services\TimezoneService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -44,7 +46,7 @@ class HandleInertiaRequests extends Middleware
         if ($isSuperAdmin) {
             $selectedTenantId = session('superadmin_tenant_id');
             if ($selectedTenantId) {
-                $tenantModel = \App\Models\Tenant::find($selectedTenantId);
+                $tenantModel = Tenant::find($selectedTenantId);
                 if ($tenantModel) {
                     $selectedTenant = [
                         'id' => $tenantModel->id,
@@ -62,7 +64,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'locale' => app()->getLocale(),
-            'timezone' => \App\Services\TimezoneService::resolveTimezone($request),
+            'timezone' => TimezoneService::resolveTimezone($request),
             'auth' => [
                 'user' => $user ? [
                     'id' => $user->id,

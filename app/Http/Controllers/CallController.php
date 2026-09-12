@@ -7,7 +7,6 @@ use App\Models\Device;
 use App\Models\Tenant;
 use App\Services\TimezoneService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -159,7 +158,7 @@ class CallController extends Controller
 
         return Storage::disk($disk)->download(
             $call->recording_path,
-            "call_{$call->phone_number}_" . ($call->call_timestamp ? \Carbon\Carbon::parse($call->call_timestamp)->format('Ymd_His') : date('Ymd_His')) . ".{$call->recording_format}"
+            "call_{$call->phone_number}_".($call->call_timestamp ? \Carbon\Carbon::parse($call->call_timestamp)->format('Ymd_His') : date('Ymd_His')).".{$call->recording_format}"
         );
     }
 }

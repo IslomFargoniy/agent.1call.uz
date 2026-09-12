@@ -13,14 +13,20 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Billing\SubscriptionService;
 use App\Services\Telegram\TelegramNotificationService;
+use Goodoneuz\PayUz\Models\PaymentSystem;
+use Goodoneuz\PayUz\Models\PaymentSystemParam;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SuperadminController extends Controller
 {
@@ -42,20 +48,20 @@ class SuperadminController extends Controller
         $tenantsQuery = Tenant::with([
             'users' => function ($q) {
                 $q->select('id', 'tenant_id', 'name', 'email', 'phone_number', 'role', 'is_active', 'created_at')
-                  ->where('role', '!=', 'superadmin')
-                  ->orderBy('id');
-            }
+                    ->where('role', '!=', 'superadmin')
+                    ->orderBy('id');
+            },
         ])->withCount(['devices', 'calls']);
 
         if ($search) {
             $tenantsQuery->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('slug', 'like', "%{$search}%")
-                  ->orWhereHas('users', function ($uq) use ($search) {
-                      $uq->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('phone_number', 'like', "%{$search}%");
-                  });
+                    ->orWhere('slug', 'like', "%{$search}%")
+                    ->orWhereHas('users', function ($uq) use ($search) {
+                        $uq->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('phone_number', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -67,18 +73,18 @@ class SuperadminController extends Controller
                 ->where('trial_ends_at', '>', now())
                 ->where(function ($q) {
                     $q->whereNull('subscription_expires_at')
-                      ->orWhere('subscription_expires_at', '<=', now());
+                        ->orWhere('subscription_expires_at', '<=', now());
                 });
         } elseif ($status === 'expired') {
             $tenantsQuery->where('is_active', true)
                 ->where(function ($q) {
                     $q->where(function ($sq) {
                         $sq->whereNotNull('subscription_expires_at')
-                           ->where('subscription_expires_at', '<=', now());
+                            ->where('subscription_expires_at', '<=', now());
                     })->orWhere(function ($tq) {
                         $tq->whereNotNull('trial_ends_at')
-                           ->where('trial_ends_at', '<=', now())
-                           ->whereNull('subscription_expires_at');
+                            ->where('trial_ends_at', '<=', now())
+                            ->whereNull('subscription_expires_at');
                     });
                 });
         } elseif ($status === 'inactive') {
@@ -112,7 +118,7 @@ class SuperadminController extends Controller
             'is_active' => ['required', 'boolean'],
         ]);
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($validated) {
+        DB::transaction(function () use ($validated) {
             $trialDays = isset($validated['trial_days']) ? (int) $validated['trial_days'] : 14;
 
             $tenant = Tenant::create([
@@ -292,7 +298,7 @@ class SuperadminController extends Controller
                 ]);
 
                 foreach ($tariff->retentionOptions as $option) {
-                    /** @var \App\Models\TariffRetentionOption $option */
+                    /** @var TariffRetentionOption $option */
                     $option->update([
                         'additional_price_usd_monthly' => round($option->additional_price_monthly / $rate, 2),
                     ]);
@@ -311,7 +317,7 @@ class SuperadminController extends Controller
     public function getCbuRate(): JsonResponse
     {
         try {
-            $response = \Illuminate\Support\Facades\Http::timeout(5)->get('https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/');
+            $response = Http::timeout(5)->get('https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/');
             if ($response->successful() && ! empty($response->json())) {
                 $data = $response->json()[0] ?? [];
                 $rate = (float) ($data['Rate'] ?? 12850);
@@ -324,7 +330,7 @@ class SuperadminController extends Controller
                 ]);
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('CBU API fetch failed: ' . $e->getMessage());
+            Log::warning('CBU API fetch failed: '.$e->getMessage());
         }
 
         return response()->json([
@@ -404,7 +410,7 @@ class SuperadminController extends Controller
             $settings = is_array($method->settings) ? $method->settings : [];
 
             if ($method->code === 'click') {
-                $params = \Goodoneuz\PayUz\Models\PaymentSystemParam::where('system', 'click')->pluck('value', 'name');
+                $params = PaymentSystemParam::where('system', 'click')->pluck('value', 'name');
                 $settings = array_merge([
                     'service_id' => $params['service_id'] ?? '',
                     'merchant_id' => $params['merchant_id'] ?? '',
@@ -412,7 +418,7 @@ class SuperadminController extends Controller
                     'merchant_user_id' => $params['merchant_user_id'] ?? '',
                 ], $settings);
             } elseif ($method->code === 'payme') {
-                $params = \Goodoneuz\PayUz\Models\PaymentSystemParam::where('system', 'payme')->pluck('value', 'name');
+                $params = PaymentSystemParam::where('system', 'payme')->pluck('value', 'name');
                 $settings = array_merge([
                     'merchant_id' => $params['merchant_id'] ?? '',
                     'secret_key' => $params['password'] ?? '',
@@ -421,6 +427,7 @@ class SuperadminController extends Controller
             }
 
             $method->settings = $settings;
+
             return $method;
         });
 
@@ -445,10 +452,10 @@ class SuperadminController extends Controller
 
         $method->update($validated);
 
-        $statusStr = $validated['is_active'] ? \Goodoneuz\PayUz\Models\PaymentSystem::ACTIVE : \Goodoneuz\PayUz\Models\PaymentSystem::NOT_ACTIVE;
+        $statusStr = $validated['is_active'] ? PaymentSystem::ACTIVE : PaymentSystem::NOT_ACTIVE;
 
         if ($method->code === 'click') {
-            \Goodoneuz\PayUz\Models\PaymentSystem::where('system', 'click')->update(['status' => $statusStr]);
+            PaymentSystem::where('system', 'click')->update(['status' => $statusStr]);
             if (isset($validated['settings'])) {
                 foreach ([
                     'service_id' => $validated['settings']['service_id'] ?? '',
@@ -456,21 +463,21 @@ class SuperadminController extends Controller
                     'secret_key' => $validated['settings']['secret_key'] ?? '',
                     'merchant_user_id' => $validated['settings']['merchant_user_id'] ?? '',
                 ] as $pName => $pVal) {
-                    \Goodoneuz\PayUz\Models\PaymentSystemParam::updateOrCreate(
+                    PaymentSystemParam::updateOrCreate(
                         ['system' => 'click', 'name' => $pName],
                         ['value' => (string) $pVal, 'label' => ucwords(str_replace('_', ' ', $pName))]
                     );
                 }
             }
         } elseif ($method->code === 'payme') {
-            \Goodoneuz\PayUz\Models\PaymentSystem::where('system', 'payme')->update(['status' => $statusStr]);
+            PaymentSystem::where('system', 'payme')->update(['status' => $statusStr]);
             if (isset($validated['settings'])) {
                 foreach ([
                     'merchant_id' => $validated['settings']['merchant_id'] ?? '',
                     'password' => $validated['settings']['secret_key'] ?? ($validated['settings']['password'] ?? ''),
-                    'key' => !empty($validated['settings']['key']) ? $validated['settings']['key'] : 'order_id',
+                    'key' => ! empty($validated['settings']['key']) ? $validated['settings']['key'] : 'order_id',
                 ] as $pName => $pVal) {
-                    \Goodoneuz\PayUz\Models\PaymentSystemParam::updateOrCreate(
+                    PaymentSystemParam::updateOrCreate(
                         ['system' => 'payme', 'name' => $pName],
                         ['value' => (string) $pVal, 'label' => ucwords(str_replace('_', ' ', $pName))]
                     );
@@ -609,8 +616,8 @@ class SuperadminController extends Controller
             ->orderBy('name')
             ->get()
             ->map(function ($t) {
-                /** @var \App\Models\Tenant $t */
-                /** @var \App\Models\User|null $primaryUser */
+                /** @var Tenant $t */
+                /** @var User|null $primaryUser */
                 $primaryUser = $t->users->first();
 
                 return [
@@ -649,10 +656,11 @@ class SuperadminController extends Controller
 
         return back()->with('success', 'Barcha kompaniyalar (asosiy tizim) rejimiga qaytildi.');
     }
+
     /**
      * View receipt screenshot or file.
      */
-    public function viewReceipt(Invoice $invoice): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function viewReceipt(Invoice $invoice): StreamedResponse
     {
         if (! $invoice->receipt_image_path) {
             abort(404, 'Chek fayli yuklanmagan.');

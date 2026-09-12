@@ -1,5 +1,12 @@
 import { Form, Head } from '@inertiajs/react';
-import { ArrowRight, Headphones, Mail, ShieldCheck, Smartphone, Sparkles } from 'lucide-react';
+import {
+    ArrowRight,
+    Headphones,
+    Mail,
+    ShieldCheck,
+    Smartphone,
+    Sparkles,
+} from 'lucide-react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -23,24 +30,25 @@ export default function Login({ status, canResetPassword }: Props) {
         <>
             <Head title="Tizimga kirish" />
 
-            <div className="overflow-hidden rounded-3xl border border-border/80 bg-card/95 shadow-2xl shadow-primary/5 backdrop-blur-xl">
+            <div className="border-border/80 bg-card/95 shadow-primary/5 overflow-hidden rounded-3xl border shadow-2xl backdrop-blur-xl">
                 {/* Decorative subtle top gradient bar */}
-                <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 via-primary to-indigo-500" />
+                <div className="via-primary h-1.5 w-full bg-gradient-to-r from-blue-600 to-indigo-500" />
 
                 <div className="grid grid-cols-1 md:grid-cols-2">
                     {/* LEFT COLUMN: Boshqa usullar (Google, Passkey, Tezkor kirish) */}
-                    <div className="flex flex-col justify-between p-6 sm:p-8 lg:p-10 bg-muted/20">
+                    <div className="bg-muted/20 flex flex-col justify-between p-6 sm:p-8 lg:p-10">
                         <div>
-                            <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary mb-4">
+                            <div className="border-primary/25 bg-primary/10 text-primary mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold">
                                 <Sparkles className="h-3.5 w-3.5" />
                                 <span>Tezkor &amp; Parolsiz kirish</span>
                             </div>
 
-                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                            <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl">
                                 Boshqa login usullari
                             </h1>
-                            <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                                Parolni eslab qolmasdan, bir lahzada xavfsiz tizimga kiring
+                            <p className="text-muted-foreground mt-1.5 text-xs leading-relaxed sm:text-sm">
+                                Parolni eslab qolmasdan, bir lahzada xavfsiz
+                                tizimga kiring
                             </p>
 
                             {/* Alternative Login Actions */}
@@ -48,11 +56,14 @@ export default function Login({ status, canResetPassword }: Props) {
                                 {/* Google Button */}
                                 <a
                                     href="/auth/google"
-                                    className="group relative flex items-center justify-between rounded-2xl border border-border bg-background p-3.5 sm:p-4 text-sm font-medium transition-all duration-200 hover:border-primary/50 hover:bg-accent/40 hover:shadow-md cursor-pointer"
+                                    className="group border-border bg-background hover:border-primary/50 hover:bg-accent/40 relative flex cursor-pointer items-center justify-between rounded-2xl border p-3.5 text-sm font-medium transition-all duration-200 hover:shadow-md sm:p-4"
                                 >
                                     <div className="flex items-center gap-3.5">
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-white shadow-xs">
-                                            <svg className="h-5 w-5" viewBox="0 0 24 24">
+                                        <div className="border-border/60 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-white shadow-xs">
+                                            <svg
+                                                className="h-5 w-5"
+                                                viewBox="0 0 24 24"
+                                            >
                                                 <path
                                                     fill="#4285F4"
                                                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -72,19 +83,19 @@ export default function Login({ status, canResetPassword }: Props) {
                                             </svg>
                                         </div>
                                         <div className="flex flex-col text-left">
-                                            <span className="font-semibold text-foreground">
+                                            <span className="text-foreground font-semibold">
                                                 Google hisobi orqali
                                             </span>
-                                            <span className="text-xs text-muted-foreground">
+                                            <span className="text-muted-foreground text-xs">
                                                 Bir bosishda lahzali kirish
                                             </span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="hidden sm:inline-flex rounded-md bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-600 dark:text-blue-400">
+                                        <span className="hidden rounded-md bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-600 sm:inline-flex dark:text-blue-400">
                                             Tavsiya
                                         </span>
-                                        <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+                                        <ArrowRight className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-transform group-hover:translate-x-1" />
                                     </div>
                                 </a>
 
@@ -98,27 +109,29 @@ export default function Login({ status, canResetPassword }: Props) {
                         </div>
 
                         {/* Security & Feature Trust Box */}
-                        <div className="mt-8 rounded-2xl border border-border/50 bg-background/70 p-4 backdrop-blur-xs">
+                        <div className="border-border/50 bg-background/70 mt-8 rounded-2xl border p-4 backdrop-blur-xs">
                             <div className="flex items-start gap-3">
-                                <div className="rounded-xl bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400 shrink-0">
+                                <div className="shrink-0 rounded-xl bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
                                     <ShieldCheck className="h-5 w-5" />
                                 </div>
-                                <div className="text-xs space-y-1">
-                                    <p className="font-semibold text-foreground">
+                                <div className="space-y-1 text-xs">
+                                    <p className="text-foreground font-semibold">
                                         256-bit xavfsiz shifrlash
                                     </p>
                                     <p className="text-muted-foreground leading-relaxed">
-                                        Barcha sessiyalar va qo‘ng‘iroqlar maʼlumotlari himoyalangan. Tizimga kirish to‘liq maxfiy.
+                                        Barcha sessiyalar va qo‘ng‘iroqlar
+                                        maʼlumotlari himoyalangan. Tizimga
+                                        kirish to‘liq maxfiy.
                                     </p>
                                 </div>
                             </div>
-                            <div className="mt-3.5 pt-3 border-t border-border/40 grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
+                            <div className="border-border/40 text-muted-foreground mt-3.5 grid grid-cols-2 gap-2 border-t pt-3 text-[11px]">
                                 <div className="flex items-center gap-1.5">
-                                    <Smartphone className="h-3.5 w-3.5 text-primary" />
+                                    <Smartphone className="text-primary h-3.5 w-3.5" />
                                     <span>Android &amp; Samsung</span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                    <Headphones className="h-3.5 w-3.5 text-primary" />
+                                    <Headphones className="text-primary h-3.5 w-3.5" />
                                     <span>2 tomonlama audio</span>
                                 </div>
                             </div>
@@ -126,35 +139,35 @@ export default function Login({ status, canResetPassword }: Props) {
                     </div>
 
                     {/* RIGHT COLUMN: Forma to'ldirish (Email + Parol) */}
-                    <div className="relative flex flex-col justify-between p-6 sm:p-8 lg:p-10 border-t md:border-t-0 md:border-l border-border/60">
+                    <div className="border-border/60 relative flex flex-col justify-between border-t p-6 sm:p-8 md:border-t-0 md:border-l lg:p-10">
                         {/* Middle "YOKI" badge on desktop vertical divider */}
-                        <div className="hidden md:flex absolute -left-3.5 top-1/2 -translate-y-1/2 z-10">
-                            <span className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-[10px] font-bold text-muted-foreground shadow-xs">
+                        <div className="absolute top-1/2 -left-3.5 z-10 hidden -translate-y-1/2 md:flex">
+                            <span className="border-border bg-card text-muted-foreground flex h-7 w-7 items-center justify-center rounded-full border text-[10px] font-bold shadow-xs">
                                 YOKI
                             </span>
                         </div>
 
                         {/* Mobile "YOKI" divider */}
-                        <div className="md:hidden flex items-center justify-center my-3">
-                            <div className="flex items-center gap-3 w-full">
-                                <div className="flex-1 h-px bg-border" />
-                                <span className="px-2 text-xs uppercase font-bold text-muted-foreground">
+                        <div className="my-3 flex items-center justify-center md:hidden">
+                            <div className="flex w-full items-center gap-3">
+                                <div className="bg-border h-px flex-1" />
+                                <span className="text-muted-foreground px-2 text-xs font-bold uppercase">
                                     Yoki elektron pochta bilan
                                 </span>
-                                <div className="flex-1 h-px bg-border" />
+                                <div className="bg-border h-px flex-1" />
                             </div>
                         </div>
 
                         <div>
-                            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-semibold text-foreground mb-4">
-                                <Mail className="h-3.5 w-3.5 text-primary" />
+                            <div className="border-border bg-muted/50 text-foreground mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold">
+                                <Mail className="text-primary h-3.5 w-3.5" />
                                 <span>Elektron pochta</span>
                             </div>
 
-                            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                            <h2 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl">
                                 Forma orqali kirish
                             </h2>
-                            <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground">
+                            <p className="text-muted-foreground mt-1.5 text-xs sm:text-sm">
                                 Email va parolingizni kiritib tizimga kiring
                             </p>
 
@@ -174,11 +187,14 @@ export default function Login({ status, canResetPassword }: Props) {
                                         <div className="space-y-4">
                                             {/* Email field */}
                                             <div className="grid gap-2">
-                                                <Label htmlFor="email" className="text-xs font-semibold">
+                                                <Label
+                                                    htmlFor="email"
+                                                    className="text-xs font-semibold"
+                                                >
                                                     Email manzil
                                                 </Label>
                                                 <div className="relative">
-                                                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                    <Mail className="text-muted-foreground absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2" />
                                                     <Input
                                                         id="email"
                                                         type="email"
@@ -188,25 +204,31 @@ export default function Login({ status, canResetPassword }: Props) {
                                                         tabIndex={1}
                                                         autoComplete="email"
                                                         placeholder="pochta@kompaniya.uz"
-                                                        className="pl-10 h-11 rounded-xl"
+                                                        className="h-11 rounded-xl pl-10"
                                                     />
                                                 </div>
-                                                <InputError message={errors.email} />
+                                                <InputError
+                                                    message={errors.email}
+                                                />
                                             </div>
 
                                             {/* Password field */}
                                             <div className="grid gap-2">
                                                 <div className="flex items-center justify-between">
-                                                    <Label htmlFor="password" className="text-xs font-semibold">
+                                                    <Label
+                                                        htmlFor="password"
+                                                        className="text-xs font-semibold"
+                                                    >
                                                         Parol
                                                     </Label>
                                                     {canResetPassword && (
                                                         <TextLink
                                                             href={request()}
-                                                            className="text-xs font-medium text-primary hover:underline"
+                                                            className="text-primary text-xs font-medium hover:underline"
                                                             tabIndex={5}
                                                         >
-                                                            Parolni unutdingizmi?
+                                                            Parolni
+                                                            unutdingizmi?
                                                         </TextLink>
                                                     )}
                                                 </div>
@@ -219,7 +241,9 @@ export default function Login({ status, canResetPassword }: Props) {
                                                     placeholder="Parolingizni kiriting"
                                                     className="h-11 rounded-xl"
                                                 />
-                                                <InputError message={errors.password} />
+                                                <InputError
+                                                    message={errors.password}
+                                                />
                                             </div>
 
                                             {/* Remember me */}
@@ -230,7 +254,10 @@ export default function Login({ status, canResetPassword }: Props) {
                                                     tabIndex={3}
                                                     className="rounded-md"
                                                 />
-                                                <Label htmlFor="remember" className="text-xs text-muted-foreground font-normal cursor-pointer select-none">
+                                                <Label
+                                                    htmlFor="remember"
+                                                    className="text-muted-foreground cursor-pointer text-xs font-normal select-none"
+                                                >
                                                     Meni eslab qol (30 kun)
                                                 </Label>
                                             </div>
@@ -238,7 +265,7 @@ export default function Login({ status, canResetPassword }: Props) {
                                             {/* Submit Button */}
                                             <Button
                                                 type="submit"
-                                                className="mt-2 h-11 w-full rounded-xl font-semibold gap-2 shadow-sm cursor-pointer"
+                                                className="mt-2 h-11 w-full cursor-pointer gap-2 rounded-xl font-semibold shadow-sm"
                                                 tabIndex={4}
                                                 disabled={processing}
                                                 data-test="login-button"
@@ -257,9 +284,13 @@ export default function Login({ status, canResetPassword }: Props) {
                         </div>
 
                         {/* Bottom link: Ro'yxatdan o'tish */}
-                        <div className="mt-8 pt-6 border-t border-border/50 text-center text-xs sm:text-sm text-muted-foreground">
+                        <div className="border-border/50 text-muted-foreground mt-8 border-t pt-6 text-center text-xs sm:text-sm">
                             Profilingiz yo‘qmi?{' '}
-                            <TextLink href={register()} tabIndex={6} className="font-semibold text-primary hover:underline">
+                            <TextLink
+                                href={register()}
+                                tabIndex={6}
+                                className="text-primary font-semibold hover:underline"
+                            >
                                 Ro‘yxatdan o‘tish
                             </TextLink>
                         </div>

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\BelongsToTenant;
+use Carbon\Carbon;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,8 +25,8 @@ use Laravel\Sanctum\HasApiTokens;
  * @property int|null $battery_level
  * @property string|null $pairing_code
  * @property bool $is_paired
- * @property \Carbon\Carbon|null $paired_at
- * @property \Carbon\Carbon|null $last_seen_at
+ * @property Carbon|null $paired_at
+ * @property Carbon|null $last_seen_at
  */
 class Device extends Model implements AuthenticatableContract
 {

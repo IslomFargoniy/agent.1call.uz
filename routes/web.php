@@ -22,9 +22,9 @@ Route::get('/downloads/app', function () {
             'Content-Type' => 'application/vnd.android.package-archive',
         ]);
     }
+
     return redirect('/devices')->with('error', 'APK fayli hali serverga yuklanmagan');
 })->name('app.download');
-
 
 // Google OAuth2 Authentication
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');

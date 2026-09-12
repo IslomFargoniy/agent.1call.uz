@@ -6,6 +6,7 @@ use App\Models\Device;
 use App\Models\IntegrationSyncLog;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
+use App\Models\User;
 use App\Services\Integrations\AmoCrm\AmoCrmService;
 use App\Services\Integrations\CrmManager;
 use App\Services\Integrations\MoySklad\MoySkladService;
@@ -124,7 +125,7 @@ test('SyncCallToIntegrationsJob dispatches and records sync logs', function () {
 });
 
 test('saveMoySklad rejects empty credentials without activating integration', function () {
-    $user = \App\Models\User::create([
+    $user = User::create([
         'tenant_id' => $this->tenant->id,
         'name' => 'Tenant Admin',
         'email' => 'crm-admin@test.uz',
@@ -144,7 +145,7 @@ test('saveMoySklad rejects empty credentials without activating integration', fu
 });
 
 test('disconnect endpoints properly remove integrations', function () {
-    $user = \App\Models\User::create([
+    $user = User::create([
         'tenant_id' => $this->tenant->id,
         'name' => 'Tenant Admin 2',
         'email' => 'crm-admin2@test.uz',

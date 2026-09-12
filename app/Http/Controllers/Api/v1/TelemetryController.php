@@ -163,7 +163,7 @@ class TelemetryController extends Controller
         $rawDirection = strtoupper((string) $request->input('direction', 'INBOUND'));
         $direction = in_array($rawDirection, ['OUTBOUND', 'OUTGOING']) ? 'outbound' : 'inbound';
         $durationSeconds = (int) $request->input('duration_seconds', 0);
-        
+
         $rawSimSlot = $request->input('sim_slot');
         $simSlot = null;
         if ($rawSimSlot !== null && $rawSimSlot !== '') {
@@ -249,7 +249,7 @@ class TelemetryController extends Controller
             if (method_exists($storageDisk, 'path')) {
                 $fullStoredPath = $storageDisk->path($path);
                 if (file_exists($fullStoredPath)) {
-                    $cmd = "ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 " . escapeshellarg($fullStoredPath) . " 2>/dev/null";
+                    $cmd = 'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 '.escapeshellarg($fullStoredPath).' 2>/dev/null';
                     $output = @shell_exec($cmd);
                     if ($output !== null && is_numeric(trim($output))) {
                         $sec = (int) round((float) trim($output));

@@ -75,7 +75,6 @@ test('CheckTenantSubscription blocks expired tenants and redirects to billing', 
     $response->assertRedirect(route('billing.index'));
 });
 
-
 test('Prorata upgrade calculates and activates correctly without extending expiry', function () {
     // Tenant has active subscription expiring in 20 days, allowed 2 devices
     $expiry = now()->addDays(20);
@@ -117,7 +116,7 @@ test('Renewal prevents reducing device count while subscription is active', func
 
     // Attempt to renew with only 2 devices should throw InvalidArgumentException
     expect(fn () => $service->createInvoice($this->tenant, $this->tariff, 2, 30, 12, 'payme'))
-        ->toThrow(\InvalidArgumentException::class);
+        ->toThrow(InvalidArgumentException::class);
 });
 
 test('Renewal properly extends from future expiry date', function () {
@@ -140,7 +139,6 @@ test('Renewal properly extends from future expiry date', function () {
     // Expiry should be futureExpiry + 3 months
     expect($this->tenant->subscription_expires_at->isAfter($futureExpiry))->toBeTrue();
 });
-
 
 test('BillingWebController checkout handles upgrade_devices action', function () {
     $this->tenant->update([
@@ -171,7 +169,6 @@ test('BillingWebController checkout handles upgrade_devices action', function ()
         'devices_count' => 5,
     ]);
 });
-
 
 test('Prorata retention upgrade calculates and activates correctly', function () {
     $expiry = now()->addDays(15);

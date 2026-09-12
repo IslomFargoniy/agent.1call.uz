@@ -10,7 +10,7 @@ export default function AppLogoIcon({
         <img
             src="/images/1call_logo.png"
             alt={alt}
-            className={cn('object-contain rounded-md', className)}
+            className={cn('rounded-md object-contain', className)}
             {...props}
         />
     );

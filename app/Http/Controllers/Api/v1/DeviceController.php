@@ -23,7 +23,7 @@ class DeviceController extends Controller
         $model = $request->input('model') ?? $deviceName;
 
         if (empty($deviceUid)) {
-            $deviceUid = 'dev_' . bin2hex(random_bytes(8));
+            $deviceUid = 'dev_'.bin2hex(random_bytes(8));
         }
 
         $tenant = null;

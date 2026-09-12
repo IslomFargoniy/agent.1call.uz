@@ -16,33 +16,37 @@ export default function AuthLayout({
     children: React.ReactNode;
 }) {
     const { component } = usePage();
-    const isWideAuth = component === 'auth/login' || component === 'auth/register';
+    const isWideAuth =
+        component === 'auth/login' || component === 'auth/register';
 
     if (isWideAuth) {
         return (
-            <div className="relative min-h-svh flex flex-col justify-between bg-gradient-to-b from-background via-muted/20 to-background selection:bg-primary/10 selection:text-primary">
+            <div className="from-background via-muted/20 to-background selection:bg-primary/10 selection:text-primary relative flex min-h-svh flex-col justify-between bg-gradient-to-b">
                 {/* Background ambient lighting effects */}
                 <div className="pointer-events-none fixed inset-0 overflow-hidden">
-                    <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-gradient-to-tr from-primary/15 via-blue-500/10 to-transparent blur-3xl opacity-60 dark:opacity-40" />
-                    <div className="absolute -bottom-40 right-0 w-[500px] h-[500px] bg-primary/5 blur-3xl rounded-full" />
+                    <div className="from-primary/15 absolute -top-40 left-1/2 h-[400px] w-[1000px] -translate-x-1/2 bg-gradient-to-tr via-blue-500/10 to-transparent opacity-60 blur-3xl dark:opacity-40" />
+                    <div className="bg-primary/5 absolute right-0 -bottom-40 h-[500px] w-[500px] rounded-full blur-3xl" />
                 </div>
 
                 {/* Top Header Bar */}
-                <header className="relative z-20 flex items-center justify-between px-6 py-4 sm:px-10 border-b border-border/40 backdrop-blur-md bg-background/50">
-                    <Link href={home()} className="flex items-center gap-3 group">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all duration-200 group-hover:scale-105 group-hover:bg-primary/20">
-                            <AppLogoIcon className="h-6 w-6 fill-current text-primary" />
+                <header className="border-border/40 bg-background/50 relative z-20 flex items-center justify-between border-b px-6 py-4 backdrop-blur-md sm:px-10">
+                    <Link
+                        href={home()}
+                        className="group flex items-center gap-3"
+                    >
+                        <div className="bg-primary/10 text-primary group-hover:bg-primary/20 flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 group-hover:scale-105">
+                            <AppLogoIcon className="text-primary h-6 w-6 fill-current" />
                         </div>
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2">
-                                <span className="text-base sm:text-lg font-bold tracking-tight text-foreground leading-tight">
+                                <span className="text-foreground text-base leading-tight font-bold tracking-tight sm:text-lg">
                                     Agent1Call
                                 </span>
-                                <span className="hidden sm:inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                                <span className="bg-primary/10 text-primary hidden rounded-full px-2 py-0.5 text-[10px] font-semibold sm:inline-flex">
                                     v1.0
                                 </span>
                             </div>
-                            <span className="text-[11px] font-medium text-muted-foreground">
+                            <span className="text-muted-foreground text-[11px] font-medium">
                                 Korporativ telefoniya va CRM integratsiyasi
                             </span>
                         </div>
@@ -62,8 +66,9 @@ export default function AuthLayout({
                 </main>
 
                 {/* Footer */}
-                <footer className="relative z-20 py-4 text-center text-xs text-muted-foreground border-t border-border/30">
-                    © {new Date().getFullYear()} Agent1Call.uz — Barcha huquqlar himoyalangan.
+                <footer className="text-muted-foreground border-border/30 relative z-20 border-t py-4 text-center text-xs">
+                    © {new Date().getFullYear()} Agent1Call.uz — Barcha huquqlar
+                    himoyalangan.
                 </footer>
             </div>
         );

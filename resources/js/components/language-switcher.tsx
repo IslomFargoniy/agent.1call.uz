@@ -21,7 +21,10 @@ interface LanguageSwitcherProps {
 export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
     const { i18n } = useTranslation();
 
-    const langCode = (i18n.language?.split('-')[0] || 'uz') as 'uz' | 'ru' | 'en';
+    const langCode = (i18n.language?.split('-')[0] || 'uz') as
+        | 'uz'
+        | 'ru'
+        | 'en';
     const currentLang =
         languages.find((l) => l.code === langCode) ?? languages[0];
 
@@ -44,7 +47,7 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
                     </span>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[140px] z-50">
+            <DropdownMenuContent align="end" className="z-50 min-w-[140px]">
                 {languages.map((lang) => (
                     <DropdownMenuItem
                         key={lang.code}

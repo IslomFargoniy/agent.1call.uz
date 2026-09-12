@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BillingWebController extends Controller
 {
@@ -125,7 +126,7 @@ class BillingWebController extends Controller
 
             if ($targetDevices === $currentAllowed && $targetRetention === $currentRetention) {
                 return back()->withErrors([
-                    'devices_count' => "Qurilmalar soni yoki arxiv saqlash muddatidan kamida bittasini oshirishingiz kerak.",
+                    'devices_count' => 'Qurilmalar soni yoki arxiv saqlash muddatidan kamida bittasini oshirishingiz kerak.',
                 ]);
             }
 
@@ -229,13 +230,14 @@ class BillingWebController extends Controller
     public function uploadReceiptForInvoice(Invoice $invoice, Request $request): RedirectResponse
     {
         $request->merge(['invoice_id' => $invoice->id]);
+
         return $this->uploadReceipt($request);
     }
 
     /**
      * View or stream the uploaded receipt.
      */
-    public function viewReceipt(Invoice $invoice, Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function viewReceipt(Invoice $invoice, Request $request): StreamedResponse
     {
         $user = $request->user();
         if (! $user->isSuperAdmin() && $invoice->tenant_id !== $user->tenant_id) {

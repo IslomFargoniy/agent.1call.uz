@@ -57,7 +57,7 @@ class TelegramBotController extends Controller
                 $memberUsername = $member['username'] ?? '';
                 if (($member['is_bot'] ?? false) && (strcasecmp($memberUsername, $botUsername) === 0 || empty($botUsername))) {
                     $welcomeGroupText = "🎉 <b>Agent1Call Bildirishnomalar Boti guruhga muvaffaqiyatli qo'shildi!</b>\n\n".
-                        "👥 <b>Guruh nomi:</b> ".htmlspecialchars($chatTitle)."\n".
+                        '👥 <b>Guruh nomi:</b> '.htmlspecialchars($chatTitle)."\n".
                         "🆔 <b>Guruh Chat ID:</b> <code>{$chatId}</code>\n\n".
                         "📋 <b>Ulash bo'yicha yo'riqnoma:</b>\n".
                         "1. Yuqoridagi <code>{$chatId}</code> raqamini nusxalab oling.\n".
@@ -76,7 +76,7 @@ class TelegramBotController extends Controller
         if (in_array($chatType, ['group', 'supergroup', 'channel'])) {
             if (str_starts_with($text, '/id') || str_starts_with($text, '/start') || str_starts_with($text, '/help') || str_starts_with($text, '/chatid')) {
                 $groupInfoText = "ℹ️ <b>1Call Guruh Ma'lumotlari:</b>\n\n".
-                    "👥 <b>Guruh:</b> ".htmlspecialchars($chatTitle)."\n".
+                    '👥 <b>Guruh:</b> '.htmlspecialchars($chatTitle)."\n".
                     "🆔 <b>Guruh Chat ID:</b> <code>{$chatId}</code>\n\n".
                     "<i>Ushbu ID ni Agent1Call kabinetingizdagi 'Telegram Bildirishnomalar Guruxi' maydoniga kiriting.</i>";
 
@@ -108,9 +108,9 @@ class TelegramBotController extends Controller
 
         if (in_array($newStatus, ['member', 'administrator'])) {
             $text = "✅ <b>Agent1Call Bildirishnomalar Boti faollashtirildi!</b>\n\n".
-                "👥 <b>Guruh:</b> ".htmlspecialchars($chatTitle)."\n".
+                '👥 <b>Guruh:</b> '.htmlspecialchars($chatTitle)."\n".
                 "🆔 <b>Guruh Chat ID:</b> <code>{$chatId}</code>\n\n".
-                "<i>Ushbu ID ni Agent1Call tizimidagi kompaniyangiz sozlamalariga kiriting.</i>";
+                '<i>Ushbu ID ni Agent1Call tizimidagi kompaniyangiz sozlamalariga kiriting.</i>';
 
             $this->telegramService->sendMessage($chatId, $text);
         }

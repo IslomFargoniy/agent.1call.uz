@@ -1,5 +1,16 @@
 import { Form, Head } from '@inertiajs/react';
-import { ArrowRight, CheckCircle2, Headphones, Mail, ShieldCheck, Smartphone, Sparkles, User as UserIcon, UserPlus, Zap } from 'lucide-react';
+import {
+    ArrowRight,
+    CheckCircle2,
+    Headphones,
+    Mail,
+    ShieldCheck,
+    Smartphone,
+    Sparkles,
+    User as UserIcon,
+    UserPlus,
+    Zap,
+} from 'lucide-react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -19,35 +30,39 @@ export default function Register({ passwordRules }: Props) {
         <>
             <Head title="Ro‘yxatdan o‘tish" />
 
-            <div className="overflow-hidden rounded-3xl border border-border/80 bg-card/95 shadow-2xl shadow-primary/5 backdrop-blur-xl">
+            <div className="border-border/80 bg-card/95 shadow-primary/5 overflow-hidden rounded-3xl border shadow-2xl backdrop-blur-xl">
                 {/* Decorative subtle top gradient bar */}
-                <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 via-primary to-blue-600" />
+                <div className="via-primary h-1.5 w-full bg-gradient-to-r from-emerald-500 to-blue-600" />
 
                 <div className="grid grid-cols-1 md:grid-cols-2">
                     {/* LEFT COLUMN: Boshqa usullar (Google orqali tezkor ro'yxatdan o'tish & Afzalliklar) */}
-                    <div className="flex flex-col justify-between p-6 sm:p-8 lg:p-10 bg-muted/20">
+                    <div className="bg-muted/20 flex flex-col justify-between p-6 sm:p-8 lg:p-10">
                         <div>
-                            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-4">
+                            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                                 <Sparkles className="h-3.5 w-3.5" />
                                 <span>Tezkor ro‘yxatdan o‘tish</span>
                             </div>
 
-                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                            <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl">
                                 Bir bosishda hisob ochish
                             </h1>
-                            <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                                Formani qo‘lda to‘ldirish shart emas — Google orqali 5 soniyada hisob oching
+                            <p className="text-muted-foreground mt-1.5 text-xs leading-relaxed sm:text-sm">
+                                Formani qo‘lda to‘ldirish shart emas — Google
+                                orqali 5 soniyada hisob oching
                             </p>
 
                             {/* Google Quick Register Button */}
                             <div className="mt-6">
                                 <a
                                     href="/auth/google"
-                                    className="group relative flex items-center justify-between rounded-2xl border border-border bg-background p-3.5 sm:p-4 text-sm font-medium transition-all duration-200 hover:border-primary/50 hover:bg-accent/40 hover:shadow-md cursor-pointer"
+                                    className="group border-border bg-background hover:border-primary/50 hover:bg-accent/40 relative flex cursor-pointer items-center justify-between rounded-2xl border p-3.5 text-sm font-medium transition-all duration-200 hover:shadow-md sm:p-4"
                                 >
                                     <div className="flex items-center gap-3.5">
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-white shadow-xs">
-                                            <svg className="h-5 w-5" viewBox="0 0 24 24">
+                                        <div className="border-border/60 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-white shadow-xs">
+                                            <svg
+                                                className="h-5 w-5"
+                                                viewBox="0 0 24 24"
+                                            >
                                                 <path
                                                     fill="#4285F4"
                                                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -67,61 +82,84 @@ export default function Register({ passwordRules }: Props) {
                                             </svg>
                                         </div>
                                         <div className="flex flex-col text-left">
-                                            <span className="font-semibold text-foreground">
+                                            <span className="text-foreground font-semibold">
                                                 Google hisobi bilan
                                             </span>
-                                            <span className="text-xs text-muted-foreground">
-                                                Maʼlumotlar avtomatik to‘ldiriladi
+                                            <span className="text-muted-foreground text-xs">
+                                                Maʼlumotlar avtomatik
+                                                to‘ldiriladi
                                             </span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="hidden sm:inline-flex rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                        <span className="hidden rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 sm:inline-flex dark:text-emerald-400">
                                             Tezkor
                                         </span>
-                                        <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+                                        <ArrowRight className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-transform group-hover:translate-x-1" />
                                     </div>
                                 </a>
                             </div>
                         </div>
 
                         {/* Platform Advantages / Benefits list */}
-                        <div className="mt-8 rounded-2xl border border-border/50 bg-background/70 p-4 sm:p-5 backdrop-blur-xs">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
-                                <Zap className="h-3.5 w-3.5 text-primary" />
-                                <span>Agent1Call platformasi imkoniyatlari</span>
+                        <div className="border-border/50 bg-background/70 mt-8 rounded-2xl border p-4 backdrop-blur-xs sm:p-5">
+                            <h3 className="text-muted-foreground mb-3 flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
+                                <Zap className="text-primary h-3.5 w-3.5" />
+                                <span>
+                                    Agent1Call platformasi imkoniyatlari
+                                </span>
                             </h3>
 
                             <div className="space-y-2.5 text-xs">
                                 <div className="flex items-start gap-2.5">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                                     <div>
-                                        <span className="font-semibold text-foreground">14 kunlik bepul sinov: </span>
-                                        <span className="text-muted-foreground">Barcha imkoniyatlar (barcha qurilmalar, cheksiz yozuv) bepul.</span>
+                                        <span className="text-foreground font-semibold">
+                                            14 kunlik bepul sinov:{' '}
+                                        </span>
+                                        <span className="text-muted-foreground">
+                                            Barcha imkoniyatlar (barcha
+                                            qurilmalar, cheksiz yozuv) bepul.
+                                        </span>
                                     </div>
                                 </div>
 
                                 <div className="flex items-start gap-2.5">
-                                    <Headphones className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                                    <Headphones className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
                                     <div>
-                                        <span className="font-semibold text-foreground">2 tomonlama audio: </span>
-                                        <span className="text-muted-foreground">Mijoz va operator ovozini 100% tiniq formatda saqlash.</span>
+                                        <span className="text-foreground font-semibold">
+                                            2 tomonlama audio:{' '}
+                                        </span>
+                                        <span className="text-muted-foreground">
+                                            Mijoz va operator ovozini 100% tiniq
+                                            formatda saqlash.
+                                        </span>
                                     </div>
                                 </div>
 
                                 <div className="flex items-start gap-2.5">
-                                    <Zap className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                    <Zap className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
                                     <div>
-                                        <span className="font-semibold text-foreground">CRM integratsiya: </span>
-                                        <span className="text-muted-foreground">AmoCRM va MoySklad bilan lahzali avtomatik sinxronizatsiya.</span>
+                                        <span className="text-foreground font-semibold">
+                                            CRM integratsiya:{' '}
+                                        </span>
+                                        <span className="text-muted-foreground">
+                                            AmoCRM va MoySklad bilan lahzali
+                                            avtomatik sinxronizatsiya.
+                                        </span>
                                     </div>
                                 </div>
 
                                 <div className="flex items-start gap-2.5">
-                                    <Smartphone className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
+                                    <Smartphone className="mt-0.5 h-4 w-4 shrink-0 text-purple-500" />
                                     <div>
-                                        <span className="font-semibold text-foreground">Ko‘p qurilmali: </span>
-                                        <span className="text-muted-foreground">Barcha xodimlar va SIM kartalarni bitta joydan boshqarish.</span>
+                                        <span className="text-foreground font-semibold">
+                                            Ko‘p qurilmali:{' '}
+                                        </span>
+                                        <span className="text-muted-foreground">
+                                            Barcha xodimlar va SIM kartalarni
+                                            bitta joydan boshqarish.
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -129,41 +167,45 @@ export default function Register({ passwordRules }: Props) {
                     </div>
 
                     {/* RIGHT COLUMN: Forma to'ldirish (An'anaviy ro'yxatdan o'tish) */}
-                    <div className="relative flex flex-col justify-between p-6 sm:p-8 lg:p-10 border-t md:border-t-0 md:border-l border-border/60">
+                    <div className="border-border/60 relative flex flex-col justify-between border-t p-6 sm:p-8 md:border-t-0 md:border-l lg:p-10">
                         {/* Middle "YOKI" badge on desktop vertical divider */}
-                        <div className="hidden md:flex absolute -left-3.5 top-1/2 -translate-y-1/2 z-10">
-                            <span className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-[10px] font-bold text-muted-foreground shadow-xs">
+                        <div className="absolute top-1/2 -left-3.5 z-10 hidden -translate-y-1/2 md:flex">
+                            <span className="border-border bg-card text-muted-foreground flex h-7 w-7 items-center justify-center rounded-full border text-[10px] font-bold shadow-xs">
                                 YOKI
                             </span>
                         </div>
 
                         {/* Mobile "YOKI" divider */}
-                        <div className="md:hidden flex items-center justify-center my-3">
-                            <div className="flex items-center gap-3 w-full">
-                                <div className="flex-1 h-px bg-border" />
-                                <span className="px-2 text-xs uppercase font-bold text-muted-foreground">
+                        <div className="my-3 flex items-center justify-center md:hidden">
+                            <div className="flex w-full items-center gap-3">
+                                <div className="bg-border h-px flex-1" />
+                                <span className="text-muted-foreground px-2 text-xs font-bold uppercase">
                                     Yoki maʼlumotlarni kiritish
                                 </span>
-                                <div className="flex-1 h-px bg-border" />
+                                <div className="bg-border h-px flex-1" />
                             </div>
                         </div>
 
                         <div>
-                            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-semibold text-foreground mb-4">
-                                <UserPlus className="h-3.5 w-3.5 text-primary" />
+                            <div className="border-border bg-muted/50 text-foreground mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold">
+                                <UserPlus className="text-primary h-3.5 w-3.5" />
                                 <span>Forma to‘ldirish</span>
                             </div>
 
-                            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                            <h2 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl">
                                 Yangi hisob ochish
                             </h2>
-                            <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground">
-                                Kompaniyangiz uchun yangi profil maʼlumotlarini to‘ldiring
+                            <p className="text-muted-foreground mt-1.5 text-xs sm:text-sm">
+                                Kompaniyangiz uchun yangi profil maʼlumotlarini
+                                to‘ldiring
                             </p>
 
                             <Form
                                 {...store.form()}
-                                resetOnSuccess={['password', 'password_confirmation']}
+                                resetOnSuccess={[
+                                    'password',
+                                    'password_confirmation',
+                                ]}
                                 disableWhileProcessing
                                 className="mt-6 flex flex-col gap-4"
                             >
@@ -172,11 +214,14 @@ export default function Register({ passwordRules }: Props) {
                                         <div className="space-y-3.5">
                                             {/* Name field */}
                                             <div className="grid gap-1.5">
-                                                <Label htmlFor="name" className="text-xs font-semibold">
+                                                <Label
+                                                    htmlFor="name"
+                                                    className="text-xs font-semibold"
+                                                >
                                                     To‘liq ismingiz
                                                 </Label>
                                                 <div className="relative">
-                                                    <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                    <UserIcon className="text-muted-foreground absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2" />
                                                     <Input
                                                         id="name"
                                                         type="text"
@@ -186,19 +231,24 @@ export default function Register({ passwordRules }: Props) {
                                                         autoComplete="name"
                                                         name="name"
                                                         placeholder="Ism Familiya"
-                                                        className="pl-10 h-10 sm:h-11 rounded-xl"
+                                                        className="h-10 rounded-xl pl-10 sm:h-11"
                                                     />
                                                 </div>
-                                                <InputError message={errors.name} />
+                                                <InputError
+                                                    message={errors.name}
+                                                />
                                             </div>
 
                                             {/* Email field */}
                                             <div className="grid gap-1.5">
-                                                <Label htmlFor="email" className="text-xs font-semibold">
+                                                <Label
+                                                    htmlFor="email"
+                                                    className="text-xs font-semibold"
+                                                >
                                                     Email manzil
                                                 </Label>
                                                 <div className="relative">
-                                                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                    <Mail className="text-muted-foreground absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2" />
                                                     <Input
                                                         id="email"
                                                         type="email"
@@ -207,15 +257,20 @@ export default function Register({ passwordRules }: Props) {
                                                         autoComplete="email"
                                                         name="email"
                                                         placeholder="email@example.com"
-                                                        className="pl-10 h-10 sm:h-11 rounded-xl"
+                                                        className="h-10 rounded-xl pl-10 sm:h-11"
                                                     />
                                                 </div>
-                                                <InputError message={errors.email} />
+                                                <InputError
+                                                    message={errors.email}
+                                                />
                                             </div>
 
                                             {/* Password field */}
                                             <div className="grid gap-1.5">
-                                                <Label htmlFor="password" className="text-xs font-semibold">
+                                                <Label
+                                                    htmlFor="password"
+                                                    className="text-xs font-semibold"
+                                                >
                                                     Parol
                                                 </Label>
                                                 <PasswordInput
@@ -225,15 +280,22 @@ export default function Register({ passwordRules }: Props) {
                                                     autoComplete="new-password"
                                                     name="password"
                                                     placeholder="Kamida 8 ta belgi"
-                                                    passwordrules={passwordRules}
-                                                    className="h-10 sm:h-11 rounded-xl"
+                                                    passwordrules={
+                                                        passwordRules
+                                                    }
+                                                    className="h-10 rounded-xl sm:h-11"
                                                 />
-                                                <InputError message={errors.password} />
+                                                <InputError
+                                                    message={errors.password}
+                                                />
                                             </div>
 
                                             {/* Password Confirmation field */}
                                             <div className="grid gap-1.5">
-                                                <Label htmlFor="password_confirmation" className="text-xs font-semibold">
+                                                <Label
+                                                    htmlFor="password_confirmation"
+                                                    className="text-xs font-semibold"
+                                                >
                                                     Parolni tasdiqlang
                                                 </Label>
                                                 <PasswordInput
@@ -243,16 +305,22 @@ export default function Register({ passwordRules }: Props) {
                                                     autoComplete="new-password"
                                                     name="password_confirmation"
                                                     placeholder="Parolni qayta kiriting"
-                                                    passwordrules={passwordRules}
-                                                    className="h-10 sm:h-11 rounded-xl"
+                                                    passwordrules={
+                                                        passwordRules
+                                                    }
+                                                    className="h-10 rounded-xl sm:h-11"
                                                 />
-                                                <InputError message={errors.password_confirmation} />
+                                                <InputError
+                                                    message={
+                                                        errors.password_confirmation
+                                                    }
+                                                />
                                             </div>
 
                                             {/* Submit Button */}
                                             <Button
                                                 type="submit"
-                                                className="mt-2 h-11 w-full rounded-xl font-semibold gap-2 shadow-sm cursor-pointer"
+                                                className="mt-2 h-11 w-full cursor-pointer gap-2 rounded-xl font-semibold shadow-sm"
                                                 tabIndex={5}
                                                 disabled={processing}
                                                 data-test="register-user-button"
@@ -271,9 +339,13 @@ export default function Register({ passwordRules }: Props) {
                         </div>
 
                         {/* Bottom link: Tizimga kirish */}
-                        <div className="mt-6 pt-6 border-t border-border/50 text-center text-xs sm:text-sm text-muted-foreground">
+                        <div className="border-border/50 text-muted-foreground mt-6 border-t pt-6 text-center text-xs sm:text-sm">
                             Profilingiz bormi?{' '}
-                            <TextLink href={login()} tabIndex={6} className="font-semibold text-primary hover:underline">
+                            <TextLink
+                                href={login()}
+                                tabIndex={6}
+                                className="text-primary font-semibold hover:underline"
+                            >
                                 Tizimga kirish
                             </TextLink>
                         </div>
@@ -286,5 +358,6 @@ export default function Register({ passwordRules }: Props) {
 
 Register.layout = {
     title: 'Ro‘yxatdan o‘tish',
-    description: 'Agent1Call tizimidan foydalanish uchun maʼlumotlaringizni kiriting',
+    description:
+        'Agent1Call tizimidan foydalanish uchun maʼlumotlaringizni kiriting',
 };
