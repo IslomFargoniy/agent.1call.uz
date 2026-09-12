@@ -346,23 +346,7 @@ export default function DevicesIndex({ devices, quota, tenant_uuid }: DevicesPro
                                                 )}
                                             </div>
                                         ) : (
-                                            <div className="space-y-1">
-                                                <span className="inline-block text-[11px] bg-amber-500/10 text-amber-700 dark:text-amber-300 font-mono px-2 py-0.5 rounded font-semibold">
-                                                    {t("devices.pairingCode", "Kod: {{code}}", { code: device.pairing_code })}
-                                                </span>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="h-6 px-2 text-[11px] font-semibold gap-1 border-primary/30 text-primary hover:bg-primary/10 rounded-md"
-                                                    onClick={() => {
-                                                        setSelectedPairingDevice(device);
-                                                        setShowPairModal(true);
-                                                    }}
-                                                >
-                                                    <QrCode className="h-3 w-3" />
-                                                    {t("devices.scanQrBtn", "QR Kod")}
-                                                </Button>
-                                            </div>
+                                            "—"
                                         )}
                                     </td>
                                     <td className="py-3.5 px-4 text-right">
