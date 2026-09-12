@@ -1,8 +1,8 @@
 {
-  "version": "1.1.2",
-  "version_code": 12,
-  "file_size": 24503421,
+  "version": "1.1.3",
+  "version_code": 13,
+  "file_size": 12320969,
   "download_url": "/downloads/1call-agent.apk",
-  "changelog": "Agent1Call v1.1.2:\\n- Ilova nomi to'liq Agent1Call ga yangilandi\\n- Bildirishnomalar va audio yozish xizmati barqarorlashtirildi\\n- Ichki audio pleyer va so'nggi yozuvlar ro'yxati optimallashtirildi",
-  "updated_at": "2026-09-12T08:08:12.091Z"
+  "changelog": "Agent1Call v1.1.3:\n- APK hajmi 2 barobar qisqartirildi (24.5 MB -> 12.3 MB)\n- ARM arxitekturalari (arm64-v8a, armeabi-v7a) uchun maxsus optimallashtirildi\n- Barqarorlik va ishlash tezligi oshirildi",
+  "updated_at": "2026-09-12T08:30:26.375Z"
 }
