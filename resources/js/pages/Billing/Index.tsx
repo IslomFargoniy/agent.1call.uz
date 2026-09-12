@@ -13,9 +13,13 @@ import {
     AlertTriangle,
     Minus,
     Plus,
+    TrendingUp,
+    RotateCw,
+    Clock,
+    Info,
+    CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { PaymentMethodLogo } from "@/components/brand-logos";
 import { formatDate } from "@/lib/datetime";
 
@@ -48,65 +52,60 @@ interface BillingProps {
         is_active: boolean;
         is_trial: boolean;
         is_grace_period: boolean;
+        has_active_paid?: boolean;
+        remaining_days?: number;
     };
     tariffs: Tariff[];
     paymentMethods: PaymentMethod[];
+    currentSubscription?: any;
 }
 
 const DEVICE_MARKS = [1, 2, 5, 10, 20, 30, 50];
 
-function countToPercent(count: number): number {
-    if (count <= 1) return 0;
-    if (count >= 50) return 100;
-
-    const intervals = [
-        { minC: 1, maxC: 2, minP: 0, maxP: 100 / 6 },
-        { minC: 2, maxC: 5, minP: 100 / 6, maxP: (100 / 6) * 2 },
-        { minC: 5, maxC: 10, minP: (100 / 6) * 2, maxP: (100 / 6) * 3 },
-        { minC: 10, maxC: 20, minP: (100 / 6) * 3, maxP: (100 / 6) * 4 },
-        { minC: 20, maxC: 30, minP: (100 / 6) * 4, maxP: (100 / 6) * 5 },
-        { minC: 30, maxC: 50, minP: (100 / 6) * 5, maxP: 100 },
-    ];
-
-    const interval = intervals.find((int) => count >= int.minC && count <= int.maxC) || intervals[intervals.length - 1];
-    const fraction = (count - interval.minC) / (interval.maxC - interval.minC);
-    return interval.minP + fraction * (interval.maxP - interval.minP);
+function countToPercent(count: number, min: number = 1, max: number = 50): number {
+    if (count <= min) return 0;
+    if (count >= max) return 100;
+    return ((count - min) / (max - min)) * 100;
 }
 
-function percentToCount(percent: number): number {
-    if (percent <= 0) return 1;
-    if (percent >= 100) return 50;
-
-    const intervals = [
-        { minC: 1, maxC: 2, minP: 0, maxP: 100 / 6 },
-        { minC: 2, maxC: 5, minP: 100 / 6, maxP: (100 / 6) * 2 },
-        { minC: 5, maxC: 10, minP: (100 / 6) * 2, maxP: (100 / 6) * 3 },
-        { minC: 10, maxC: 20, minP: (100 / 6) * 3, maxP: (100 / 6) * 4 },
-        { minC: 20, maxC: 30, minP: (100 / 6) * 4, maxP: (100 / 6) * 5 },
-        { minC: 30, maxC: 50, minP: (100 / 6) * 5, maxP: 100 },
-    ];
-
-    const interval = intervals.find((int) => percent >= int.minP && percent <= int.maxP) || intervals[intervals.length - 1];
-    const fraction = (percent - interval.minP) / (interval.maxP - interval.minP);
-    const rawCount = interval.minC + fraction * (interval.maxC - interval.minC);
-    return Math.max(1, Math.min(50, Math.round(rawCount)));
+function percentToCount(percent: number, min: number = 1, max: number = 50): number {
+    if (percent <= 0) return min;
+    if (percent >= 100) return max;
+    const raw = min + (percent / 100) * (max - min);
+    return Math.max(min, Math.min(max, Math.round(raw)));
 }
 
 export default function BillingIndex({ tenant, tariffs, paymentMethods }: BillingProps) {
     const { t } = useTranslation();
     const defaultTariff = tariffs[0] || null;
 
-    const [selectedTariff, setSelectedTariff] = useState<Tariff | null>(defaultTariff);
-    const [devicesCount, setDevicesCount] = useState(tenant?.allowed_devices_count || 2);
+    const hasActivePaid = Boolean(tenant?.has_active_paid && tenant?.subscription_expires_at);
+    const remainingDays = Math.max(1, tenant?.remaining_days || 1);
+    const currentAllowed = Math.max(1, tenant?.allowed_devices_count || 2);
 
-    const progressPercent = useMemo(() => countToPercent(devicesCount), [devicesCount]);
+    // Active mode: 'upgrade' (Add devices pro-rata) or 'renewal' (Extend subscription)
+    const [activeMode, setActiveMode] = useState<'upgrade' | 'renewal'>(
+        hasActivePaid && remainingDays <= 10 ? 'renewal' : hasActivePaid ? 'upgrade' : 'renewal'
+    );
+
+    // Upgrade target devices (always > currentAllowed)
+    const [upgradeTargetDevices, setUpgradeTargetDevices] = useState<number>(
+        Math.min(50, currentAllowed + 1)
+    );
+
+    // Renewal devices count (always >= currentAllowed when active)
+    const [renewalDevicesCount, setRenewalDevicesCount] = useState<number>(currentAllowed);
+
+    // Standard devices count (for trial / expired)
+    const [standardDevicesCount, setStandardDevicesCount] = useState<number>(currentAllowed || 2);
+
+    const [selectedTariff, setSelectedTariff] = useState<Tariff | null>(defaultTariff);
     const [retentionDays, setRetentionDays] = useState(tenant?.audio_retention_days || 30);
     const [months, setMonths] = useState(1);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(paymentMethods[0]?.code || "payme");
-
     const [processing, setProcessing] = useState(false);
 
-    // Price calculation
+    // Common Pricing Rates
     const baseUzs = selectedTariff ? Number(selectedTariff.base_price_monthly) : 0;
     const baseUsd = selectedTariff ? Number(selectedTariff.price_usd_monthly) : 0;
 
@@ -120,11 +119,20 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
         }
     }
 
-    const deviceRateUzs = baseUzs + retentionAddonUzs;
-    const deviceRateUsd = baseUsd + retentionAddonUsd;
+    const deviceRateMonthlyUzs = baseUzs + retentionAddonUzs;
+    const deviceRateMonthlyUsd = baseUsd + retentionAddonUsd;
 
-    const subtotalUzs = deviceRateUzs * devicesCount * months;
-    const subtotalUsd = deviceRateUsd * devicesCount * months;
+    // === UPGRADE (PRO-RATA) CALCULATION ===
+    const additionalDevices = Math.max(1, upgradeTargetDevices - currentAllowed);
+    const dailyRateUzs = deviceRateMonthlyUzs / 30.0;
+    const dailyRateUsd = deviceRateMonthlyUsd / 30.0;
+    const proratedTotalUzs = Math.ceil(dailyRateUzs * remainingDays * additionalDevices);
+    const proratedTotalUsd = Math.round(dailyRateUsd * remainingDays * additionalDevices * 100) / 100;
+
+    // === RENEWAL & STANDARD CALCULATION ===
+    const activeRenewalDevices = hasActivePaid ? renewalDevicesCount : standardDevicesCount;
+    const subtotalUzs = deviceRateMonthlyUzs * activeRenewalDevices * months;
+    const subtotalUsd = deviceRateMonthlyUsd * activeRenewalDevices * months;
 
     // Dynamic Discounts
     let periodDiscount = 0;
@@ -142,16 +150,21 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
 
     let volumeDiscount = 0;
     const dbVolume = selectedTariff?.discounts
-        ?.filter((d) => d.type === 'device_volume' && devicesCount >= d.min_value && (!d.max_value || devicesCount <= d.max_value))
+        ?.filter((d) => d.type === 'device_volume' && activeRenewalDevices >= d.min_value && (!d.max_value || activeRenewalDevices <= d.max_value))
         .sort((a, b) => Number(b.discount_percent) - Number(a.discount_percent))[0];
 
     if (dbVolume) {
         volumeDiscount = Number(dbVolume.discount_percent);
     } else {
-        if (devicesCount >= 20) volumeDiscount = 15;
-        else if (devicesCount >= 10) volumeDiscount = 10;
-        else if (devicesCount >= 5) volumeDiscount = 5;
+        if (activeRenewalDevices >= 20) volumeDiscount = 15;
+        else if (activeRenewalDevices >= 10) volumeDiscount = 10;
+        else if (activeRenewalDevices >= 5) volumeDiscount = 5;
     }
+
+    const totalDiscount = Math.min(40, periodDiscount + volumeDiscount);
+    const discountFactor = (100 - totalDiscount) / 100;
+    const renewalTotalUzs = Math.round(subtotalUzs * discountFactor);
+    const renewalTotalUsd = Math.round(subtotalUsd * discountFactor * 100) / 100;
 
     // Dynamic Retention items list
     const retentionItems = [
@@ -177,26 +190,33 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
         })),
     ];
 
-    const totalDiscount = Math.min(40, periodDiscount + volumeDiscount);
-    const discountFactor = (100 - totalDiscount) / 100;
-
-    const totalUzs = Math.round(subtotalUzs * discountFactor);
-    const totalUsd = Math.round(subtotalUsd * discountFactor * 100) / 100;
-
     const handleCheckout = (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedTariff) return;
 
         setProcessing(true);
-        router.post("/billing/checkout", {
-            tariff_id: selectedTariff.id,
-            devices_count: devicesCount,
-            retention_days: retentionDays,
-            months: months,
-            payment_method: selectedPaymentMethod,
-        }, {
-            onFinish: () => setProcessing(false),
-        });
+
+        if (hasActivePaid && activeMode === 'upgrade') {
+            router.post("/billing/checkout", {
+                action_type: 'upgrade_devices',
+                tariff_id: selectedTariff.id,
+                devices_count: upgradeTargetDevices,
+                payment_method: selectedPaymentMethod,
+            }, {
+                onFinish: () => setProcessing(false),
+            });
+        } else {
+            router.post("/billing/checkout", {
+                action_type: 'renewal',
+                tariff_id: selectedTariff.id,
+                devices_count: hasActivePaid ? renewalDevicesCount : standardDevicesCount,
+                retention_days: retentionDays,
+                months: months,
+                payment_method: selectedPaymentMethod,
+            }, {
+                onFinish: () => setProcessing(false),
+            });
+        }
     };
 
     return (
@@ -241,14 +261,14 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                             )}
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-3 text-xs text-muted-foreground">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3 text-xs text-muted-foreground">
                             <div>
                                 <span className="block text-foreground font-semibold">{tenant.allowed_devices_count} {t("billing.devicesUnit", "ta")}</span>
                                 <span>{t("billing.allowedDevicesLabel", "Ruxsat etilgan telefonlar")}</span>
                             </div>
                             <div>
                                 <span className="block text-foreground font-semibold">{tenant.audio_retention_days} {t("billing.daysUnit", "kun")}</span>
-                                <span>{t("billing.retentionDaysLabel", "Audio arxiv muddati")}</span>
+                                <span>{t("billing.retentionDaysLabel", "Arxiv saqlash muddati")}</span>
                             </div>
                             <div>
                                 <span className="block text-foreground font-semibold">
@@ -258,177 +278,393 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
                                             ? formatDate(tenant.trial_ends_at)
                                             : "—"}
                                 </span>
-                                <span>{t("billing.expiresAt", "Amal qilish muddati")}</span>
+                                <span>{tenant.is_trial ? t("billing.trialPeriod", "Sinov muddati tugashi") : t("billing.expiresAt", "Amal qilish muddati")}</span>
                             </div>
+                            {hasActivePaid && (
+                                <div>
+                                    <span className="block text-primary font-bold font-mono text-sm">
+                                        {remainingDays} {t("billing.daysUnit", "kun")}
+                                    </span>
+                                    <span>{t("billing.remainingDaysLabel", "Qolgan muddat")}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Interactive Calculator Form */}
-            <form onSubmit={handleCheckout} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Configuration Options */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* 1. Devices Count */}
-                    <div className="bg-card p-6 rounded-2xl border border-border space-y-4 shadow-xs">
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <h3 className="font-semibold text-base flex items-center gap-2">
-                                    <Smartphone className="h-5 w-5 text-primary" /> {t("billing.step2Devices", "Telefonlar (Agentlar) soni")}
-                                </h3>
-                                <p className="text-xs text-muted-foreground">{t("billing.step2DevicesDesc", "Bir vaqtda qo'ng'iroqlari yoziladigan xodimlar soni")}</p>
+            {/* Active Subscription Mode Selector */}
+            {hasActivePaid && (
+                <div className="bg-card p-4 rounded-2xl border border-border shadow-xs space-y-3">
+                    <h3 className="font-semibold text-sm flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-primary" /> {t("billing.modeSelector", "Harakat turini tanlang")}
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <button
+                            type="button"
+                            onClick={() => setActiveMode('upgrade')}
+                            className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3.5 ${
+                                activeMode === 'upgrade'
+                                    ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm"
+                                    : "border-border bg-card hover:bg-muted/40"
+                            }`}
+                        >
+                            <div className={`p-2 rounded-lg shrink-0 ${
+                                activeMode === 'upgrade' ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            }`}>
+                                <TrendingUp className="h-5 w-5" />
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-7 w-7 rounded-md"
-                                    onClick={() => setDevicesCount((prev) => Math.max(1, prev - 1))}
-                                    disabled={devicesCount <= 1}
-                                >
-                                    <Minus className="h-3.5 w-3.5" />
-                                </Button>
-                                <span className="text-xl font-bold font-mono text-primary min-w-[2.5rem] text-center">
-                                    {devicesCount}
+                            <div className="space-y-1">
+                                <span className="font-bold text-sm block text-foreground">
+                                    {t("billing.upgradeTab", "Qurilmalar sonini oshirish (Pro-rata)")}
                                 </span>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-7 w-7 rounded-md"
-                                    onClick={() => setDevicesCount((prev) => Math.min(50, prev + 1))}
-                                    disabled={devicesCount >= 50}
-                                >
-                                    <Plus className="h-3.5 w-3.5" />
-                                </Button>
-                                <span className="text-sm font-semibold text-muted-foreground">{t("billing.devicesUnit", "ta")}</span>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    {t("billing.upgradeDesc", "Hozirgi faol obuna tugaguniga qadar qo'shimcha telefonlar qo'shish. To'lov qolgan kunlar uchun hisoblanadi.")}
+                                </p>
                             </div>
-                        </div>
+                        </button>
 
-                        <div className="space-y-3">
-                            <div className="relative w-full h-8 flex items-center select-none touch-none">
-                                {/* Base Track */}
-                                <div className="w-full h-2 bg-secondary rounded-full overflow-hidden relative">
-                                    {/* Filled Progress */}
-                                    <div
-                                        className="h-full bg-primary transition-all duration-75"
-                                        style={{ width: `${progressPercent}%` }}
-                                    />
-                                </div>
-
-                                {/* Custom Styled Thumb with 100% precise alignment */}
-                                <div
-                                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 bg-background border-2 border-primary rounded-full shadow-md pointer-events-none transition-all duration-75 flex items-center justify-center ring-2 ring-primary/20"
-                                    style={{
-                                        left: `calc(10px + (100% - 20px) * ${progressPercent / 100})`,
-                                    }}
-                                >
-                                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                </div>
-
-                                {/* Accessible full range input for dragging */}
-                                <input
-                                    type="range"
-                                    min={0}
-                                    max={100}
-                                    step={0.1}
-                                    value={progressPercent}
-                                    onChange={(e) => setDevicesCount(percentToCount(Number(e.target.value)))}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                    aria-label="Telefonlar soni"
-                                />
+                        <button
+                            type="button"
+                            onClick={() => setActiveMode('renewal')}
+                            className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3.5 ${
+                                activeMode === 'renewal'
+                                    ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm"
+                                    : "border-border bg-card hover:bg-muted/40"
+                            }`}
+                        >
+                            <div className={`p-2 rounded-lg shrink-0 ${
+                                activeMode === 'renewal' ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            }`}>
+                                <RotateCw className="h-5 w-5" />
                             </div>
-
-                            <div className="flex justify-between text-xs text-muted-foreground font-mono pt-0.5">
-                                {DEVICE_MARKS.map((num) => (
-                                    <button
-                                        type="button"
-                                        key={num}
-                                        onClick={() => setDevicesCount(num)}
-                                        className={`min-w-[1.75rem] py-0.5 px-1 rounded text-center transition-all ${
-                                            devicesCount === num
-                                                ? "bg-primary text-primary-foreground font-bold shadow-xs scale-105"
-                                                : "hover:bg-muted"
-                                        }`}
-                                    >
-                                        {num}
-                                    </button>
-                                ))}
+                            <div className="space-y-1">
+                                <span className="font-bold text-sm block text-foreground">
+                                    {t("billing.renewTab", "Obunani uzaytirish")}
+                                </span>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    {t("billing.renewDesc", "Hozirgi obunangiz tugaganidan so'ng yangi davr uchun muddatni uzaytirish.")}
+                                </p>
                             </div>
-                        </div>
-
-                        {volumeDiscount > 0 && (
-                            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-                                {t("billing.volumeDiscountApplied", "Hajm bo'yicha {{percent}}% chegirma qo'llandi!", { percent: volumeDiscount })}
-                            </p>
-                        )}
+                        </button>
                     </div>
+                </div>
+            )}
 
-                    {/* 2. Subscription Period Selection */}
-                    <div className="bg-card p-6 rounded-2xl border border-border space-y-4 shadow-xs">
-                        <h3 className="font-semibold text-base flex items-center gap-2">
-                            <Calendar className="h-5 w-5 text-primary" /> {t("billing.step3Period", "To'lov davri")}
-                        </h3>
+            <form onSubmit={handleCheckout} className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                <div className="lg:col-span-2 space-y-6">
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            {[
-                                { m: 1, label: t("billing.month1", "1 oy"), discount: null },
-                                { m: 3, label: t("billing.month3", "3 oy"), discount: t("billing.discount5", "5% chegirma") },
-                                { m: 6, label: t("billing.month6", "6 oy"), discount: t("billing.discount10", "10% chegirma") },
-                                { m: 12, label: t("billing.month12", "12 oy (1 yil)"), discount: t("billing.discount20", "20% chegirma") },
-                            ].map((item) => (
-                                <div
-                                    key={item.m}
-                                    onClick={() => setMonths(item.m)}
-                                    className={`p-4 rounded-xl border cursor-pointer text-center transition-all ${
-                                        months === item.m
-                                            ? "border-primary bg-primary/5 ring-1 ring-primary"
-                                            : "border-border bg-card hover:bg-muted/40"
-                                    }`}
-                                >
-                                    <span className="font-bold text-sm block">{item.label}</span>
-                                    {item.discount && (
-                                        <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold block mt-1">
-                                            {item.discount}
+                    {/* === UPGRADE MODE: ADD DEVICES PRO-RATA === */}
+                    {hasActivePaid && activeMode === 'upgrade' && (
+                        <>
+                            <div className="bg-card p-6 rounded-2xl border border-border space-y-5 shadow-xs">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <h3 className="font-semibold text-base flex items-center gap-2">
+                                            <Smartphone className="h-5 w-5 text-primary" /> {t("billing.targetDevices", "Yangi umumiy miqdor")}
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground">
+                                            {t("billing.currentDevices", "Hozirgi telefonlar")}: <span className="font-semibold text-foreground">{currentAllowed} ta</span>
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-8 w-8 rounded-md"
+                                            onClick={() => setUpgradeTargetDevices((prev) => Math.max(currentAllowed + 1, prev - 1))}
+                                            disabled={upgradeTargetDevices <= currentAllowed + 1}
+                                        >
+                                            <Minus className="h-3.5 w-3.5" />
+                                        </Button>
+                                        <span className="text-2xl font-bold font-mono text-primary min-w-[3rem] text-center">
+                                            {upgradeTargetDevices}
                                         </span>
-                                    )}
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-8 w-8 rounded-md"
+                                            onClick={() => setUpgradeTargetDevices((prev) => Math.min(50, prev + 1))}
+                                            disabled={upgradeTargetDevices >= 50}
+                                        >
+                                            <Plus className="h-3.5 w-3.5" />
+                                        </Button>
+                                        <span className="text-sm font-semibold text-muted-foreground">{t("billing.devicesUnit", "ta")}</span>
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
 
-                    {/* 3. Audio Retention Options */}
-                    <div className="bg-card p-6 rounded-2xl border border-border space-y-4 shadow-xs">
-                        <div>
-                            <h3 className="font-semibold text-base flex items-center gap-2">
-                                <ShieldCheck className="h-5 w-5 text-primary" /> {t("billing.step4Retention", "Audio arxiv saqlash muddati")}
-                            </h3>
-                            <p className="text-xs text-muted-foreground">{t("billing.step4RetentionDesc", "Belgilangan muddatdan oshgan audio yozuvlar avtomatik tozalanadi")}</p>
-                        </div>
+                                {/* Slider for target devices */}
+                                <div className="space-y-3">
+                                    <div className="relative w-full h-8 flex items-center select-none touch-none">
+                                        <div className="w-full h-2 bg-secondary rounded-full overflow-hidden relative">
+                                            <div
+                                                className="h-full bg-primary transition-all duration-75"
+                                                style={{ width: `${countToPercent(upgradeTargetDevices, currentAllowed + 1, 50)}%` }}
+                                            />
+                                        </div>
+                                        <div
+                                            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 bg-background border-2 border-primary rounded-full shadow-md pointer-events-none transition-all duration-75 flex items-center justify-center ring-2 ring-primary/20"
+                                            style={{
+                                                left: `calc(10px + (100% - 20px) * ${countToPercent(upgradeTargetDevices, currentAllowed + 1, 50) / 100})`,
+                                            }}
+                                        >
+                                            <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min={0}
+                                            max={100}
+                                            step={0.1}
+                                            value={countToPercent(upgradeTargetDevices, currentAllowed + 1, 50)}
+                                            onChange={(e) => setUpgradeTargetDevices(percentToCount(Number(e.target.value), currentAllowed + 1, 50))}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            aria-label="Telefonlar soni"
+                                        />
+                                    </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5">
-                            {retentionItems.map((item) => (
-                                <div
-                                    key={item.days}
-                                    onClick={() => setRetentionDays(item.days)}
-                                    className={`p-3 rounded-xl border cursor-pointer text-center text-xs transition-all ${
-                                        retentionDays === item.days
-                                            ? "border-primary bg-primary/5 ring-1 ring-primary"
-                                            : "border-border bg-card hover:bg-muted/40"
-                                    }`}
-                                >
-                                    <span className="font-bold block">{item.label}</span>
-                                    <span className="text-[10px] text-muted-foreground block mt-0.5">{item.extra}</span>
+                                    {/* Quick Increment Buttons */}
+                                    <div className="flex flex-wrap gap-2 pt-1">
+                                        {[1, 2, 3, 5, 10, 20].map((add) => {
+                                            const val = currentAllowed + add;
+                                            if (val > 50) return null;
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    key={add}
+                                                    onClick={() => setUpgradeTargetDevices(val)}
+                                                    className={`py-1 px-2.5 rounded-lg text-xs font-semibold transition-all ${
+                                                        upgradeTargetDevices === val
+                                                            ? "bg-primary text-primary-foreground shadow-xs"
+                                                            : "bg-secondary text-secondary-foreground hover:bg-muted"
+                                                    }`}
+                                                >
+                                                    +{add} ta ({val} jami)
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+
+                                <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 font-medium space-y-1">
+                                    <div className="flex items-center gap-1.5 font-bold">
+                                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                        <span>+{additionalDevices} ta qo'shimcha telefon qo'shilmoqda</span>
+                                    </div>
+                                    <p className="text-muted-foreground text-[11px] leading-relaxed">
+                                        {t("billing.proratedExplanation", {
+                                            date: tenant.subscription_expires_at ? formatDate(tenant.subscription_expires_at) : "",
+                                            defaultValue: `To'lov amalga oshirilgach, telefonlar soni darhol ${upgradeTargetDevices} taga oshadi. Obunaning umumiy amal qilish muddati o'zgarmaydi.`
+                                        })}
+                                    </p>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {/* === RENEWAL / STANDARD MODE === */}
+                    {(!hasActivePaid || activeMode === 'renewal') && (
+                        <>
+                            {/* Devices Count */}
+                            <div className="bg-card p-6 rounded-2xl border border-border space-y-4 shadow-xs">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <h3 className="font-semibold text-base flex items-center gap-2">
+                                            <Smartphone className="h-5 w-5 text-primary" /> {t("billing.step2Devices", "Telefonlar (Agentlar) soni")}
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground">
+                                            {hasActivePaid
+                                                ? t("billing.renewMinDevicesNotice", { count: currentAllowed, defaultValue: `Faol obunani uzaytirishda telefonlar soni kamida ${currentAllowed} ta bo'ladi` })
+                                                : t("billing.step2DevicesDesc", "Bir vaqtda qo'ng'iroqlari yoziladigan xodimlar soni")
+                                            }
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-7 w-7 rounded-md"
+                                            onClick={() => {
+                                                if (hasActivePaid) {
+                                                    setRenewalDevicesCount((prev) => Math.max(currentAllowed, prev - 1));
+                                                } else {
+                                                    setStandardDevicesCount((prev) => Math.max(1, prev - 1));
+                                                }
+                                            }}
+                                            disabled={hasActivePaid ? renewalDevicesCount <= currentAllowed : standardDevicesCount <= 1}
+                                        >
+                                            <Minus className="h-3.5 w-3.5" />
+                                        </Button>
+                                        <span className="text-xl font-bold font-mono text-primary min-w-[2.5rem] text-center">
+                                            {hasActivePaid ? renewalDevicesCount : standardDevicesCount}
+                                        </span>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-7 w-7 rounded-md"
+                                            onClick={() => {
+                                                if (hasActivePaid) {
+                                                    setRenewalDevicesCount((prev) => Math.min(50, prev + 1));
+                                                } else {
+                                                    setStandardDevicesCount((prev) => Math.min(50, prev + 1));
+                                                }
+                                            }}
+                                            disabled={(hasActivePaid ? renewalDevicesCount : standardDevicesCount) >= 50}
+                                        >
+                                            <Plus className="h-3.5 w-3.5" />
+                                        </Button>
+                                        <span className="text-sm font-semibold text-muted-foreground">{t("billing.devicesUnit", "ta")}</span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <div className="relative w-full h-8 flex items-center select-none touch-none">
+                                        <div className="w-full h-2 bg-secondary rounded-full overflow-hidden relative">
+                                            <div
+                                                className="h-full bg-primary transition-all duration-75"
+                                                style={{
+                                                    width: `${countToPercent(hasActivePaid ? renewalDevicesCount : standardDevicesCount, hasActivePaid ? currentAllowed : 1, 50)}%`,
+                                                }}
+                                            />
+                                        </div>
+                                        <div
+                                            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 bg-background border-2 border-primary rounded-full shadow-md pointer-events-none transition-all duration-75 flex items-center justify-center ring-2 ring-primary/20"
+                                            style={{
+                                                left: `calc(10px + (100% - 20px) * ${countToPercent(hasActivePaid ? renewalDevicesCount : standardDevicesCount, hasActivePaid ? currentAllowed : 1, 50) / 100})`,
+                                            }}
+                                        >
+                                            <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min={0}
+                                            max={100}
+                                            step={0.1}
+                                            value={countToPercent(hasActivePaid ? renewalDevicesCount : standardDevicesCount, hasActivePaid ? currentAllowed : 1, 50)}
+                                            onChange={(e) => {
+                                                const val = percentToCount(Number(e.target.value), hasActivePaid ? currentAllowed : 1, 50);
+                                                if (hasActivePaid) setRenewalDevicesCount(val);
+                                                else setStandardDevicesCount(val);
+                                            }}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            aria-label="Telefonlar soni"
+                                        />
+                                    </div>
+
+                                    <div className="flex justify-between text-xs text-muted-foreground font-mono pt-0.5">
+                                        {DEVICE_MARKS.map((num) => {
+                                            const minRequired = hasActivePaid ? currentAllowed : 1;
+                                            if (num < minRequired) return null;
+                                            const activeCount = hasActivePaid ? renewalDevicesCount : standardDevicesCount;
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    key={num}
+                                                    onClick={() => {
+                                                        if (hasActivePaid) setRenewalDevicesCount(num);
+                                                        else setStandardDevicesCount(num);
+                                                    }}
+                                                    className={`min-w-[1.75rem] py-0.5 px-1 rounded text-center transition-all ${
+                                                        activeCount === num
+                                                            ? "bg-primary text-primary-foreground font-bold shadow-xs scale-105"
+                                                            : "hover:bg-muted"
+                                                    }`}
+                                                >
+                                                    {num}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {volumeDiscount > 0 && (
+                                    <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                                        {t("billing.volumeDiscountApplied", "Hajm bo'yicha {{percent}}% chegirma qo'llandi!", { percent: volumeDiscount })}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Subscription Period Selection */}
+                            <div className="bg-card p-6 rounded-2xl border border-border space-y-4 shadow-xs">
+                                <h3 className="font-semibold text-base flex items-center gap-2">
+                                    <Calendar className="h-5 w-5 text-primary" /> {t("billing.step3Period", "To'lov davri")}
+                                </h3>
+
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    {[
+                                        { m: 1, label: t("billing.month1", "1 oy"), discount: null },
+                                        { m: 3, label: t("billing.month3", "3 oy"), discount: t("billing.discount5", "5% chegirma") },
+                                        { m: 6, label: t("billing.month6", "6 oy"), discount: t("billing.discount10", "10% chegirma") },
+                                        { m: 12, label: t("billing.month12", "12 oy (1 yil)"), discount: t("billing.discount20", "20% chegirma") },
+                                    ].map((item) => (
+                                        <div
+                                            key={item.m}
+                                            onClick={() => setMonths(item.m)}
+                                            className={`p-4 rounded-xl border cursor-pointer text-center transition-all ${
+                                                months === item.m
+                                                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                                    : "border-border bg-card hover:bg-muted/40"
+                                            }`}
+                                        >
+                                            <span className="font-bold text-sm block">{item.label}</span>
+                                            {item.discount && (
+                                                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold block mt-1">
+                                                    {item.discount}
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {hasActivePaid && tenant?.subscription_expires_at && (
+                                    <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-1">
+                                        <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
+                                        <span>
+                                            {t("billing.renewalExplanation", {
+                                                date: formatDate(tenant.subscription_expires_at),
+                                                defaultValue: `Yangi obuna muddati hozirgi obunangiz (${formatDate(tenant.subscription_expires_at)}) tugaganidan so'ng uzaytiriladi.`
+                                            })}
+                                        </span>
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Archive Retention Selection */}
+                            <div className="bg-card p-6 rounded-2xl border border-border space-y-4 shadow-xs">
+                                <div>
+                                    <h3 className="font-semibold text-base flex items-center gap-2">
+                                        <ShieldCheck className="h-5 w-5 text-primary" /> {t("billing.step4Retention", "Ovozli qo'ng'iroqlar arxivini saqlash")}
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground">{t("billing.step4RetentionDesc", "Qo'ng'iroq yozuvlari va tahlillar bazada qancha muddat saqlanishi kerak?")}</p>
+                                </div>
+
+                                <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5">
+                                    {retentionItems.map((item) => (
+                                        <div
+                                            key={item.days}
+                                            onClick={() => setRetentionDays(item.days)}
+                                            className={`p-3 rounded-xl border cursor-pointer text-center text-xs transition-all ${
+                                                retentionDays === item.days
+                                                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                                    : "border-border bg-card hover:bg-muted/40"
+                                            }`}
+                                        >
+                                            <span className="font-bold block">{item.label}</span>
+                                            <span className="text-[10px] text-muted-foreground block mt-0.5">{item.extra}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    )}
 
                 </div>
 
                 {/* Right Column: Payment Method & Order Summary */}
-                <div className="lg:col-span-1 space-y-3 sticky top-6">
+                <div className="lg:col-span-1 space-y-4 sticky top-6">
                     {/* Payment Method Selection Card */}
                     <div className="bg-card p-4 rounded-xl border border-border shadow-xs space-y-2.5">
                         <h3 className="font-semibold text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -476,48 +712,100 @@ export default function BillingIndex({ tenant, tariffs, paymentMethods }: Billin
 
                     {/* Order Summary & Checkout Card */}
                     <div className="bg-card p-4 rounded-xl border border-border shadow-xs space-y-3">
-                        <h3 className="font-bold text-sm border-b border-border pb-2 text-foreground">{t("billing.orderSummary", "Buyurtma tafsilotlari")}</h3>
-
-                        <div className="space-y-2 text-xs">
-                            <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">{t("billing.devicesCountLabel", "Telefonlar soni:")}</span>
-                                <span className="font-semibold font-mono">{devicesCount} {t("billing.devicesUnit", "ta")}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">{t("billing.periodLabel", "Muddat:")}</span>
-                                <span className="font-semibold font-mono">{months} {t("billing.monthsUnit", "oy")}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">{t("billing.retentionLabel", "Arxiv saqlash:")}</span>
-                                <span className="font-semibold font-mono">{retentionDays} {t("billing.daysUnit", "kun")}</span>
-                            </div>
-
-                            {totalDiscount > 0 && (
-                                <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-semibold">
-                                    <span>{t("billing.totalDiscountLabel", "Jami chegirma:")}</span>
-                                    <span>-{totalDiscount}%</span>
-                                </div>
+                        <h3 className="font-bold text-sm border-b border-border pb-2 text-foreground flex items-center justify-between">
+                            <span>{t("billing.orderSummary", "Buyurtma tafsilotlari")}</span>
+                            {hasActivePaid && activeMode === 'upgrade' && (
+                                <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full">
+                                    Pro-rata
+                                </span>
                             )}
+                        </h3>
 
-                            <div className="border-t border-border pt-2.5 flex justify-between items-baseline">
-                                <span className="text-xs font-bold">{t("billing.totalPriceLabel", "Jami to'lov:")}</span>
-                                <div className="text-right">
-                                    <span className="text-xl font-extrabold font-mono text-primary block leading-tight">
-                                        {totalUzs.toLocaleString("uz-UZ")} UZS
-                                    </span>
-                                    <span className="text-[11px] text-muted-foreground font-mono">
-                                        (~{totalUsd} USD)
-                                    </span>
+                        {hasActivePaid && activeMode === 'upgrade' ? (
+                            /* UPGRADE SUMMARY */
+                            <div className="space-y-2 text-xs">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">{t("billing.currentDevices", "Hozirgi telefonlar:")}</span>
+                                    <span className="font-semibold font-mono">{currentAllowed} {t("billing.devicesUnit", "ta")}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">{t("billing.targetDevices", "Yangi miqdor:")}</span>
+                                    <span className="font-bold font-mono text-primary">{upgradeTargetDevices} {t("billing.devicesUnit", "ta")}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-semibold">
+                                    <span>{t("billing.additionalDevices", "Qo'shimcha:")}</span>
+                                    <span>+{additionalDevices} {t("billing.devicesUnit", "ta")}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">{t("billing.remainingDaysLabel", "Qolgan muddat:")}</span>
+                                    <span className="font-semibold font-mono">{remainingDays} {t("billing.daysUnit", "kun")}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">{t("billing.dailyProrataRate", "Kunlik 1 ta qurilma narxi:")}</span>
+                                    <span className="font-semibold font-mono">{Math.round(dailyRateUzs).toLocaleString("uz-UZ")} so'm</span>
+                                </div>
+
+                                <div className="border-t border-border pt-2.5 flex justify-between items-baseline">
+                                    <span className="text-xs font-bold">{t("billing.totalPriceLabel", "Jami to'lov:")}</span>
+                                    <div className="text-right">
+                                        <span className="text-xl font-extrabold font-mono text-primary block leading-tight">
+                                            {proratedTotalUzs.toLocaleString("uz-UZ")} UZS
+                                        </span>
+                                        <span className="text-[11px] text-muted-foreground font-mono">
+                                            (~{proratedTotalUsd} USD)
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        ) : (
+                            /* RENEWAL / STANDARD SUMMARY */
+                            <div className="space-y-2 text-xs">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">{t("billing.devicesCountLabel", "Telefonlar soni:")}</span>
+                                    <span className="font-semibold font-mono">{activeRenewalDevices} {t("billing.devicesUnit", "ta")}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">{t("billing.periodLabel", "Muddat:")}</span>
+                                    <span className="font-semibold font-mono">{months} {t("billing.monthsUnit", "oy")}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">{t("billing.retentionLabel", "Arxiv saqlash:")}</span>
+                                    <span className="font-semibold font-mono">{retentionDays} {t("billing.daysUnit", "kun")}</span>
+                                </div>
 
-                        <Button type="submit" size="default" className="w-full font-bold shadow-sm h-10 text-sm" disabled={processing}>
-                            {processing ? t("billing.loading", "Yuklanmoqda...") : t("billing.proceedToPayment", "To'lovga o'tish")}
+                                {totalDiscount > 0 && (
+                                    <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-semibold">
+                                        <span>{t("billing.totalDiscountLabel", "Jami chegirma:")}</span>
+                                        <span>-{totalDiscount}%</span>
+                                    </div>
+                                )}
+
+                                <div className="border-t border-border pt-2.5 flex justify-between items-baseline">
+                                    <span className="text-xs font-bold">{t("billing.totalPriceLabel", "Jami to'lov:")}</span>
+                                    <div className="text-right">
+                                        <span className="text-xl font-extrabold font-mono text-primary block leading-tight">
+                                            {renewalTotalUzs.toLocaleString("uz-UZ")} UZS
+                                        </span>
+                                        <span className="text-[11px] text-muted-foreground font-mono">
+                                            (~{renewalTotalUsd} USD)
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <Button type="submit" size="default" className="w-full font-bold shadow-sm h-10 text-sm cursor-pointer" disabled={processing}>
+                            {processing
+                                ? t("billing.loading", "Yuklanmoqda...")
+                                : hasActivePaid && activeMode === 'upgrade'
+                                    ? t("billing.upgradeProceed", "Qurilmalar sonini oshirish va to'lash")
+                                    : t("billing.proceedToPayment", "To'lovga o'tish")}
                         </Button>
 
                         <p className="text-[10px] text-muted-foreground text-center leading-tight">
-                            {t("billing.autoRenewNote", "To'lov tasdiqlangach, obunangiz avtomatik ravishda uzaytiriladi.")}
+                            {hasActivePaid && activeMode === 'upgrade'
+                                ? t("billing.upgradeNote", "To'lov tasdiqlangach, telefonlar limiti darhol oshiriladi.")
+                                : t("billing.autoRenewNote", "To'lov tasdiqlangach, obunangiz avtomatik ravishda faollashtiriladi.")}
                         </p>
                     </div>
                 </div>

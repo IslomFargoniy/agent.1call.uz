@@ -7,6 +7,27 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $tenant_id
+ * @property int|null $subscription_id
+ * @property string $invoice_number
+ * @property int $amount
+ * @property string $currency
+ * @property float|null $amount_usd
+ * @property string $payment_method
+ * @property string $status
+ * @property string|null $receipt_image_path
+ * @property int|null $approved_by
+ * @property \Illuminate\Support\Carbon|null $approved_at
+ * @property string|null $admin_notes
+ * @property string|null $external_transaction_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Subscription|null $subscription
+ * @property Tenant|null $tenant
+ * @property User|null $approver
+ */
 class Invoice extends Model
 {
     use BelongsToTenant, HasFactory;

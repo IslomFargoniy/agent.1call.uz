@@ -13,6 +13,7 @@ use App\Services\Billing\SubscriptionService;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -48,6 +49,9 @@ class BillingWebController extends Controller
             ->orderByDesc('id')
             ->first();
 
+        $hasActivePaid = (bool) ($tenant && $tenant->subscription_expires_at && $tenant->subscription_expires_at->isFuture());
+        $remainingDays = $hasActivePaid ? max(1, (int) Carbon::now()->diffInDays($tenant->subscription_expires_at)) : 0;
+
         return Inertia::render('Billing/Index', [
             'tenant' => $tenant ? [
                 'name' => $tenant->name,
@@ -59,6 +63,8 @@ class BillingWebController extends Controller
                 'is_active' => $tenant->isSubscriptionActive(),
                 'is_trial' => $tenant->isTrial(),
                 'is_grace_period' => $tenant->isGracePeriod(),
+                'has_active_paid' => $hasActivePaid,
+                'remaining_days' => $remainingDays,
             ] : null,
             'tariffs' => $tariffs,
             'paymentMethods' => $paymentMethods,
@@ -89,29 +95,59 @@ class BillingWebController extends Controller
     public function checkout(Request $request, TenantContext $tenantContext): SymfonyResponse|RedirectResponse
     {
         $tenant = $tenantContext->getTenant() ?? $request->user()->tenant;
-
-        $validated = $request->validate([
-            'tariff_id' => ['required', 'exists:tariffs,id'],
-            'devices_count' => ['required', 'integer', 'min:1', 'max:500'],
-            'retention_days' => ['required', 'integer', 'in:30,60,90,180,365'],
-            'months' => ['required', 'integer', 'in:1,3,6,12'],
-            'payment_method' => ['required', 'in:click,payme,card_transfer,lemonsqueezy'],
-        ]);
-
-        /** @var Tariff $tariff */
-        $tariff = Tariff::query()->findOrFail((int) $validated['tariff_id']);
         if (! $tenant) {
             abort(404, 'Kompaniya topilmadi.');
         }
 
-        $invoice = $this->subscriptionService->createInvoice(
-            $tenant,
-            $tariff,
-            (int) $validated['devices_count'],
-            (int) $validated['retention_days'],
-            (int) $validated['months'],
-            $validated['payment_method']
-        );
+        $actionType = $request->input('action_type', 'renewal');
+
+        if ($actionType === 'upgrade_devices') {
+            $currentAllowed = (int) ($tenant->allowed_devices_count ?: 1);
+
+            $validated = $request->validate([
+                'tariff_id' => ['required', 'exists:tariffs,id'],
+                'devices_count' => ['required', 'integer', 'min:'.($currentAllowed + 1), 'max:500'],
+                'payment_method' => ['required', 'in:click,payme,card_transfer,lemonsqueezy'],
+            ], [
+                'devices_count.min' => "Yangi telefonlar soni hozirgi litsenziyadagidan ({$currentAllowed} ta) ko'p bo'lishi kerak.",
+            ]);
+
+            /** @var Tariff $tariff */
+            $tariff = Tariff::query()->findOrFail((int) $validated['tariff_id']);
+
+            $invoice = $this->subscriptionService->createProrataInvoice(
+                $tenant,
+                $tariff,
+                (int) $validated['devices_count'],
+                $validated['payment_method']
+            );
+        } else {
+            $minDevices = ($tenant->subscription_expires_at && $tenant->subscription_expires_at->isFuture())
+                ? (int) ($tenant->allowed_devices_count ?: 1)
+                : 1;
+
+            $validated = $request->validate([
+                'tariff_id' => ['required', 'exists:tariffs,id'],
+                'devices_count' => ['required', 'integer', 'min:'.$minDevices, 'max:500'],
+                'retention_days' => ['required', 'integer', 'in:30,60,90,180,365'],
+                'months' => ['required', 'integer', 'in:1,3,6,12'],
+                'payment_method' => ['required', 'in:click,payme,card_transfer,lemonsqueezy'],
+            ], [
+                'devices_count.min' => "Faol obunani uzaytirishda telefonlar soni kamida {$minDevices} ta bo'lishi kerak.",
+            ]);
+
+            /** @var Tariff $tariff */
+            $tariff = Tariff::query()->findOrFail((int) $validated['tariff_id']);
+
+            $invoice = $this->subscriptionService->createInvoice(
+                $tenant,
+                $tariff,
+                (int) $validated['devices_count'],
+                (int) $validated['retention_days'],
+                (int) $validated['months'],
+                $validated['payment_method']
+            );
+        }
 
         // Pay-uz direct redirect for Click & Payme
         if (in_array($validated['payment_method'], ['click', 'payme'])) {

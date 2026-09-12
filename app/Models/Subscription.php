@@ -8,6 +8,23 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $tenant_id
+ * @property int $tariff_id
+ * @property string $type
+ * @property int $devices_count
+ * @property int $retention_days
+ * @property int $billing_period_months
+ * @property \Illuminate\Support\Carbon $starts_at
+ * @property \Illuminate\Support\Carbon $expires_at
+ * @property \Illuminate\Support\Carbon|null $grace_period_ends_at
+ * @property string $status
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Tariff $tariff
+ * @property Tenant $tenant
+ */
 class Subscription extends Model
 {
     use BelongsToTenant, HasFactory;
@@ -15,6 +32,7 @@ class Subscription extends Model
     protected $fillable = [
         'tenant_id',
         'tariff_id',
+        'type',
         'devices_count',
         'retention_days',
         'billing_period_months',

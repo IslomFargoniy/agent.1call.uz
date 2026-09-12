@@ -2109,7 +2109,22 @@
         "submit": "Yuborish",
         "invoiceLabel": "Invoys",
         "amountLabel": "Summa",
-        "company": "Kompaniya"
+        "company": "Kompaniya",
+        "upgradeTab": "Qurilmalar sonini oshirish (Pro-rata)",
+        "renewTab": "Obunani uzaytirish",
+        "upgradeDesc": "Hozirgi faol obuna tugaguniga qadar qo'shimcha telefonlar qo'shish",
+        "renewDesc": "Hozirgi obunangiz tugaganidan so'ng yangi davr uchun muddatni uzaytirish",
+        "currentDevices": "Hozirgi telefonlar",
+        "targetDevices": "Yangi umumiy miqdor",
+        "additionalDevices": "Qo'shimcha telefonlar",
+        "remainingDaysLabel": "Qolgan muddat",
+        "proratedExplanation": "To'lov amalga oshirilgach, telefonlar soni darhol oshadi. Obunaning amal qilish muddati o'zgarmaydi ({{date}} gacha).",
+        "renewalExplanation": "Yangi obuna muddati hozirgi obunangiz ({{date}}) tugaganidan so'ng uzaytiriladi.",
+        "renewMinDevicesNotice": "Faol obunani uzaytirishda telefonlar soni hozirgi obunadagidan (kamida {{count}} ta) kam bo'lishi mumkin emas.",
+        "upgradeProceed": "Qurilmalar sonini oshirish va to'lash",
+        "renewProceed": "Obunani uzaytirish va to'lash",
+        "modeSelector": "Harakat turini tanlang",
+        "dailyProrataRate": "Kunlik narx (1 ta qurilma uchun)"
     },
     "workSchedule": {
         "title": "Ish Grafigi va Maxfiylik",

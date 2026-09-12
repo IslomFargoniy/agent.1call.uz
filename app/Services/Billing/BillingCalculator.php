@@ -135,15 +135,41 @@ class BillingCalculator
 
     /**
      * Calculate Pro-rata (Co-terming) cost when adding new devices during active billing cycle.
+     *
+     * @return array{
+     *     current_devices: int,
+     *     new_total_devices: int,
+     *     additional_devices: int,
+     *     remaining_days: int,
+     *     daily_rate_uzs: float,
+     *     daily_rate_usd: float,
+     *     prorated_uzs: int,
+     *     prorated_usd: float,
+     *     expires_at: string|null
+     * }
      */
-    public function calculateProrata(Tenant $tenant, Tariff $tariff, int $additionalDevices): array
+    public function calculateProrata(Tenant $tenant, Tariff $tariff, int $newTotalDevices): array
     {
+        $currentDevices = (int) ($tenant->allowed_devices_count ?: 1);
+        $additionalDevices = max(1, $newTotalDevices - $currentDevices);
+
         if (! $tenant->subscription_expires_at || $tenant->subscription_expires_at->isPast()) {
-            return $this->calculate($tariff, $additionalDevices, $tenant->audio_retention_days ?: 30, 1);
+            $pricing = $this->calculate($tariff, $additionalDevices, $tenant->audio_retention_days ?: 30, 1);
+            return [
+                'current_devices' => $currentDevices,
+                'new_total_devices' => $newTotalDevices,
+                'additional_devices' => $additionalDevices,
+                'remaining_days' => 30,
+                'daily_rate_uzs' => round($pricing['total_uzs'] / 30.0, 2),
+                'daily_rate_usd' => round($pricing['total_usd'] / 30.0, 2),
+                'prorated_uzs' => $pricing['total_uzs'],
+                'prorated_usd' => $pricing['total_usd'],
+                'expires_at' => null,
+            ];
         }
 
         $now = Carbon::now();
-        $remainingDays = max(1, $now->diffInDays($tenant->subscription_expires_at));
+        $remainingDays = max(1, (int) $now->diffInDays($tenant->subscription_expires_at));
 
         $pricing = $this->calculate($tariff, 1, $tenant->audio_retention_days ?: 30, 1);
         $dailyRateUzs = $pricing['total_uzs'] / 30.0;
@@ -153,10 +179,15 @@ class BillingCalculator
         $proratedUsd = round($dailyRateUsd * $remainingDays * $additionalDevices, 2);
 
         return [
-            'remaining_days' => $remainingDays,
+            'current_devices' => $currentDevices,
+            'new_total_devices' => $newTotalDevices,
             'additional_devices' => $additionalDevices,
+            'remaining_days' => $remainingDays,
+            'daily_rate_uzs' => round($dailyRateUzs, 2),
+            'daily_rate_usd' => round($dailyRateUsd, 2),
             'prorated_uzs' => $proratedUzs,
             'prorated_usd' => $proratedUsd,
+            'expires_at' => $tenant->subscription_expires_at->toIso8601String(),
         ];
     }
 }
