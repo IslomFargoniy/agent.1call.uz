@@ -119,6 +119,11 @@ interface Strings {
     val unpairConfirmTitle: String
     val unpairConfirmDesc: String
     val unpairConfirmAction: String
+
+    // Bottom Navigation Tabs
+    val tabHome: String
+    val tabCalls: String
+    val tabProfile: String
 }
 
 object UzStrings : Strings {
@@ -229,6 +234,10 @@ object UzStrings : Strings {
     override val unpairConfirmTitle = "Qurilmani uzishni tasdiqlaysizmi?"
     override val unpairConfirmDesc = "Qurilma kompaniya tizimidan uziladi va qayta ulanmaguncha qo'ng'iroqlar CRM ga yozilmaydi."
     override val unpairConfirmAction = "Tizimdan Uzish"
+
+    override val tabHome = "Asosiy"
+    override val tabCalls = "Qo'ng'iroqlar"
+    override val tabProfile = "Profil"
 }
 
 object RuStrings : Strings {
@@ -339,6 +348,10 @@ object RuStrings : Strings {
     override val unpairConfirmTitle = "Подтвердить отключение устройства?"
     override val unpairConfirmDesc = "Устройство будет отключено от CRM и звонки перестанут синхронизироваться до повторного подключения."
     override val unpairConfirmAction = "Отключить"
+
+    override val tabHome = "Главная"
+    override val tabCalls = "Звонки"
+    override val tabProfile = "Профиль"
 }
 
 object EnStrings : Strings {
@@ -449,6 +462,10 @@ object EnStrings : Strings {
     override val unpairConfirmTitle = "Confirm Device Disconnect?"
     override val unpairConfirmDesc = "This device will be disconnected from CRM and calls will not sync until paired again."
     override val unpairConfirmAction = "Disconnect"
+
+    override val tabHome = "Home"
+    override val tabCalls = "Calls"
+    override val tabProfile = "Profile"
 }
 
 object AppLanguageManager {

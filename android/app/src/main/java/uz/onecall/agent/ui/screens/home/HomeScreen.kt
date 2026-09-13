@@ -118,7 +118,8 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onNavigateToSettings: () -> Unit
+    onNavigateToCalls: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {}
 ) {
     val s = appStrings()
     val context = LocalContext.current
@@ -651,11 +652,24 @@ fun HomeScreen(
 
             // Recent Calls Header
             item {
-                Text(
-                    text = s.recentCallsTitle,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = s.recentCallsTitle,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    TextButton(onClick = onNavigateToCalls) {
+                        Text(
+                            text = "Barchasi >",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = PrimaryBlue
+                        )
+                    }
+                }
             }
 
             // Calls List Items

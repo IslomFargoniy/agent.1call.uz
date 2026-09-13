@@ -74,7 +74,7 @@ import uz.onecall.agent.ui.theme.PrimaryBlue
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onNavigateBack: () -> Unit,
+    onNavigateBack: (() -> Unit)? = null,
     onUnpaired: () -> Unit
 ) {
     val context = LocalContext.current
@@ -229,8 +229,10 @@ fun SettingsScreen(
             TopAppBar(
                 title = { Text(s.settingsTitle, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = s.back)
+                    if (onNavigateBack != null) {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = s.back)
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)

@@ -4,7 +4,6 @@ import android.Manifest
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.view.accessibility.AccessibilityManager
 import androidx.activity.ComponentActivity
@@ -18,10 +17,9 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import uz.onecall.agent.ui.screens.home.HomeScreen
+import uz.onecall.agent.ui.screens.main.MainContainerScreen
 import uz.onecall.agent.ui.screens.pairing.PairingScreen
 import uz.onecall.agent.ui.screens.permissions.PermissionsScreen
-import uz.onecall.agent.ui.screens.settings.SettingsScreen
 import uz.onecall.agent.ui.theme.OneCallTheme
 
 class MainActivity : ComponentActivity() {
@@ -67,7 +65,7 @@ class MainActivity : ComponentActivity() {
         val startDest = when {
             !areCorePermissionsGranted() -> "permissions"
             !prefs.isPaired -> "pairing"
-            else -> "home"
+            else -> "main"
         }
 
         NavHost(
@@ -77,14 +75,9 @@ class MainActivity : ComponentActivity() {
             composable("permissions") {
                 PermissionsScreen(
                     onAllGranted = {
-                        if (prefs.isPaired) {
-                            navController.navigate("home") {
-                                popUpTo("permissions") { inclusive = true }
-                            }
-                        } else {
-                            navController.navigate("pairing") {
-                                popUpTo("permissions") { inclusive = true }
-                            }
+                        val target = if (prefs.isPaired) "main" else "pairing"
+                        navController.navigate(target) {
+                            popUpTo("permissions") { inclusive = true }
                         }
                     }
                 )
@@ -93,29 +86,18 @@ class MainActivity : ComponentActivity() {
             composable("pairing") {
                 PairingScreen(
                     onPairedSuccess = {
-                        navController.navigate("home") {
+                        navController.navigate("main") {
                             popUpTo("pairing") { inclusive = true }
                         }
                     }
                 )
             }
 
-            composable("home") {
-                HomeScreen(
-                    onNavigateToSettings = {
-                        navController.navigate("settings")
-                    }
-                )
-            }
-
-            composable("settings") {
-                SettingsScreen(
-                    onNavigateBack = {
-                        navController.popBackStack()
-                    },
+            composable("main") {
+                MainContainerScreen(
                     onUnpaired = {
                         navController.navigate("pairing") {
-                            popUpTo("home") { inclusive = true }
+                            popUpTo("main") { inclusive = true }
                         }
                     }
                 )

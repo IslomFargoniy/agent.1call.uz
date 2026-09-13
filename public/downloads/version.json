@@ -1,8 +1,8 @@
 {
-    "version": "1.1.4",
-    "version_code": 14,
-    "file_size": 12320979,
+    "version": "1.1.5",
+    "version_code": 15,
+    "file_size": 12337342,
     "download_url": "/downloads/1call-agent.apk",
-    "changelog": "Agent1Call v1.1.4:\n- Samsung va Android 15 da 2 tomonlama toza audio yozish sozlamasi qo'shildi\n- Audio yozish manbasi optimallashtirildi (ovozsiz yozilish muammosi to'liq bartaraf etildi)\n- Barcha fayllarga ruxsat (All Files Access) tizimi ulandi",
-    "updated_at": "2026-09-13T12:12:24.930674+00:00"
+    "changelog": "Agent1Call v1.1.5:\n- Apple uslubidagi pastki navigatsiya paneli (Asosiy, Qo'ng'iroqlar, Profil) qo'shildi\n- Yangi to'liq Qo'ng'iroqlar jurnali ekrani yaratildi (audio pleer, qidiruv va filtrlar)\n- Samsung va Android 15 da 2 tomonlama audio yozish to'liq sozlandi",
+    "updated_at": "2026-09-13T13:01:00.797134+00:00"
 }
