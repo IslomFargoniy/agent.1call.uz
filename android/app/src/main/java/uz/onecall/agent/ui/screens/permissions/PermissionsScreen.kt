@@ -165,7 +165,7 @@ fun PermissionsScreen(
         checkStatus()
     }
 
-    val allDone = isPhoneGranted && isAudioGranted && isNotificationGranted && isAccessibilityEnabled && isInstallUnknownAppsGranted
+    val allDone = isPhoneGranted && isAudioGranted && isNotificationGranted && isAccessibilityEnabled && isInstallUnknownAppsGranted && isStorageGranted
 
     Scaffold { padding ->
         Column(

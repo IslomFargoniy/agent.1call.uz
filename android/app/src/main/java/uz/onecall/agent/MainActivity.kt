@@ -54,7 +54,16 @@ class MainActivity : ComponentActivity() {
         val enabledServices = am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
         val accessibilityEnabled = enabledServices.any { it.resolveInfo.serviceInfo.packageName == packageName }
 
-        return phoneGranted && audioGranted && accessibilityEnabled
+        val storageGranted = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            android.os.Environment.isExternalStorageManager()
+        } else {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+
+        return phoneGranted && audioGranted && accessibilityEnabled && storageGranted
     }
 
     @Composable

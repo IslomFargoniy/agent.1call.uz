@@ -8,8 +8,73 @@ import android.provider.MediaStore
 import android.util.Log
 import java.io.File
 
+data class SamsungRecordStatus(
+    val hasAllFilesAccess: Boolean,
+    val callFolderExists: Boolean,
+    val callFilesCount: Int,
+    val latestFileName: String?,
+    val latestFileTime: Long?
+)
+
 object SamsungRecordingFinder {
     private const val TAG = "SamsungRecordingFinder"
+
+    /**
+     * Inspect Samsung and native Android call recording directories
+     * to check permission and whether Samsung native call recorder is actively producing files.
+     */
+    fun getSamsungStatus(context: Context): SamsungRecordStatus {
+        val hasAllFilesAccess = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Environment.isExternalStorageManager()
+        } else {
+            true
+        }
+
+        val primaryDirs = listOf(
+            File("/storage/emulated/0/Recordings/Call"),
+            File("/sdcard/Recordings/Call"),
+            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_RECORDINGS), "Call"),
+            File(Environment.getExternalStorageDirectory(), "Recordings/Call")
+        )
+
+        var folderFound = false
+        var totalFiles = 0
+        var newestFile: File? = null
+
+        for (dir in primaryDirs) {
+            try {
+                if (dir.exists() && dir.isDirectory) {
+                    folderFound = true
+                    val files = dir.listFiles { file ->
+                        file.isFile && (
+                            file.extension.equals("m4a", true) ||
+                            file.extension.equals("amr", true) ||
+                            file.extension.equals("mp3", true) ||
+                            file.extension.equals("wav", true) ||
+                            file.extension.equals("3gp", true)
+                        )
+                    } ?: emptyArray()
+
+                    totalFiles += files.size
+                    for (f in files) {
+                        if (newestFile == null || f.lastModified() > newestFile!!.lastModified()) {
+                            newestFile = f
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not inspect status in ${dir.absolutePath}: ${e.message}")
+            }
+        }
+
+        return SamsungRecordStatus(
+            hasAllFilesAccess = hasAllFilesAccess,
+            callFolderExists = folderFound,
+            callFilesCount = totalFiles,
+            latestFileName = newestFile?.name,
+            latestFileTime = newestFile?.lastModified()
+        )
+    }
 
     /**
      * Scan Samsung and Android native call recording folders and MediaStore
@@ -33,20 +98,19 @@ object SamsungRecordingFinder {
         val lastDigits = if (cleanPhone.length >= 7) cleanPhone.takeLast(7) else cleanPhone
 
         // Method 1: Check Direct File System Access (Fastest & most direct on Samsung)
-        val directDirs = mutableListOf(
+        val directDirs = listOf(
             File("/storage/emulated/0/Recordings/Call"),
-            File("/storage/emulated/0/Recordings"),
-            File("/storage/emulated/0/Call"),
+            File("/sdcard/Recordings/Call"),
+            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_RECORDINGS), "Call"),
+            File(Environment.getExternalStorageDirectory(), "Recordings/Call"),
             File("/storage/emulated/0/Sounds/Call"),
+            File("/storage/emulated/0/Recordings"),
+            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_RECORDINGS), ""),
+            File("/storage/emulated/0/Call"),
             File("/storage/emulated/0/Sounds"),
             File("/storage/emulated/0/Voice Recorder"),
-            File(Environment.getExternalStorageDirectory(), "Recordings/Call"),
-            File(Environment.getExternalStorageDirectory(), "Recordings"),
-            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_RECORDINGS), "Call"),
-            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_RECORDINGS), ""),
             File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "Recordings/Call"),
-            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "Call"),
-            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "")
+            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "Call")
         )
 
         for (dir in directDirs) {
@@ -66,16 +130,36 @@ object SamsungRecordingFinder {
                         Log.i(TAG, "Found ${files.size} audio files in dir ${dir.absolutePath}")
                     }
 
+                    val isDedicatedCallDir = dir.name.equals("Call", ignoreCase = true) || 
+                                             dir.absolutePath.endsWith("/Call", ignoreCase = true)
+
                     val sorted = files.sortedByDescending { it.lastModified() }
                     for (f in sorted) {
                         val modTime = f.lastModified()
-                        val diffMs = Math.abs(modTime - callEndedTime)
+                        val diffFromEnd = Math.abs(modTime - callEndedTime)
+                        val diffFromStart = Math.abs(modTime - callStartTime)
                         val fileName = f.name
                         val matchesPhone = lastDigits.isNotBlank() && fileName.replace(Regex("[^0-9]"), "").contains(lastDigits)
 
-                        // File modified within 180 seconds of call end OR matches dialed/received phone number
-                        if (f.length() > 1000L && (matchesPhone || (diffMs < 180000 && modTime >= callStartTime - 20000))) {
-                            Log.i(TAG, "Found Samsung native recording file directly: ${f.absolutePath} (${f.length()} bytes)")
+                        val isTimingMatch = (modTime >= callStartTime - 90000L && modTime <= callEndedTime + 90000L) ||
+                                            diffFromEnd <= 300000L || // within 5 minutes of call end
+                                            diffFromStart <= 300000L  // within 5 minutes of call start
+
+                        val isNameKeywordMatch = fileName.contains("Call", ignoreCase = true) || 
+                                                fileName.contains("Qo'ng'iroq", ignoreCase = true) ||
+                                                fileName.contains("Запись", ignoreCase = true) ||
+                                                fileName.contains("Вызов", ignoreCase = true) ||
+                                                fileName.contains("통화", ignoreCase = true) ||
+                                                fileName.contains("Record", ignoreCase = true)
+
+                        val isCandidate = f.length() > 1000L && (
+                            matchesPhone || 
+                            (isDedicatedCallDir && isTimingMatch) ||
+                            (isNameKeywordMatch && isTimingMatch)
+                        )
+
+                        if (isCandidate) {
+                            Log.i(TAG, "Found Samsung native recording file directly: ${f.absolutePath} (${f.length()} bytes, matchesPhone=$matchesPhone, isDedicated=$isDedicatedCallDir, diffEnd=${diffFromEnd}ms)")
                             
                             // Copy to app internal storage cache to ensure stability and upload permission
                             try {
@@ -133,7 +217,7 @@ object SamsungRecordingFinder {
 
             cursor?.use {
                 var count = 0
-                while (it.moveToNext() && count < 50) {
+                while (it.moveToNext() && count < 60) {
                     count++
                     val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID))
                     val name = it.getString(it.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)) ?: ""
@@ -143,17 +227,23 @@ object SamsungRecordingFinder {
 
                     if (size <= 1000L) continue
 
-                    val diffMs = Math.abs(modMs - callEndedTime)
+                    val diffFromEnd = Math.abs(modMs - callEndedTime)
+                    val diffFromStart = Math.abs(modMs - callStartTime)
                     val matchesPhone = lastDigits.isNotBlank() && name.replace(Regex("[^0-9]"), "").contains(lastDigits)
+                    val isTimingMatch = (modMs >= callStartTime - 90000L && modMs <= callEndedTime + 90000L) ||
+                                        diffFromEnd <= 300000L ||
+                                        diffFromStart <= 300000L
+
                     val isCallFile = name.contains("Call", ignoreCase = true) || 
                                      name.contains("Qo'ng'iroq", ignoreCase = true) ||
+                                     name.contains("Запись", ignoreCase = true) ||
                                      name.contains("Вызов", ignoreCase = true) ||
                                      name.contains("통화", ignoreCase = true) ||
                                      name.contains("Record", ignoreCase = true)
 
-                    if (matchesPhone || (isCallFile && diffMs < 180000 && modMs >= callStartTime - 20000)) {
+                    if (matchesPhone || (isCallFile && isTimingMatch)) {
                         val contentUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
-                        Log.i(TAG, "Found candidate in MediaStore: $name (id=$id, size=$size, diff=${diffMs}ms). Copying stream...")
+                        Log.i(TAG, "Found candidate in MediaStore: $name (id=$id, size=$size, diffEnd=${diffFromEnd}ms). Copying stream...")
 
                         try {
                             val cacheDir = File(context.filesDir, "samsung_records").apply { mkdirs() }

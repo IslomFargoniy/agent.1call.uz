@@ -211,7 +211,9 @@ class CallAccessibilityService : AccessibilityService() {
 
                     try {
                         var nativeFile: File? = null
-                        for (retry in 1..3) {
+                        // Wait slightly for Samsung Phone app to flush AAC/AMR file to storage
+                        delay(800)
+                        for (retry in 1..4) {
                             nativeFile = SamsungRecordingFinder.findLatestNativeCallRecording(
                                 context = appContext,
                                 phoneNumber = phone,
@@ -221,7 +223,7 @@ class CallAccessibilityService : AccessibilityService() {
                             if (nativeFile != null && nativeFile.exists() && nativeFile.length() > 1000L) {
                                 break
                             }
-                            if (retry < 3) {
+                            if (retry < 4) {
                                 delay(1200)
                             }
                         }

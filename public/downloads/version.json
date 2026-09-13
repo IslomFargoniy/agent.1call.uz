@@ -1,8 +1,8 @@
 {
-    "version": "1.1.5",
-    "version_code": 15,
-    "file_size": 12337342,
+    "version": "1.1.6",
+    "version_code": 16,
+    "file_size": 12337356,
     "download_url": "/downloads/1call-agent.apk",
-    "changelog": "Agent1Call v1.1.5:\n- Apple uslubidagi pastki navigatsiya paneli (Asosiy, Qo'ng'iroqlar, Profil) qo'shildi\n- Yangi to'liq Qo'ng'iroqlar jurnali ekrani yaratildi (audio pleer, qidiruv va filtrlar)\n- Samsung va Android 15 da 2 tomonlama audio yozish to'liq sozlandi",
-    "updated_at": "2026-09-13T13:01:00.797134+00:00"
+    "changelog": "Agent1Call v1.1.6:\n- Samsung Galaxy 2 tomonlama toza apparatli audio yozish to'liq avtomatlashtirildi\n- Asosiy ekranda Samsung avtomatik yozish holati va fayllar sonini ko'rsatuvchi diagnostika paneli qo'shildi\n- 1-bosishda Samsung Telefon sozlamalarini ochish va avtomatik yozishni faollashtirish tugmasi yaratildi\n- Samsung Call audio fayllarini qidirish algoritmi kuchaytirildi (kontakt ismlari va kengaytirilgan vaqt oralig'i)",
+    "updated_at": "2026-09-13T13:09:43.138550+00:00"
 }
