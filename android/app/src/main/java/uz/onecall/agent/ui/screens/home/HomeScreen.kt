@@ -625,7 +625,7 @@ fun HomeScreen(
                         }
                     }
 
-                    samsungStatus.callFilesCount == 0 -> {
+                    samsungStatus.callFilesCount == 0 && recentCalls.none { !it.audioFilePath.isNullOrEmpty() && it.fileSizeBytes > 1000L } -> {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),

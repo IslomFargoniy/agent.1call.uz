@@ -30,18 +30,30 @@ object SamsungRecordingFinder {
             true
         }
 
-        val primaryDirs = listOf(
+        // 1. Check if our app has successfully captured Samsung recordings
+        val cachedSamsungDir = File(context.filesDir, "samsung_records")
+        val cachedCount = cachedSamsungDir.listFiles()?.count { it.isFile && it.length() > 1000L } ?: 0
+
+        val checkDirs = listOf(
             File("/storage/emulated/0/Recordings/Call"),
             File("/sdcard/Recordings/Call"),
             File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_RECORDINGS), "Call"),
-            File(Environment.getExternalStorageDirectory(), "Recordings/Call")
+            File(Environment.getExternalStorageDirectory(), "Recordings/Call"),
+            File("/storage/emulated/0/Sounds/Call"),
+            File("/storage/emulated/0/Recordings"),
+            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_RECORDINGS), ""),
+            File("/storage/emulated/0/Call"),
+            File("/storage/emulated/0/Sounds"),
+            File("/storage/emulated/0/Voice Recorder"),
+            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "Recordings/Call"),
+            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "Call")
         )
 
         var folderFound = false
-        var totalFiles = 0
-        var newestFile: File? = null
+        var totalFiles = cachedCount
+        var newestFile: File? = cachedSamsungDir.listFiles()?.filter { it.isFile && it.length() > 1000L }?.maxByOrNull { it.lastModified() }
 
-        for (dir in primaryDirs) {
+        for (dir in checkDirs) {
             try {
                 if (dir.exists() && dir.isDirectory) {
                     folderFound = true
@@ -67,9 +79,39 @@ object SamsungRecordingFinder {
             }
         }
 
+        // Check MediaStore if filesystem directories yielded 0 files
+        if (totalFiles == 0) {
+            try {
+                val projection = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.DISPLAY_NAME)
+                val cursor = context.contentResolver.query(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    projection,
+                    null,
+                    null,
+                    "${MediaStore.Audio.Media.DATE_MODIFIED} DESC"
+                )
+                cursor?.use {
+                    var msCount = 0
+                    while (it.moveToNext() && msCount < 30) {
+                        val name = it.getString(it.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)) ?: ""
+                        if (name.contains("Call", ignoreCase = true) ||
+                            name.contains("Запись", ignoreCase = true) ||
+                            name.contains("Вызов", ignoreCase = true) ||
+                            name.contains("통화", ignoreCase = true) ||
+                            name.contains("Record", ignoreCase = true) ||
+                            name.contains("Qo'ng'iroq", ignoreCase = true)
+                        ) {
+                            totalFiles++
+                        }
+                        msCount++
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+
         return SamsungRecordStatus(
             hasAllFilesAccess = hasAllFilesAccess,
-            callFolderExists = folderFound,
+            callFolderExists = folderFound || totalFiles > 0,
             callFilesCount = totalFiles,
             latestFileName = newestFile?.name,
             latestFileTime = newestFile?.lastModified()
