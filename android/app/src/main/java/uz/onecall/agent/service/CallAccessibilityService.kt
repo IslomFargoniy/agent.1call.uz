@@ -210,26 +210,24 @@ class CallAccessibilityService : AccessibilityService() {
                     var finalFileSize = fileSize
 
                     try {
-                        var nativeFile = SamsungRecordingFinder.findLatestNativeCallRecording(
-                            context = appContext,
-                            phoneNumber = phone,
-                            callStartTime = callStartTime,
-                            callEndedTime = endedAt
-                        )
-
-                        // Retry if Samsung dialer is still finishing encoding / indexing
-                        if (nativeFile == null || !nativeFile.exists() || nativeFile.length() == 0L) {
-                            delay(1000)
+                        var nativeFile: File? = null
+                        for (retry in 1..3) {
                             nativeFile = SamsungRecordingFinder.findLatestNativeCallRecording(
                                 context = appContext,
                                 phoneNumber = phone,
                                 callStartTime = callStartTime,
                                 callEndedTime = System.currentTimeMillis()
                             )
+                            if (nativeFile != null && nativeFile.exists() && nativeFile.length() > 1000L) {
+                                break
+                            }
+                            if (retry < 3) {
+                                delay(1200)
+                            }
                         }
 
-                        if (nativeFile != null && nativeFile.exists() && nativeFile.length() > 0) {
-                            Log.i(TAG, "Found native Samsung two-way call recording: ${nativeFile.absolutePath} (${nativeFile.length()} bytes)")
+                        if (nativeFile != null && nativeFile.exists() && nativeFile.length() > 1000L) {
+                            Log.i(TAG, "Using native Samsung two-way call recording: ${nativeFile.absolutePath} (${nativeFile.length()} bytes)")
                             finalAudioPath = nativeFile.absolutePath
                             finalFileSize = nativeFile.length()
                         } else {

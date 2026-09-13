@@ -32,6 +32,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Refresh
@@ -78,6 +79,7 @@ fun PermissionsScreen(
 
     var isPhoneGranted by remember { mutableStateOf(false) }
     var isAudioGranted by remember { mutableStateOf(false) }
+    var isStorageGranted by remember { mutableStateOf(false) }
     var isNotificationGranted by remember { mutableStateOf(false) }
     var isAccessibilityEnabled by remember { mutableStateOf(false) }
     var isBatteryOptimized by remember { mutableStateOf(false) }
@@ -115,6 +117,15 @@ fun PermissionsScreen(
             ) == android.content.pm.PackageManager.PERMISSION_GRANTED
         } else {
             true
+        }
+
+        isStorageGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            android.os.Environment.isExternalStorageManager()
+        } else {
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
         }
 
         val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
@@ -245,6 +256,38 @@ fun PermissionsScreen(
                         perms.add(Manifest.permission.READ_EXTERNAL_STORAGE)
                     }
                     requestPermissionsLauncher.launch(perms.toTypedArray())
+                }
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 2.5 Storage / All Files (Crucial for Samsung 2-way call recordings)
+            PermissionCard(
+                title = s.permStorageTitle,
+                description = s.permStorageDesc,
+                icon = Icons.Default.Folder,
+                isGranted = isStorageGranted,
+                onGrant = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        try {
+                            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                                data = Uri.parse("package:${context.packageName}")
+                            }
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            try {
+                                val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                                context.startActivity(intent)
+                            } catch (_: Exception) {}
+                        }
+                    } else {
+                        requestPermissionsLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.READ_EXTERNAL_STORAGE,
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                            )
+                        )
+                    }
                 }
             )
 

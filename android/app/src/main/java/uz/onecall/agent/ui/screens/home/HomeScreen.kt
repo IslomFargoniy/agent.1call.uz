@@ -5,6 +5,14 @@ import uz.onecall.agent.ui.components.LanguageSwitchButton
 
 import android.content.Intent
 import android.provider.Settings
+import android.os.Build
+import android.net.Uri
+import android.os.Environment
+import androidx.compose.material.icons.filled.Mic
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+
 import android.widget.Toast
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
@@ -141,6 +149,48 @@ fun HomeScreen(
 
     var showEditPhoneDialog by remember { mutableStateOf(false) }
     var inputPhoneNumber by remember { mutableStateOf(prefs.sim1PhoneNumber ?: "") }
+
+    var isAllFilesAccessGranted by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                Environment.isExternalStorageManager()
+            } else true
+        )
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    isAllFilesAccessGranted = Environment.isExternalStorageManager()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    fun openSamsungSettings() {
+        val intents = listOf(
+            Intent("com.samsung.android.app.telephonyui.action.OPEN_AUTO_RECORD_SETTINGS"),
+            Intent("com.samsung.android.app.telephonyui.action.OPEN_RECORD_CALL"),
+            Intent(android.telecom.TelecomManager.ACTION_SHOW_CALL_SETTINGS),
+            Intent().setClassName("com.samsung.android.incallui", "com.samsung.android.incallui.setting.CallRecordSettingActivity"),
+            Intent().setClassName("com.samsung.android.dialer", "com.samsung.android.dialer.app.calllog.CallLogTabActivity"),
+            Intent(Intent.ACTION_DIAL)
+        )
+        for (it in intents) {
+            try {
+                it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(it)
+                return
+            } catch (_: Throwable) {}
+        }
+        Toast.makeText(context, "Telefon sozlamalarida 'Qo\'ng\'iroqlarni avtomatik yozish'ni yoqing", Toast.LENGTH_LONG).show()
+    }
 
         var updateAvailableInfo by remember { mutableStateOf<AppVersionResponse?>(null) }
     LaunchedEffect(Unit) {
@@ -467,52 +517,102 @@ fun HomeScreen(
                                 color = if (!sim1Num.isNullOrBlank()) MaterialTheme.colorScheme.onSurface else Color(0xFFF59E0B)
                             )
 
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
+
+                        }
+                    }
+                }
+            }
+
+            // Samsung 2-Way Audio Recording & Storage Access Banner
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isAllFilesAccessGranted) MaterialTheme.colorScheme.surface else Color(0xFFFEF3C7).copy(alpha = 0.9f)
+                    ),
+                    border = BorderStroke(
+                        1.dp,
+                        if (isAllFilesAccessGranted) PrimaryBlue.copy(alpha = 0.25f) else Color(0xFFF59E0B)
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Mic,
+                                contentDescription = null,
+                                tint = if (isAllFilesAccessGranted) AccentGreen else Color(0xFFD97706),
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Samsung: 2 tomonlama toza audio",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = if (isAllFilesAccessGranted)
+                                        "Fayllar ruxsati berilgan. Telefoningizda 'Avtomatik yozish' yoqilgan bo'lsa, har ikkala tomon ovozi toza yoziladi."
+                                    else
+                                        "Samsungda 2 tomonlama audio yozilishi uchun 'Fayllarga ruxsat' bering va 'Avtomatik yozish'ni yoqing.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = { openSamsungSettings() },
+                                modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(8.dp),
-                                colors = CardDefaults.cardColors(containerColor = PrimaryBlue.copy(alpha = 0.08f))
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(10.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = s.samsungRecordTitle,
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = PrimaryBlue
-                                        )
-                                        Text(
-                                            text = s.samsungRecordDesc,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontSize = 11.sp,
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    OutlinedButton(
-                                        onClick = {
+                                Text(
+                                    text = "Telefon sozlamalari",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            if (!isAllFilesAccessGranted) {
+                                Button(
+                                    onClick = {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                                             try {
-                                                val intent = Intent("com.samsung.android.app.telephonyui.action.OPEN_AUTO_RECORD_SETTINGS")
-                                                context.startActivity(intent)
-                                            } catch (_: Throwable) {
-                                                try {
-                                                    val intent = Intent(android.telecom.TelecomManager.ACTION_SHOW_CALL_SETTINGS)
-                                                    context.startActivity(intent)
-                                                } catch (_: Throwable) {
-                                                    val intent = Intent(Settings.ACTION_SETTINGS)
-                                                    context.startActivity(intent)
+                                                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                                                    data = Uri.parse("package:${context.packageName}")
                                                 }
+                                                context.startActivity(intent)
+                                            } catch (e: Exception) {
+                                                val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                                                context.startActivity(intent)
                                             }
-                                        },
-                                        shape = RoundedCornerShape(8.dp),
-                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                                        modifier = Modifier.height(34.dp)
-                                    ) {
-                                        Text(s.samsungSettingsBtn, fontSize = 11.sp)
-                                    }
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
+                                    shape = RoundedCornerShape(8.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = "Fayllarga ruxsat",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
                                 }
                             }
                         }

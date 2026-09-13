@@ -739,7 +739,10 @@
         "logout": "Выйти"
     },
     "nav": {
-        "navigationMenu": "Меню навигации"
+        "navigationMenu": "Меню навигации",
+        "home": "Главная",
+        "calls": "Звонки",
+        "profile": "Профиль"
     },
     "language": {
         "uz": "Узбекский",

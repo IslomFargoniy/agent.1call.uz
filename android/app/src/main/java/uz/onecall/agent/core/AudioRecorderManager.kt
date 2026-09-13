@@ -32,10 +32,11 @@ class AudioRecorderManager(private val context: Context) {
             val fileName = "call_${direction}_${cleanPhone}_${timestampStr}.m4a"
             val outputFile = File(recordsDir, fileName)
 
-            // On modern Android (10-15), VOICE_RECOGNITION avoids telephony AEC hardware mute
-            // conflicts on Samsung/Pixel and captures clear speech during calls. MIC is the standard fallback.
+            // CRITICAL: On modern Android (10-15), VOICE_COMMUNICATION is silenced (0 dB)
+            // by AudioPolicy for 3rd-party apps during GSM cellular calls without throwing an error!
+            // VOICE_RECOGNITION captures microphone audio with noise cancellation without being zeroed.
+            // MIC is the hardware fallback.
             val sourcesToTry = listOf(
-                MediaRecorder.AudioSource.VOICE_COMMUNICATION,
                 MediaRecorder.AudioSource.VOICE_RECOGNITION,
                 MediaRecorder.AudioSource.MIC,
                 MediaRecorder.AudioSource.DEFAULT
@@ -55,9 +56,9 @@ class AudioRecorderManager(private val context: Context) {
                         setAudioSource(source)
                         setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                         setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                        setAudioSamplingRate(44100) // Standard 44.1kHz AAC
-                        setAudioEncodingBitRate(64000) // 64kbps high quality speech
-                        setAudioChannels(1) // Mono
+                        setAudioSamplingRate(44100)
+                        setAudioEncodingBitRate(64000)
+                        setAudioChannels(1)
                         setOutputFile(outputFile.absolutePath)
 
                         prepare()
@@ -70,10 +71,10 @@ class AudioRecorderManager(private val context: Context) {
                     isRecording = true
                     recorderStarted = true
 
-                    Log.i(TAG, "Recording started with source: $source to ${outputFile.absolutePath}")
+                    Log.i(TAG, "Recording successfully started with source: $source to ${outputFile.absolutePath}")
                     return outputFile
                 } catch (e: Throwable) {
-                    Log.w(TAG, "AudioSource $source failed: ${e.message}, trying next...")
+                    Log.w(TAG, "AudioSource $source failed: ${e.message}, trying next source...")
                     try {
                         recorder?.reset()
                         recorder?.release()
@@ -111,7 +112,7 @@ class AudioRecorderManager(private val context: Context) {
                 release()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error stopping recorder", e)
+            Log.e(TAG, "Error stopping recorder: ${e.message}", e)
         } finally {
             recorder = null
             isRecording = false

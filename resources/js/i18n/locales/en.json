@@ -739,7 +739,10 @@
         "logout": "Log out"
     },
     "nav": {
-        "navigationMenu": "Navigation Menu"
+        "navigationMenu": "Navigation Menu",
+        "home": "Home",
+        "calls": "Calls",
+        "profile": "Profile"
     },
     "language": {
         "uz": "Uzbek",

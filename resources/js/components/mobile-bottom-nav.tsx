@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, usePage } from '@inertiajs/react';
-import { Home, Phone, User } from 'lucide-react';
+import { LayoutGrid, PhoneCall, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function MobileBottomNav() {
@@ -16,13 +16,13 @@ export function MobileBottomNav() {
         {
             name: t('nav.home', 'Asosiy'),
             href: '/dashboard',
-            icon: Home,
+            icon: LayoutGrid,
             isActive: isHomeActive,
         },
         {
             name: t('nav.calls', "Qo'ng'iroqlar"),
             href: '/calls',
-            icon: Phone,
+            icon: PhoneCall,
             isActive: isCallsActive,
         },
         {
@@ -35,10 +35,10 @@ export function MobileBottomNav() {
 
     return (
         <nav
-            aria-label="Mobile Bottom Navigation"
-            className="fixed inset-x-0 bottom-0 z-40 border-t border-black/[0.08] bg-white/80 pt-1.5 pb-[max(env(safe-area-inset-bottom),8px)] shadow-[0_-1px_3px_rgba(0,0,0,0.03)] backdrop-blur-2xl transition-all duration-200 md:hidden dark:border-white/[0.12] dark:bg-[#121214]/85 dark:shadow-[0_-1px_3px_rgba(0,0,0,0.3)]"
+            aria-label="Mobile Navigation"
+            className="fixed inset-x-0 bottom-0 z-50 block md:hidden bg-white/80 dark:bg-[#161618]/85 backdrop-blur-2xl backdrop-saturate-150 border-t border-black/[0.08] dark:border-white/[0.12] pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-1px_3px_rgba(0,0,0,0.03)] dark:shadow-[0_-1px_3px_rgba(0,0,0,0.3)] transition-all select-none"
         >
-            <div className="mx-auto grid h-[49px] max-w-md grid-cols-3 items-center px-4">
+            <div className="mx-auto grid h-[49px] max-w-md grid-cols-3 items-stretch px-2">
                 {navItems.map((item) => {
                     const Icon = item.icon;
                     return (
@@ -47,28 +47,28 @@ export function MobileBottomNav() {
                             href={item.href}
                             prefetch={true}
                             className={cn(
-                                'group flex h-full flex-col items-center justify-center text-center transition-all duration-150 ease-out select-none focus-visible:outline-none active:scale-90',
+                                'group flex flex-col items-center justify-center py-1 transition-transform duration-150 ease-out active:scale-90 focus-visible:outline-none',
                                 item.isActive
                                     ? 'text-[#007AFF] dark:text-[#0A84FF]'
-                                    : 'hover:text-foreground text-[#8E8E93] dark:text-[#98989D]',
+                                    : 'text-[#8E8E93] dark:text-[#98989D]',
                             )}
                         >
-                            <div className="relative flex h-6 w-6 items-center justify-center">
+                            <div className="relative flex h-[24px] w-[24px] items-center justify-center">
                                 <Icon
                                     className={cn(
-                                        'h-[22px] w-[22px] transition-all duration-200',
+                                        'h-[22px] w-[22px] transition-transform duration-200 group-active:scale-95',
                                         item.isActive
-                                            ? 'fill-[#007AFF]/15 stroke-[2.2px] text-[#007AFF] dark:fill-[#0A84FF]/25 dark:text-[#0A84FF]'
-                                            : 'fill-transparent stroke-[1.75px]',
+                                            ? 'stroke-[2.2px] fill-[#007AFF]/15 dark:fill-[#0A84FF]/25'
+                                            : 'stroke-[1.75px] fill-transparent',
                                     )}
                                 />
                             </div>
                             <span
                                 className={cn(
-                                    'mt-1 text-[10px] leading-none tracking-tight transition-colors duration-200',
+                                    'mt-[2px] text-[10px] leading-tight tracking-tight font-medium transition-colors',
                                     item.isActive
-                                        ? 'font-semibold text-[#007AFF] dark:text-[#0A84FF]'
-                                        : 'font-normal text-[#8E8E93] dark:text-[#98989D]',
+                                        ? 'text-[#007AFF] dark:text-[#0A84FF] font-semibold'
+                                        : 'text-[#8E8E93] dark:text-[#98989D]',
                                 )}
                             >
                                 {item.name}

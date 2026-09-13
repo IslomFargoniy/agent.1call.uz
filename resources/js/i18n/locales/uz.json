@@ -739,7 +739,10 @@
         "logout": "Chiqish"
     },
     "nav": {
-        "navigationMenu": "Navigatsiya menyusi"
+        "navigationMenu": "Navigatsiya menyusi",
+        "home": "Asosiy",
+        "calls": "Qo'ng'iroqlar",
+        "profile": "Profil"
     },
     "language": {
         "uz": "O'zbekcha",

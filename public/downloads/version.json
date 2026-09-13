@@ -1,8 +1,8 @@
 {
-    "version": "1.1.3",
-    "version_code": 13,
-    "file_size": 12320969,
+    "version": "1.1.4",
+    "version_code": 14,
+    "file_size": 12320979,
     "download_url": "/downloads/1call-agent.apk",
-    "changelog": "Agent1Call v1.1.3:\n- APK hajmi 2 barobar qisqartirildi (24.5 MB -> 12.3 MB)\n- ARM arxitekturalari (arm64-v8a, armeabi-v7a) uchun maxsus optimallashtirildi\n- Barqarorlik va ishlash tezligi oshirildi",
-    "updated_at": "2026-09-12T08:30:26.375Z"
+    "changelog": "Agent1Call v1.1.4:\n- Samsung va Android 15 da 2 tomonlama toza audio yozish sozlamasi qo'shildi\n- Audio yozish manbasi optimallashtirildi (ovozsiz yozilish muammosi to'liq bartaraf etildi)\n- Barcha fayllarga ruxsat (All Files Access) tizimi ulandi",
+    "updated_at": "2026-09-13T12:12:24.930674+00:00"
 }
