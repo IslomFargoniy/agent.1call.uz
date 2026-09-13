@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import {
     Receipt,
     CheckCircle2,
@@ -13,6 +13,7 @@ import {
     X,
     ExternalLink,
     CreditCard,
+    Ban,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PaginationNav, PaginationLink } from '@/components/ui/pagination-nav';
@@ -54,6 +55,29 @@ export default function InvoicesIndex({ invoices }: InvoicesProps) {
     const [viewingReceipt, setViewingReceipt] = useState<InvoiceItem | null>(
         null,
     );
+    const [cancellingId, setCancellingId] = useState<number | null>(null);
+
+    const handleCancelInvoice = (invoice: InvoiceItem) => {
+        if (
+            !confirm(
+                t(
+                    'billing.confirmCancelInvoice',
+                    `Haqiqatan ham #${invoice.invoice_number} raqamli invoysni bekor qilmoqchimisiz?`,
+                ),
+            )
+        ) {
+            return;
+        }
+
+        setCancellingId(invoice.id);
+        router.post(
+            `/billing/invoices/${invoice.id}/cancel`,
+            {},
+            {
+                onFinish: () => setCancellingId(null),
+            },
+        );
+    };
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -279,6 +303,15 @@ export default function InvoicesIndex({ invoices }: InvoicesProps) {
                                                     )}
                                                 </span>
                                             )}
+                                            {invoice.status === 'cancelled' && (
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                                                    <Ban className="h-3.5 w-3.5" />{' '}
+                                                    {t(
+                                                        'billing.cancelled',
+                                                        'Bekor qilingan',
+                                                    )}
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="text-muted-foreground px-4 py-3.5 font-mono text-xs">
                                             {formatDate(invoice.created_at)}
@@ -288,13 +321,13 @@ export default function InvoicesIndex({ invoices }: InvoicesProps) {
                                                 {invoice.receipt_image_path ? (
                                                     <button
                                                         type="button"
-                                                        className="group border-border bg-muted/40 hover:ring-primary relative h-11 w-11 shrink-0 cursor-pointer overflow-hidden rounded-lg border shadow-xs transition-all hover:ring-2"
+                                                        className="group border-border bg-muted/40 hover:ring-primary relative h-10 w-10 shrink-0 cursor-pointer overflow-hidden rounded-lg border shadow-xs transition-all hover:ring-2"
                                                         onClick={() =>
                                                             setViewingReceipt(
                                                                 invoice,
                                                             )
                                                         }
-                                                        title="Chekni kattalashtirib ko'rish"
+                                                        title="Chekni ko'rish"
                                                     >
                                                         <img
                                                             src={`/billing/invoices/${invoice.id}/receipt`}
@@ -302,54 +335,95 @@ export default function InvoicesIndex({ invoices }: InvoicesProps) {
                                                             className="h-full w-full object-cover transition-transform group-hover:scale-110"
                                                         />
                                                         <div className="absolute inset-0 flex items-center justify-center bg-black/30 text-white opacity-0 transition-opacity group-hover:opacity-100">
-                                                            <Eye className="h-4 w-4" />
+                                                            <Eye className="h-3.5 w-3.5" />
                                                         </div>
                                                     </button>
                                                 ) : null}
 
-                                                {['click', 'payme'].includes(
-                                                    invoice.payment_method,
-                                                ) &&
-                                                    invoice.status ===
-                                                        'pending' && (
-                                                        <a
-                                                            href={`/pay/${invoice.payment_method}/${invoice.id}`}
-                                                            className="focus-visible:ring-ring border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-8 items-center justify-center gap-1.5 rounded-md border px-3 text-xs font-medium shadow-xs transition-colors focus-visible:ring-1 focus-visible:outline-hidden"
-                                                        >
-                                                            <CreditCard className="text-primary h-3.5 w-3.5" />
-                                                            {t(
-                                                                'billing.payNow',
-                                                                'To\x27lash',
-                                                            )}
-                                                        </a>
-                                                    )}
+                                                {invoice.status ===
+                                                    'pending' && (
+                                                    <>
+                                                        {[
+                                                            'click',
+                                                            'payme',
+                                                        ].includes(
+                                                            invoice.payment_method,
+                                                        ) && (
+                                                            <a
+                                                                href={`/pay/${invoice.payment_method}/${invoice.id}`}
+                                                                className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-8 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold shadow-xs transition-colors"
+                                                            >
+                                                                <CreditCard className="h-3.5 w-3.5" />
+                                                                {t(
+                                                                    'billing.payNow',
+                                                                    "To'lash",
+                                                                )}
+                                                            </a>
+                                                        )}
 
-                                                {invoice.payment_method ===
-                                                    'card_transfer' &&
-                                                    invoice.status ===
-                                                        'pending' && (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="h-8 gap-1.5 text-xs"
-                                                            onClick={() =>
-                                                                openUpload(
-                                                                    invoice,
-                                                                )
-                                                            }
-                                                        >
-                                                            <Upload className="h-3.5 w-3.5" />
-                                                            {invoice.receipt_image_path
-                                                                ? t(
-                                                                      'billing.updateReceipt',
-                                                                      'Chekni yangilash',
-                                                                  )
-                                                                : t(
-                                                                      'billing.uploadReceipt',
-                                                                      'Chek yuklash',
-                                                                  )}
-                                                        </Button>
-                                                    )}
+                                                        {invoice.payment_method ===
+                                                            'card_transfer' && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="h-8 gap-1.5 text-xs font-medium"
+                                                                onClick={() =>
+                                                                    openUpload(
+                                                                        invoice,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Upload className="h-3.5 w-3.5" />
+                                                                {invoice.receipt_image_path
+                                                                    ? t(
+                                                                          'billing.updateReceipt',
+                                                                          'Chekni yangilash',
+                                                                      )
+                                                                    : t(
+                                                                          'billing.uploadReceipt',
+                                                                          'Chek yuklash',
+                                                                      )}
+                                                            </Button>
+                                                        )}
+
+                                                        {!invoice.receipt_image_path && (
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                className="text-destructive hover:bg-destructive/10 border-destructive/25 hover:border-destructive/50 h-8 gap-1 border text-xs"
+                                                                onClick={() =>
+                                                                    handleCancelInvoice(
+                                                                        invoice,
+                                                                    )
+                                                                }
+                                                                disabled={
+                                                                    cancellingId ===
+                                                                    invoice.id
+                                                                }
+                                                            >
+                                                                <Ban className="h-3.5 w-3.5" />
+                                                                {cancellingId ===
+                                                                invoice.id
+                                                                    ? t(
+                                                                          'billing.cancelling',
+                                                                          'Bekor qilinmoqda...',
+                                                                      )
+                                                                    : t(
+                                                                          'billing.cancelAction',
+                                                                          'Bekor qilish',
+                                                                      )}
+                                                            </Button>
+                                                        )}
+                                                    </>
+                                                )}
+
+                                                {invoice.status ===
+                                                    'cancelled' && (
+                                                    <span className="text-muted-foreground text-xs italic">
+                                                        —
+                                                    </span>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

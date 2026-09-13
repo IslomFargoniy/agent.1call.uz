@@ -88,6 +88,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/checkout', [BillingWebController::class, 'checkout'])->name('checkout');
         Route::post('/upload-receipt', [BillingWebController::class, 'uploadReceipt'])->name('upload-receipt');
         Route::post('/invoices/{invoice}/upload-receipt', [BillingWebController::class, 'uploadReceiptForInvoice'])->name('invoices.upload-receipt');
+        Route::post('/invoices/{invoice}/cancel', [BillingWebController::class, 'cancelInvoice'])->name('invoices.cancel');
         Route::get('/invoices/{invoice}/receipt', [BillingWebController::class, 'viewReceipt'])->name('invoices.receipt');
     });
 

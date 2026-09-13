@@ -251,6 +251,28 @@ class BillingWebController extends Controller
     }
 
     /**
+     * Cancel a pending invoice.
+     */
+    public function cancelInvoice(Invoice $invoice, Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        if (! $user->isSuperAdmin() && $invoice->tenant_id !== $user->tenant_id) {
+            abort(403, 'Ushbu invoysga ruxsat berilmagan.');
+        }
+
+        if ($invoice->status !== 'pending') {
+            return back()->with('error', 'Faqat kutilayotgan invoyslarni bekor qilish mumkin.');
+        }
+
+        $invoice->update(['status' => 'cancelled']);
+        if ($invoice->subscription && $invoice->subscription->status === 'pending') {
+            $invoice->subscription->update(['status' => 'cancelled']);
+        }
+
+        return back()->with('success', "Invoys #{$invoice->invoice_number} bekor qilindi.");
+    }
+
+    /**
      * View or stream the uploaded receipt.
      */
     public function viewReceipt(Invoice $invoice, Request $request): StreamedResponse

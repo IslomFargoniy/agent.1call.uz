@@ -2109,7 +2109,12 @@
         "renewalPeriodCost": "Renewal period ({{months}} mo):",
         "renewalProrataCost": "Prorated addition for remaining {{days}} days:",
         "retentionDowngradeRestricted": "Cannot downgrade retention period during active subscription",
-        "currentActiveTier": "Below active tier"
+        "currentActiveTier": "Below active tier",
+        "cancelled": "Cancelled",
+        "cancelAction": "Cancel",
+        "cancelling": "Cancelling...",
+        "confirmCancelInvoice": "Are you sure you want to cancel this invoice?",
+        "payNow": "Pay now"
     },
     "workSchedule": {
         "title": "Work Schedule & Privacy",

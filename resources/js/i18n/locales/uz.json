@@ -2136,7 +2136,12 @@
         "renewalPeriodCost": "Uzaytirish to'lovi ({{months}} oy):",
         "renewalProrataCost": "Qolgan {{days}} kun uchun pro-rata:",
         "retentionDowngradeRestricted": "Amaldagi obuna muddati davomida arxiv saqlash muddatini kamaytirish mumkin emas",
-        "currentActiveTier": "Amaldagidan kam"
+        "currentActiveTier": "Amaldagidan kam",
+        "cancelled": "Bekor qilingan",
+        "cancelAction": "Bekor qilish",
+        "cancelling": "Bekor qilinmoqda...",
+        "confirmCancelInvoice": "Haqiqatan ham ushbu invoysni bekor qilmoqchimisiz?",
+        "payNow": "To'lash"
     },
     "workSchedule": {
         "title": "Ish Grafigi va Maxfiylik",

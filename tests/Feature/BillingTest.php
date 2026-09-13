@@ -256,3 +256,36 @@ test('Creating new invoice auto-cancels old unpaid pending invoices', function (
     expect($invoice1->subscription->status)->toBe('cancelled');
     expect($invoice2->status)->toBe('pending');
 });
+
+test('Tenant user can cancel their pending invoice', function () {
+    $user = User::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'role' => 'admin',
+    ]);
+    $service = app(SubscriptionService::class);
+    $invoice = $service->createInvoice($this->tenant, $this->tariff, 3, 30, 1, 'click');
+
+    $response = $this->actingAs($user)
+        ->post("/billing/invoices/{$invoice->id}/cancel");
+
+    $response->assertRedirect();
+    $invoice->refresh();
+    expect($invoice->status)->toBe('cancelled');
+    expect($invoice->subscription->status)->toBe('cancelled');
+});
+
+test('Tenant user cannot cancel paid invoice', function () {
+    $user = User::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'role' => 'admin',
+    ]);
+    $service = app(SubscriptionService::class);
+    $invoice = $service->createInvoice($this->tenant, $this->tariff, 3, 30, 1, 'click');
+    $service->activateSubscription($invoice);
+
+    $response = $this->actingAs($user)
+        ->post("/billing/invoices/{$invoice->id}/cancel");
+
+    $invoice->refresh();
+    expect($invoice->status)->toBe('paid');
+});

@@ -2136,7 +2136,12 @@
         "renewalPeriodCost": "Продление ({{months}} мес.):",
         "renewalProrataCost": "Доплата за оставшиеся {{days}} дн.:",
         "retentionDowngradeRestricted": "Нельзя уменьшить срок хранения архива в течение действующей подписки",
-        "currentActiveTier": "Меньше текущего"
+        "currentActiveTier": "Меньше текущего",
+        "cancelled": "Отменен",
+        "cancelAction": "Отменить",
+        "cancelling": "Отмена...",
+        "confirmCancelInvoice": "Вы действительно хотите отменить этот счет?",
+        "payNow": "Оплатить"
     },
     "workSchedule": {
         "title": "График Работы и Конфиденциальность",
