@@ -220,6 +220,42 @@ export default function BillingIndex({
         };
     };
 
+    // Calculate monthly rate for a given device count and retention (including volume discounts)
+    const calculateMonthlyRate = (devices: number, retentionDays: number) => {
+        const retAddon = getRetentionAddon(retentionDays);
+        const rateUzs = baseUzs + retAddon.uzs;
+        const rateUsd = baseUsd + retAddon.usd;
+        const subUzs = rateUzs * devices;
+        const subUsd = rateUsd * devices;
+
+        let volDisc = 0;
+        const dbVol = selectedTariff?.discounts
+            ?.filter(
+                (d) =>
+                    d.type === 'device_volume' &&
+                    devices >= d.min_value &&
+                    (!d.max_value || devices <= d.max_value),
+            )
+            .sort(
+                (a, b) =>
+                    Number(b.discount_percent) - Number(a.discount_percent),
+            )[0];
+
+        if (dbVol) {
+            volDisc = Number(dbVol.discount_percent);
+        } else {
+            if (devices >= 20) volDisc = 15;
+            else if (devices >= 10) volDisc = 10;
+            else if (devices >= 5) volDisc = 5;
+        }
+
+        const factor = (100 - volDisc) / 100;
+        return {
+            uzs: Math.round(subUzs * factor),
+            usd: Math.round(subUsd * factor * 100) / 100,
+        };
+    };
+
     // === UPGRADE (PRO-RATA) CALCULATION ===
     const isDevicesChanged = upgradeTargetDevices > currentAllowed;
     const isRetentionChanged = upgradeRetentionDays > currentRetention;
@@ -229,21 +265,24 @@ export default function BillingIndex({
         upgradeTargetDevices - currentAllowed,
     );
 
-    // Current monthly cost for current devices with current retention
-    const currentRetAddon = getRetentionAddon(currentRetention);
-    const currentMonthlyUzs = (baseUzs + currentRetAddon.uzs) * currentAllowed;
-    const currentMonthlyUsd = (baseUsd + currentRetAddon.usd) * currentAllowed;
-
-    // Target monthly cost for upgrade target devices with upgrade retention
-    const targetRetAddon = getRetentionAddon(upgradeRetentionDays);
-    const targetMonthlyUzs =
-        (baseUzs + targetRetAddon.uzs) * upgradeTargetDevices;
-    const targetMonthlyUsd =
-        (baseUsd + targetRetAddon.usd) * upgradeTargetDevices;
+    const currentMonthly = calculateMonthlyRate(
+        currentAllowed,
+        currentRetention,
+    );
+    const upgradeTargetMonthly = calculateMonthlyRate(
+        upgradeTargetDevices,
+        upgradeRetentionDays,
+    );
 
     // Monthly difference
-    const monthlyDiffUzs = Math.max(0, targetMonthlyUzs - currentMonthlyUzs);
-    const monthlyDiffUsd = Math.max(0, targetMonthlyUsd - currentMonthlyUsd);
+    const monthlyDiffUzs = Math.max(
+        0,
+        upgradeTargetMonthly.uzs - currentMonthly.uzs,
+    );
+    const monthlyDiffUsd = Math.max(
+        0,
+        upgradeTargetMonthly.usd - currentMonthly.usd,
+    );
 
     // Prorated cost for remaining days
     const proratedTotalUzs = Math.ceil((monthlyDiffUzs / 30.0) * remainingDays);
@@ -304,9 +343,37 @@ export default function BillingIndex({
 
     const totalDiscount = Math.min(40, periodDiscount + volumeDiscount);
     const discountFactor = (100 - totalDiscount) / 100;
-    const renewalTotalUzs = Math.round(subtotalUzs * discountFactor);
-    const renewalTotalUsd =
+    const renewalPeriodTotalUzs = Math.round(subtotalUzs * discountFactor);
+    const renewalPeriodTotalUsd =
         Math.round(subtotalUsd * discountFactor * 100) / 100;
+
+    // Renewal with upgrade over current active subscription
+    const isRenewalUpgraded = Boolean(
+        hasActivePaid &&
+        (activeRenewalDevices > currentAllowed ||
+            renewalRetentionDays > currentRetention),
+    );
+
+    const renewalTargetMonthly = calculateMonthlyRate(
+        activeRenewalDevices,
+        renewalRetentionDays,
+    );
+    const renewalMonthlyDiffUzs = isRenewalUpgraded
+        ? Math.max(0, renewalTargetMonthly.uzs - currentMonthly.uzs)
+        : 0;
+    const renewalMonthlyDiffUsd = isRenewalUpgraded
+        ? Math.max(0, renewalTargetMonthly.usd - currentMonthly.usd)
+        : 0;
+
+    const renewalProratedUzs = Math.ceil(
+        (renewalMonthlyDiffUzs / 30.0) * remainingDays,
+    );
+    const renewalProratedUsd =
+        Math.round((renewalMonthlyDiffUsd / 30.0) * remainingDays * 100) / 100;
+
+    const renewalTotalUzs = renewalPeriodTotalUzs + renewalProratedUzs;
+    const renewalTotalUsd =
+        Math.round((renewalPeriodTotalUsd + renewalProratedUsd) * 100) / 100;
 
     // Dynamic Retention items list
     const retentionItems = [
@@ -1034,6 +1101,33 @@ export default function BillingIndex({
                                         )}
                                     </p>
                                 )}
+
+                                {isRenewalUpgraded && (
+                                    <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-300">
+                                        <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                        <div>
+                                            <span className="block font-semibold">
+                                                {t(
+                                                    'billing.renewalProrataTitle',
+                                                    "Qurilmalar/arxiv oshirilishi bo'yicha ma'lumot",
+                                                )}
+                                            </span>
+                                            <span className="text-muted-foreground mt-0.5 block text-[11px] leading-relaxed">
+                                                {t(
+                                                    'billing.renewalProrataExplanation',
+                                                    {
+                                                        days: remainingDays,
+                                                        prorated:
+                                                            renewalProratedUzs.toLocaleString(
+                                                                'uz-UZ',
+                                                            ),
+                                                        defaultValue: `Siz obunani uzaytirish bilan birga tarif parametrlarini oshirmoqdasiz. Yangi parametrlar to'lovdan so'ng darhol kuchga kirganligi sababli, amaldagi obunaning qolgan ${remainingDays} kuni uchun pro-rata farqi (+${renewalProratedUzs.toLocaleString('uz-UZ')} UZS) hisoblandi.`,
+                                                    },
+                                                )}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Subscription Period Selection */}
@@ -1387,6 +1481,42 @@ export default function BillingIndex({
                                             )}
                                         </span>
                                         <span>-{totalDiscount}%</span>
+                                    </div>
+                                )}
+
+                                {isRenewalUpgraded && (
+                                    <div className="border-border space-y-1.5 border-t border-dashed pt-2 text-[11px]">
+                                        <div className="text-muted-foreground flex items-center justify-between">
+                                            <span>
+                                                {t(
+                                                    'billing.renewalPeriodCost',
+                                                    "Uzaytirish to'lovi ({{months}} oy):",
+                                                    { months },
+                                                )}
+                                            </span>
+                                            <span className="text-foreground font-mono font-semibold">
+                                                {renewalPeriodTotalUzs.toLocaleString(
+                                                    'uz-UZ',
+                                                )}{' '}
+                                                UZS
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between font-medium text-amber-600 dark:text-amber-400">
+                                            <span>
+                                                {t(
+                                                    'billing.renewalProrataCost',
+                                                    'Qolgan {{days}} kun uchun pro-rata:',
+                                                    { days: remainingDays },
+                                                )}
+                                            </span>
+                                            <span className="font-mono font-semibold">
+                                                +
+                                                {renewalProratedUzs.toLocaleString(
+                                                    'uz-UZ',
+                                                )}{' '}
+                                                UZS
+                                            </span>
+                                        </div>
                                     </div>
                                 )}
 

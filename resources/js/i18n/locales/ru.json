@@ -2130,7 +2130,11 @@
         "upgradeStepRetentionDesc": "Продление срока хранения записей разговоров",
         "currentRetentionLabel": "Текущий срок архива",
         "cannotLowerRetention": "Нельзя уменьшить текущий срок",
-        "unchanged": "Без изменений"
+        "unchanged": "Без изменений",
+        "renewalProrataTitle": "Информация о повышении тарифа",
+        "renewalProrataExplanation": "Вы повышаете параметры тарифа вместе с продлением. Так как новые параметры вступают в силу сразу, добавлена доплата pro-rata за оставшиеся {{days}} дн. текущего периода (+{{prorated}} UZS).",
+        "renewalPeriodCost": "Продление ({{months}} мес.):",
+        "renewalProrataCost": "Доплата за оставшиеся {{days}} дн.:"
     },
     "workSchedule": {
         "title": "График Работы и Конфиденциальность",

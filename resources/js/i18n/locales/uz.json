@@ -2130,7 +2130,11 @@
         "upgradeStepRetentionDesc": "Qo'ng'iroq yozuvlarini saqlash muddatini uzaytirish",
         "currentRetentionLabel": "Hozirgi arxiv muddati",
         "cannotLowerRetention": "Hozirgi muddatdan kamaytirib bo'lmaydi",
-        "unchanged": "O'zgarishsiz"
+        "unchanged": "O'zgarishsiz",
+        "renewalProrataTitle": "Qurilmalar/arxiv oshirilishi bo'yicha ma'lumot",
+        "renewalProrataExplanation": "Siz obunani uzaytirish bilan birga tarif parametrlarini oshirmoqdasiz. Yangi parametrlar to'lovdan so'ng darhol kuchga kirganligi sababli, amaldagi obunaning qolgan {{days}} kuni uchun pro-rata farqi (+{{prorated}} UZS) hisoblandi.",
+        "renewalPeriodCost": "Uzaytirish to'lovi ({{months}} oy):",
+        "renewalProrataCost": "Qolgan {{days}} kun uchun pro-rata:"
     },
     "workSchedule": {
         "title": "Ish Grafigi va Maxfiylik",

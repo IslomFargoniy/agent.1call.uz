@@ -203,3 +203,27 @@ test('Prorata retention upgrade calculates and activates correctly', function ()
     expect($this->tenant->allowed_devices_count)->toBe(2);
     expect($this->tenant->subscription_expires_at->toDateTimeString())->toBe($expiry->toDateTimeString());
 });
+
+test('Renewal with upgraded device count includes prorata difference for remaining active days', function () {
+    $expiry = now()->addDays(29);
+    $this->tenant->update([
+        'allowed_devices_count' => 2,
+        'audio_retention_days' => 30,
+        'subscription_expires_at' => $expiry,
+    ]);
+
+    $service = app(SubscriptionService::class);
+
+    $invoice = $service->createInvoice($this->tenant, $this->tariff, 5, 30, 1, 'payme');
+
+    expect($invoice)->not->toBeNull();
+    expect($invoice->subscription->type)->toBe('renewal');
+    expect($invoice->subscription->devices_count)->toBe(5);
+    expect($invoice->amount)->toBeGreaterThan(237500);
+
+    $service->activateSubscription($invoice, 'trans-renew-upg-1');
+
+    $this->tenant->refresh();
+    expect($this->tenant->allowed_devices_count)->toBe(5);
+    expect($this->tenant->subscription_expires_at->isAfter($expiry))->toBeTrue();
+});

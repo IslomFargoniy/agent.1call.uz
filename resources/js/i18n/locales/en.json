@@ -2103,7 +2103,11 @@
         "submit": "Submit",
         "invoiceLabel": "Invoice",
         "amountLabel": "Amount",
-        "company": "Company"
+        "company": "Company",
+        "renewalProrataTitle": "Tier upgrade information",
+        "renewalProrataExplanation": "You are upgrading tier parameters along with renewal. Since new parameters apply immediately, a pro-rata difference for the remaining {{days}} days of the current period (+{{prorated}} UZS) has been added.",
+        "renewalPeriodCost": "Renewal period ({{months}} mo):",
+        "renewalProrataCost": "Prorated addition for remaining {{days}} days:"
     },
     "workSchedule": {
         "title": "Work Schedule & Privacy",

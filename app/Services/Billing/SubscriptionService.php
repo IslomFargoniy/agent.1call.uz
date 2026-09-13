@@ -39,6 +39,21 @@ class SubscriptionService
 
         $calculation = $this->calculator->calculate($tariff, $devicesCount, $retentionDays, $months);
 
+        $prorataCostUzs = 0;
+        $prorataCostUsd = 0.0;
+
+        if ($isCurrentlyActive && (
+            $devicesCount > (int) $tenant->allowed_devices_count ||
+            $retentionDays > (int) ($tenant->audio_retention_days ?: 30)
+        )) {
+            $prorataCalc = $this->calculator->calculateProrata($tenant, $tariff, $devicesCount, $retentionDays);
+            $prorataCostUzs = $prorataCalc['prorated_uzs'];
+            $prorataCostUsd = $prorataCalc['prorated_usd'];
+        }
+
+        $totalAmountUzs = $calculation['total_uzs'] + $prorataCostUzs;
+        $totalAmountUsd = round($calculation['total_usd'] + $prorataCostUsd, 2);
+
         $startsAt = $isCurrentlyActive
             ? $tenant->subscription_expires_at
             : $now;
@@ -67,9 +82,9 @@ class SubscriptionService
             'tenant_id' => $tenant->id,
             'subscription_id' => $subscription->id,
             'invoice_number' => $invoiceNumber,
-            'amount' => $calculation['total_uzs'],
+            'amount' => $totalAmountUzs,
             'currency' => 'UZS',
-            'amount_usd' => $calculation['total_usd'],
+            'amount_usd' => $totalAmountUsd,
             'payment_method' => $paymentMethod,
             'status' => 'pending',
         ]);
