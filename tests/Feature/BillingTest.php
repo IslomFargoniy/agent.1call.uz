@@ -227,3 +227,32 @@ test('Renewal with upgraded device count includes prorata difference for remaini
     expect($this->tenant->allowed_devices_count)->toBe(5);
     expect($this->tenant->subscription_expires_at->isAfter($expiry))->toBeTrue();
 });
+
+test('Renewal with retention downgrade is rejected when subscription is active', function () {
+    $expiry = now()->addDays(29);
+    $this->tenant->update([
+        'allowed_devices_count' => 2,
+        'audio_retention_days' => 90,
+        'subscription_expires_at' => $expiry,
+    ]);
+
+    $service = app(SubscriptionService::class);
+
+    expect(fn () => $service->createInvoice($this->tenant, $this->tariff, 2, 30, 1, 'payme'))
+        ->toThrow(InvalidArgumentException::class);
+});
+
+test('Creating new invoice auto-cancels old unpaid pending invoices', function () {
+    $service = app(SubscriptionService::class);
+
+    $invoice1 = $service->createInvoice($this->tenant, $this->tariff, 3, 30, 1, 'payme');
+    expect($invoice1->status)->toBe('pending');
+    expect($invoice1->subscription->status)->toBe('pending');
+
+    $invoice2 = $service->createInvoice($this->tenant, $this->tariff, 4, 30, 1, 'click');
+
+    $invoice1->refresh();
+    expect($invoice1->status)->toBe('cancelled');
+    expect($invoice1->subscription->status)->toBe('cancelled');
+    expect($invoice2->status)->toBe('pending');
+});

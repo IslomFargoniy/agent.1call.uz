@@ -2,6 +2,7 @@
 
 namespace App\Services\Billing;
 
+use App\Models\Subscription;
 use App\Models\SystemSetting;
 use App\Models\Tariff;
 use App\Models\Tenant;
@@ -163,17 +164,31 @@ class BillingCalculator
 
         $now = Carbon::now();
         $hasActive = (bool) ($tenant->subscription_expires_at && $tenant->subscription_expires_at->isFuture());
-        $remainingDays = $hasActive ? max(1, (int) $now->diffInDays($tenant->subscription_expires_at)) : 30;
+        $remainingDays = $hasActive ? max(1, (int) ceil($now->diffInSeconds($tenant->subscription_expires_at, false) / 86400.0)) : 30;
 
-        // Current monthly rate for active devices and active retention
-        $currentPricing = $this->calculate($tariff, $currentDevices, $currentRetention, 1);
-        $currentMonthlyUzs = $currentPricing['total_uzs'];
-        $currentMonthlyUsd = $currentPricing['total_usd'];
+        // Determine tenant's active contract period (to honor discounts like 20% for 1-year commitments)
+        $activeContractMonths = 1;
+        if ($hasActive) {
+            /** @var Subscription|null $lastActiveSub */
+            $lastActiveSub = $tenant->subscriptions()
+                ->where('status', 'active')
+                ->where('billing_period_months', '>', 0)
+                ->latest('id')
+                ->first();
+            if ($lastActiveSub && $lastActiveSub->billing_period_months > 0) {
+                $activeContractMonths = (int) $lastActiveSub->billing_period_months;
+            }
+        }
 
-        // Target new monthly rate
-        $newPricing = $this->calculate($tariff, $targetDevices, $targetRetention, 1);
-        $newMonthlyUzs = $newPricing['total_uzs'];
-        $newMonthlyUsd = $newPricing['total_usd'];
+        // Current monthly rate for active devices and active retention (scaled by contract period discount)
+        $currentPricing = $this->calculate($tariff, $currentDevices, $currentRetention, $activeContractMonths);
+        $currentMonthlyUzs = (int) round($currentPricing['total_uzs'] / (float) $activeContractMonths);
+        $currentMonthlyUsd = round($currentPricing['total_usd'] / (float) $activeContractMonths, 2);
+
+        // Target new monthly rate (under same contract conditions)
+        $newPricing = $this->calculate($tariff, $targetDevices, $targetRetention, $activeContractMonths);
+        $newMonthlyUzs = (int) round($newPricing['total_uzs'] / (float) $activeContractMonths);
+        $newMonthlyUsd = round($newPricing['total_usd'] / (float) $activeContractMonths, 2);
 
         // Difference between new total monthly cost and current monthly cost
         $diffUzs = max(0, $newMonthlyUzs - $currentMonthlyUzs);

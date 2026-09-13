@@ -64,6 +64,7 @@ interface BillingProps {
         is_grace_period: boolean;
         has_active_paid?: boolean;
         remaining_days?: number;
+        contract_months?: number;
     };
     tariffs: Tariff[];
     paymentMethods: PaymentMethod[];
@@ -220,8 +221,14 @@ export default function BillingIndex({
         };
     };
 
-    // Calculate monthly rate for a given device count and retention (including volume discounts)
-    const calculateMonthlyRate = (devices: number, retentionDays: number) => {
+    const activeContractMonths = tenant?.contract_months || 1;
+
+    // Calculate monthly rate for a given device count and retention (including volume and active contract discounts)
+    const calculateMonthlyRate = (
+        devices: number,
+        retentionDays: number,
+        contractMonths: number = activeContractMonths,
+    ) => {
         const retAddon = getRetentionAddon(retentionDays);
         const rateUzs = baseUzs + retAddon.uzs;
         const rateUsd = baseUsd + retAddon.usd;
@@ -249,7 +256,29 @@ export default function BillingIndex({
             else if (devices >= 5) volDisc = 5;
         }
 
-        const factor = (100 - volDisc) / 100;
+        let periodDisc = 0;
+        const dbPeriod = selectedTariff?.discounts
+            ?.filter(
+                (d) =>
+                    d.type === 'period' &&
+                    contractMonths >= d.min_value &&
+                    (!d.max_value || contractMonths <= d.max_value),
+            )
+            .sort(
+                (a, b) =>
+                    Number(b.discount_percent) - Number(a.discount_percent),
+            )[0];
+
+        if (dbPeriod) {
+            periodDisc = Number(dbPeriod.discount_percent);
+        } else {
+            if (contractMonths >= 12) periodDisc = 20;
+            else if (contractMonths >= 6) periodDisc = 10;
+            else if (contractMonths >= 3) periodDisc = 5;
+        }
+
+        const totalDisc = Math.min(40, volDisc + periodDisc);
+        const factor = (100 - totalDisc) / 100;
         return {
             uzs: Math.round(subUzs * factor),
             usd: Math.round(subUsd * factor * 100) / 100,
@@ -1231,29 +1260,55 @@ export default function BillingIndex({
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-2.5 md:grid-cols-5">
-                                    {retentionItems.map((item) => (
-                                        <div
-                                            key={item.days}
-                                            onClick={() =>
-                                                setRenewalRetentionDays(
-                                                    item.days,
-                                                )
-                                            }
-                                            className={`cursor-pointer rounded-xl border p-3 text-center text-xs transition-all ${
-                                                renewalRetentionDays ===
-                                                item.days
-                                                    ? 'border-primary bg-primary/5 ring-primary ring-1'
-                                                    : 'border-border bg-card hover:bg-muted/40'
-                                            }`}
-                                        >
-                                            <span className="block font-bold">
-                                                {item.label}
-                                            </span>
-                                            <span className="text-muted-foreground mt-0.5 block text-[10px]">
-                                                {item.extra}
-                                            </span>
-                                        </div>
-                                    ))}
+                                    {retentionItems.map((item) => {
+                                        const isRetentionDisabled = Boolean(
+                                            hasActivePaid &&
+                                            item.days < currentRetention,
+                                        );
+                                        return (
+                                            <div
+                                                key={item.days}
+                                                onClick={() => {
+                                                    if (!isRetentionDisabled) {
+                                                        setRenewalRetentionDays(
+                                                            item.days,
+                                                        );
+                                                    }
+                                                }}
+                                                className={`rounded-xl border p-3 text-center text-xs transition-all ${
+                                                    isRetentionDisabled
+                                                        ? 'border-border bg-muted/20 cursor-not-allowed border-dashed opacity-40 select-none'
+                                                        : renewalRetentionDays ===
+                                                            item.days
+                                                          ? 'border-primary bg-primary/5 ring-primary cursor-pointer ring-1'
+                                                          : 'border-border bg-card hover:bg-muted/40 cursor-pointer'
+                                                }`}
+                                                title={
+                                                    isRetentionDisabled
+                                                        ? t(
+                                                              'billing.retentionDowngradeRestricted',
+                                                              'Amaldagi obuna muddati davomida arxiv saqlash muddatini kamaytirish mumkin emas',
+                                                          )
+                                                        : undefined
+                                                }
+                                            >
+                                                <span className="block font-bold">
+                                                    {item.label}
+                                                </span>
+                                                <span className="text-muted-foreground mt-0.5 block text-[10px]">
+                                                    {item.extra}
+                                                </span>
+                                                {isRetentionDisabled && (
+                                                    <span className="mt-1 block text-[9px] font-medium text-amber-600 dark:text-amber-400">
+                                                        {t(
+                                                            'billing.currentActiveTier',
+                                                            'Amaldagidan kam',
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </>
@@ -1466,10 +1521,22 @@ export default function BillingIndex({
                                             'Arxiv saqlash:',
                                         )}
                                     </span>
-                                    <span className="font-mono font-semibold">
-                                        {renewalRetentionDays}{' '}
-                                        {t('billing.daysUnit', 'kun')}
-                                    </span>
+                                    <div className="text-right">
+                                        <span className="font-mono font-semibold">
+                                            {renewalRetentionDays}{' '}
+                                            {t('billing.daysUnit', 'kun')}
+                                        </span>
+                                        {renewalRetAddon.uzs > 0 && (
+                                            <span className="text-muted-foreground block text-[10px]">
+                                                (+
+                                                {renewalRetAddon.uzs.toLocaleString(
+                                                    'uz-UZ',
+                                                )}{' '}
+                                                UZS × {activeRenewalDevices}{' '}
+                                                ta/oy)
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {totalDiscount > 0 && (

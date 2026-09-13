@@ -2134,7 +2134,9 @@
         "renewalProrataTitle": "Информация о повышении тарифа",
         "renewalProrataExplanation": "Вы повышаете параметры тарифа вместе с продлением. Так как новые параметры вступают в силу сразу, добавлена доплата pro-rata за оставшиеся {{days}} дн. текущего периода (+{{prorated}} UZS).",
         "renewalPeriodCost": "Продление ({{months}} мес.):",
-        "renewalProrataCost": "Доплата за оставшиеся {{days}} дн.:"
+        "renewalProrataCost": "Доплата за оставшиеся {{days}} дн.:",
+        "retentionDowngradeRestricted": "Нельзя уменьшить срок хранения архива в течение действующей подписки",
+        "currentActiveTier": "Меньше текущего"
     },
     "workSchedule": {
         "title": "График Работы и Конфиденциальность",

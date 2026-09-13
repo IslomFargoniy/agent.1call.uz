@@ -2134,7 +2134,9 @@
         "renewalProrataTitle": "Qurilmalar/arxiv oshirilishi bo'yicha ma'lumot",
         "renewalProrataExplanation": "Siz obunani uzaytirish bilan birga tarif parametrlarini oshirmoqdasiz. Yangi parametrlar to'lovdan so'ng darhol kuchga kirganligi sababli, amaldagi obunaning qolgan {{days}} kuni uchun pro-rata farqi (+{{prorated}} UZS) hisoblandi.",
         "renewalPeriodCost": "Uzaytirish to'lovi ({{months}} oy):",
-        "renewalProrataCost": "Qolgan {{days}} kun uchun pro-rata:"
+        "renewalProrataCost": "Qolgan {{days}} kun uchun pro-rata:",
+        "retentionDowngradeRestricted": "Amaldagi obuna muddati davomida arxiv saqlash muddatini kamaytirish mumkin emas",
+        "currentActiveTier": "Amaldagidan kam"
     },
     "workSchedule": {
         "title": "Ish Grafigi va Maxfiylik",

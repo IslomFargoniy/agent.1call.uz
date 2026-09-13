@@ -30,12 +30,31 @@ class SubscriptionService
         $now = Carbon::now();
         $isCurrentlyActive = $tenant->subscription_expires_at && $tenant->subscription_expires_at->isFuture();
 
+        $currentAllowed = (int) ($tenant->allowed_devices_count ?: 1);
+        $currentRetention = (int) ($tenant->audio_retention_days ?: 30);
+
         // Anti-abuse: When renewing an active subscription, device count cannot be lower than current active tier
-        if ($isCurrentlyActive && $devicesCount < (int) $tenant->allowed_devices_count) {
+        if ($isCurrentlyActive && $devicesCount < $currentAllowed) {
             throw new \InvalidArgumentException(
-                "Faol obunani uzaytirishda telefonlar soni hozirgi litsenziyadagidan (kamida {$tenant->allowed_devices_count} ta) kam bo'lishi mumkin emas."
+                "Faol obunani uzaytirishda telefonlar soni hozirgi litsenziyadagidan (kamida {$currentAllowed} ta) kam bo'lishi mumkin emas."
             );
         }
+
+        // Anti-abuse: Audio retention days cannot be lower than current active tier
+        if ($isCurrentlyActive && $retentionDays < $currentRetention) {
+            throw new \InvalidArgumentException(
+                "Faol obunani uzaytirishda arxiv saqlash muddati hozirgi litsenziyadagidan (kamida {$currentRetention} kun) kam bo'lishi mumkin emas."
+            );
+        }
+
+        // Auto-cancel previous unpaid pending invoices for this tenant (excluding those with receipt uploaded for review)
+        Invoice::where('tenant_id', $tenant->id)
+            ->where('status', 'pending')
+            ->whereNull('receipt_image_path')
+            ->each(function (Invoice $oldInvoice) {
+                $oldInvoice->update(['status' => 'cancelled']);
+                $oldInvoice->subscription?->update(['status' => 'cancelled']);
+            });
 
         $calculation = $this->calculator->calculate($tariff, $devicesCount, $retentionDays, $months);
 
@@ -124,6 +143,15 @@ class SubscriptionService
         if ($newTotalDevices === $currentDevices && $newRetentionDays === $currentRetention) {
             throw new \InvalidArgumentException('Kamida bitta parametrni oshirishingiz kerak.');
         }
+
+        // Auto-cancel previous unpaid pending invoices for this tenant (excluding those with receipt uploaded for review)
+        Invoice::where('tenant_id', $tenant->id)
+            ->where('status', 'pending')
+            ->whereNull('receipt_image_path')
+            ->each(function (Invoice $oldInvoice) {
+                $oldInvoice->update(['status' => 'cancelled']);
+                $oldInvoice->subscription?->update(['status' => 'cancelled']);
+            });
 
         $calculation = $this->calculator->calculateProrata($tenant, $tariff, $newTotalDevices, $newRetentionDays);
 

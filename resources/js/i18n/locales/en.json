@@ -2107,7 +2107,9 @@
         "renewalProrataTitle": "Tier upgrade information",
         "renewalProrataExplanation": "You are upgrading tier parameters along with renewal. Since new parameters apply immediately, a pro-rata difference for the remaining {{days}} days of the current period (+{{prorated}} UZS) has been added.",
         "renewalPeriodCost": "Renewal period ({{months}} mo):",
-        "renewalProrataCost": "Prorated addition for remaining {{days}} days:"
+        "renewalProrataCost": "Prorated addition for remaining {{days}} days:",
+        "retentionDowngradeRestricted": "Cannot downgrade retention period during active subscription",
+        "currentActiveTier": "Below active tier"
     },
     "workSchedule": {
         "title": "Work Schedule & Privacy",

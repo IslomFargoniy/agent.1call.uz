@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\SendTelegramAlertJob;
 use App\Models\Invoice;
 use App\Models\PaymentMethod;
+use App\Models\Subscription;
 use App\Models\Tariff;
 use App\Services\Billing\BillingCalculator;
 use App\Services\Billing\LemonSqueezyService;
@@ -51,7 +52,15 @@ class BillingWebController extends Controller
             ->first();
 
         $hasActivePaid = (bool) ($tenant && $tenant->subscription_expires_at && $tenant->subscription_expires_at->isFuture());
-        $remainingDays = $hasActivePaid ? max(1, (int) Carbon::now()->diffInDays($tenant->subscription_expires_at)) : 0;
+        $remainingDays = $hasActivePaid ? max(1, (int) ceil(Carbon::now()->diffInSeconds($tenant->subscription_expires_at, false) / 86400.0)) : 0;
+
+        /** @var Subscription|null $lastActiveSub */
+        $lastActiveSub = $tenant ? $tenant->subscriptions()
+            ->where('status', 'active')
+            ->where('billing_period_months', '>', 0)
+            ->latest('id')
+            ->first() : null;
+        $contractMonths = $lastActiveSub ? (int) $lastActiveSub->billing_period_months : 1;
 
         return Inertia::render('Billing/Index', [
             'tenant' => $tenant ? [
@@ -66,6 +75,7 @@ class BillingWebController extends Controller
                 'is_grace_period' => $tenant->isGracePeriod(),
                 'has_active_paid' => $hasActivePaid,
                 'remaining_days' => $remainingDays,
+                'contract_months' => $contractMonths,
             ] : null,
             'tariffs' => $tariffs,
             'paymentMethods' => $paymentMethods,
@@ -141,9 +151,9 @@ class BillingWebController extends Controller
                 $validated['payment_method']
             );
         } else {
-            $minDevices = ($tenant->subscription_expires_at && $tenant->subscription_expires_at->isFuture())
-                ? (int) ($tenant->allowed_devices_count ?: 1)
-                : 1;
+            $isFutureActive = (bool) ($tenant->subscription_expires_at && $tenant->subscription_expires_at->isFuture());
+            $minDevices = $isFutureActive ? (int) ($tenant->allowed_devices_count ?: 1) : 1;
+            $minRetention = $isFutureActive ? (int) ($tenant->audio_retention_days ?: 30) : 30;
 
             $validated = $request->validate([
                 'tariff_id' => ['required', 'exists:tariffs,id'],
@@ -154,6 +164,12 @@ class BillingWebController extends Controller
             ], [
                 'devices_count.min' => "Faol obunani uzaytirishda telefonlar soni kamida {$minDevices} ta bo'lishi kerak.",
             ]);
+
+            if ((int) $validated['retention_days'] < $minRetention) {
+                return back()->withErrors([
+                    'retention_days' => "Faol obunani uzaytirishda arxiv saqlash muddati hozirgi litsenziyadagidan (kamida {$minRetention} kun) kam bo'lishi mumkin emas.",
+                ]);
+            }
 
             /** @var Tariff $tariff */
             $tariff = Tariff::query()->findOrFail((int) $validated['tariff_id']);
